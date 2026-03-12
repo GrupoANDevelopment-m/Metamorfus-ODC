@@ -1263,7 +1263,9 @@ class GeneticForge:
           { id: 'actions_init', name: '__init__.py', type: 'file', content: '' },
           { id: 'base.py', name: 'base.py', type: 'file', content: generateBoilerplate('base.py') }
         ]
-      },
+      }
+    ]
+  },
       {
         id: 'network_folder',
         name: 'network',
