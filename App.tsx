@@ -53,7 +53,7 @@ export default function App() {
   };
 
   const [config, setConfig] = useState<SystemConfig>({
-      geminiApiKey: getEnvApiKey(),
+      nvidiaApiKey: getEnvApiKey() || "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",
       supabaseUrl: "https://vswawfqzocydtwgwiqqv.supabase.co",
       supabaseKey: "sb_publishable_aeDLN0jr5xjiCKlXfRgCGQ_pXH-bIab"
   });
@@ -64,6 +64,9 @@ export default function App() {
     if (savedConfig) {
       try {
         const parsed = JSON.parse(savedConfig);
+        if (!parsed.nvidiaApiKey) {
+            parsed.nvidiaApiKey = getEnvApiKey() || "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";
+        }
         setConfig(prev => ({ ...prev, ...parsed }));
       } catch(e) {}
     }

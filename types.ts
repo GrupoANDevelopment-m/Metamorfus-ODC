@@ -21,7 +21,7 @@ export enum SimulationMode {
 }
 
 export interface SystemConfig {
-  geminiApiKey: string;
+  nvidiaApiKey: string;
   supabaseUrl: string;
   supabaseKey: string;
 }

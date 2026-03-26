@@ -136,8 +136,21 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
     isSyncing.current = true;
     
     return new Promise<void>((resolve) => {
+        let resolved = false;
+        const timeout = setTimeout(() => {
+            if (!resolved) {
+                resolved = true;
+                isSyncing.current = false;
+                console.warn("FS Sync Timeout");
+                resolve();
+            }
+        }, 3000);
+
         try {
             py.FS.syncfs(false, (err: any) => {
+                if (resolved) return;
+                resolved = true;
+                clearTimeout(timeout);
                 isSyncing.current = false;
                 if (err) {
                     console.error("FS Sync Error:", err);
@@ -145,6 +158,9 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
                 resolve();
             });
         } catch (e) {
+            if (resolved) return;
+            resolved = true;
+            clearTimeout(timeout);
             console.error("FS Sync Exception:", e);
             isSyncing.current = false;
             resolve();
@@ -181,7 +197,7 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
       if (!py) return;
       try {
         const secrets = JSON.stringify({
-            GEMINI_API_KEY: cfg.geminiApiKey,
+            NVIDIA_API_KEY: cfg.nvidiaApiKey,
             SUPABASE_URL: cfg.supabaseUrl,
             SUPABASE_KEY: cfg.supabaseKey,
             MARKET_ENDPOINT: "https://api.market-data.com/v1"
@@ -227,28 +243,50 @@ skill if skill else "No source found"
 
       try {
         addLog('Initializing Python Runtime (Pyodide)...', 'SYSTEM');
-        const py = await window.loadPyodide({
+        const pyPromise = window.loadPyodide({
           indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
         });
+        const pyTimeout = new Promise<any>((_, reject) => 
+            setTimeout(() => reject(new Error("Pyodide Download Timeout")), 30000)
+        );
+        const py = await Promise.race([pyPromise, pyTimeout]);
         
-        await py.loadPackage(["micropip", "sqlite3"]);
+        const pkgPromise = py.loadPackage(["micropip", "sqlite3"]);
+        const pkgTimeout = new Promise<void>((_, reject) => 
+            setTimeout(() => reject(new Error("Package Download Timeout")), 30000)
+        );
+        await Promise.race([pkgPromise, pkgTimeout]);
         addLog('Loading dependencies (micropip, sqlite3)...', 'SYSTEM');
         
         addLog('Mounting Persistent Storage (IndexedDB)...', 'SYSTEM');
         try { py.FS.mkdir('/odc_data'); } catch(e) {}
-        py.FS.mount(py.FS.filesystems.IDBFS, {}, '/odc_data');
-        
-        await new Promise<void>((resolve, reject) => {
-            py.FS.syncfs(true, (err: any) => {
-                if (err) {
-                    addLog(`Storage Sync Error: ${err}`, 'SYSTEM');
-                    reject(err);
-                } else {
-                    addLog('Storage Synchronized.', 'SYSTEM');
+        try {
+            py.FS.mount(py.FS.filesystems.IDBFS, {}, '/odc_data');
+            await new Promise<void>((resolve) => {
+                let resolved = false;
+                const timeout = setTimeout(() => {
+                    if (!resolved) {
+                        resolved = true;
+                        addLog('Storage Sync Timeout. Proceeding without persistent storage.', 'SYSTEM');
+                        resolve();
+                    }
+                }, 3000);
+
+                py.FS.syncfs(true, (err: any) => {
+                    if (resolved) return;
+                    resolved = true;
+                    clearTimeout(timeout);
+                    if (err) {
+                        addLog(`Storage Sync Error: ${err}. Proceeding without persistence.`, 'SYSTEM');
+                    } else {
+                        addLog('Storage Synchronized.', 'SYSTEM');
+                    }
                     resolve();
-                }
+                });
             });
-        });
+        } catch (e) {
+            addLog(`IDBFS Mount Error: ${e}. Proceeding without persistence.`, 'SYSTEM');
+        }
         
         addLog('Mounting ODC File System...', 'SYSTEM');
         try { py.FS.mkdir('/home/pyodide'); } catch(e) {}
@@ -257,7 +295,7 @@ skill if skill else "No source found"
         
         // Initial Secret Write
         const secrets = JSON.stringify({
-            GEMINI_API_KEY: config.geminiApiKey,
+            NVIDIA_API_KEY: config.nvidiaApiKey,
             SUPABASE_URL: config.supabaseUrl,
             SUPABASE_KEY: config.supabaseKey,
             MARKET_ENDPOINT: "https://api.market-data.com/v1"
@@ -482,7 +520,12 @@ async def step(current_cycle_input):
     return {"organisms": state, "mind_state": mind_state}
 `;
       
-        await py.runPythonAsync(driverCode);
+        // Run driver code with timeout
+        const runPromise = py.runPythonAsync(driverCode);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Python Kernel Initialization Timeout")), 15000)
+        );
+        await Promise.race([runPromise, timeoutPromise]);
 
         (window as any).getSkillSource = async (name: string) => {
             return await fetchSkillSource(name);

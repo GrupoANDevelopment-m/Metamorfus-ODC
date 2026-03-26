@@ -52,24 +52,24 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
                 <ShieldAlert size={16} className="shrink-0 mt-0.5" />
                 <p>
                     These keys are stored locally in your browser and injected into the Python Sandbox at runtime.
-                    Without a Gemini API Key, the <strong>Cortex</strong> and <strong>Forge</strong> (AI Evolution) will not function.
+                    Without an NVIDIA API Key, the <strong>Cortex</strong> and <strong>Forge</strong> (AI Evolution) will not function.
                 </p>
             </div>
 
-            {/* Gemini API Key */}
+            {/* NVIDIA API Key */}
             <div className="space-y-1.5">
               <label className="text-xs uppercase font-bold text-odc-muted flex items-center gap-2">
-                <Key size={12} /> Gemini API Key (Required)
+                <Key size={12} /> NVIDIA API Key (Required)
               </label>
               <input
                 type="password"
-                name="geminiApiKey"
-                value={formData.geminiApiKey}
+                name="nvidiaApiKey"
+                value={formData.nvidiaApiKey}
                 onChange={handleChange}
-                placeholder="AIzaSy..."
+                placeholder="nvapi-..."
                 className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-odc-text focus:border-odc-accent focus:outline-none font-mono"
               />
-              <p className="text-[10px] text-odc-muted">Used for Cognitive Cortex & Genetic Forge logic.</p>
+              <p className="text-[10px] text-odc-muted">Used for Cognitive Cortex & Genetic Forge logic (Kimi-k2.5).</p>
             </div>
 
             <div className="border-t border-white/5 my-4"></div>

@@ -191,22 +191,32 @@ class Cortex:
         if not self.config.api_key:
             return None
 
-        model_name = "gemini-3-flash-preview"
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.config.api_key}"
+        model_name = "moonshotai/kimi-k2.5"
+        url = "https://integrate.api.nvidia.com/v1/chat/completions"
         
         payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "systemInstruction": {"parts": [{"text": system_role}]},
-            "generationConfig": {"temperature": 0.4, "maxOutputTokens": 2000}
+            "model": model_name,
+            "messages": [
+                {"role": "system", "content": system_role},
+                {"role": "user", "content": prompt}
+            ],
+            "max_tokens": 16384,
+            "temperature": 1.00,
+            "top_p": 1.00,
+            "stream": False,
+            "chat_template_kwargs": {"thinking": True}
         }
 
         try:
-            response = await pyfetch(url, method="POST", body=json.dumps(payload), headers={"Content-Type": "application/json"})
+            response = await pyfetch(url, method="POST", body=json.dumps(payload), headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.config.api_key}"
+            })
             if response.status != 200:
                 return None
             data = await response.json()
-            if 'candidates' in data and len(data['candidates']) > 0:
-                return data['candidates'][0]['content']['parts'][0]['text']
+            if 'choices' in data and len(data['choices']) > 0:
+                return data['choices'][0]['message']['content']
         except:
             return None
         return None
@@ -450,7 +460,7 @@ import asyncio
 async def run_ecosystem(organisms, governance, soul_stone, interval=2):
     pass`;
 
-const ENV_CONTENT = `GEMINI_API_KEY=INSERT_YOUR_GEMINI_KEY_HERE
+const ENV_CONTENT = `NVIDIA_API_KEY=INSERT_YOUR_NVIDIA_KEY_HERE
 SUPABASE_URL=https://vswawfqzocydtwgwiqqv.supabase.co
 SUPABASE_KEY=sb_publishable_aeDLN0jr5xjiCKlXfRgCGQ_pXH-bIab
 MARKET_DATA_ENDPOINT=https://api.market-data.com/v1`;
@@ -481,7 +491,6 @@ try:
     from fastapi import FastAPI, WebSocket, WebSocketDisconnect
     from fastapi.middleware.cors import CORSMiddleware
     import uvicorn
-    import google.generativeai as genai
     import psutil
     import docker
 except ImportError as e:
@@ -489,11 +498,9 @@ except ImportError as e:
     sys.exit(1)
 
 # --- CONFIGURATION ---
-API_KEY = os.getenv("GEMINI_API_KEY")
+API_KEY = os.getenv("NVIDIA_API_KEY")
 if not API_KEY:
-    print("WARNING: GEMINI_API_KEY not found.")
-else:
-    genai.configure(api_key=API_KEY)
+    print("WARNING: NVIDIA_API_KEY not found.")
 
 app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -842,7 +849,7 @@ import json
 
 class SecureConfig:
     def __init__(self):
-        self.api_key = self._load_key('GEMINI_API_KEY')
+        self.api_key = self._load_key('NVIDIA_API_KEY')
         self.supabase_url = self._load_key('SUPABASE_URL')
         self.supabase_key = self._load_key('SUPABASE_KEY')
 
@@ -1115,34 +1122,33 @@ class GeneticForge:
 
     async def _call_llm(self, messages):
         if not self.config.api_key:
-            print("FORGE ERROR: Missing GEMINI_API_KEY.")
+            print("FORGE ERROR: Missing NVIDIA_API_KEY.")
             return None
         
-        system_instruction = ""
-        user_prompt = ""
-        for msg in messages:
-            if msg['role'] == 'system':
-                system_instruction += msg['content'] + "\\n"
-            elif msg['role'] == 'user':
-                user_prompt += msg['content'] + "\\n"
-        
-        model_name = "gemini-3-flash-preview" 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self.config.api_key}"
+        model_name = "moonshotai/kimi-k2.5" 
+        url = "https://integrate.api.nvidia.com/v1/chat/completions"
         
         payload = {
-            "contents": [{"parts": [{"text": user_prompt}]}],
-            "systemInstruction": {"parts": [{"text": system_instruction}]},
-            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 2000}
+            "model": model_name,
+            "messages": messages,
+            "max_tokens": 16384,
+            "temperature": 1.00,
+            "top_p": 1.00,
+            "stream": False,
+            "chat_template_kwargs": {"thinking": True}
         }
 
         try:
-            response = await pyfetch(url, method="POST", body=json.dumps(payload), headers={"Content-Type": "application/json"})
+            response = await pyfetch(url, method="POST", body=json.dumps(payload), headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {self.config.api_key}"
+            })
             if response.status != 200:
-                print(f"GEMINI NETWORK ERROR: {response.status}")
+                print(f"KIMI NETWORK ERROR: {response.status}")
                 return None
             data = await response.json()
-            if 'candidates' in data and len(data['candidates']) > 0:
-                content = data['candidates'][0]['content']['parts'][0]['text']
+            if 'choices' in data and len(data['choices']) > 0:
+                content = data['choices'][0]['message']['content']
                 return self._clean_code(content)
             return None
         except Exception as e:
