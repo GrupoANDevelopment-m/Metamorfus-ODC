@@ -12,7 +12,8 @@ export interface FileNode {
 export enum ViewMode {
   CODE = 'CODE',
   SIMULATION = 'SIMULATION',
-  SETTINGS = 'SETTINGS'
+  SETTINGS = 'SETTINGS',
+  CHAT = 'CHAT'
 }
 
 export enum SimulationMode {

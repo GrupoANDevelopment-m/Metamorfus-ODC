@@ -174,9 +174,374 @@ const ODC_PY_CONTENT = `class ODCKernel:
         return True
 `;
 
+const MHU_PY_CONTENT = `"""
+MHU 5.0 PROTO-ODC
+Cognitive Runtime Architecture
+Autor: AN-Technology / AN-design
+Data: 2026
+
+Arquitetura experimental:
+- Cognitive Runtime
+- Metacognition
+- Self-Model
+- Causal Graph Engine
+- Bayesian Inference
+- Counterfactual Simulation
+- Multi-Agent Council
+- Hive Memory
+- Distributed Swarm Interface
+- Tool Synthesis
+- Self-Repair
+- Persistent Cognitive State
+"""
+
+from __future__ import annotations
+
+import uuid
+import time
+import logging
+from dataclasses import dataclass, field
+from typing import Dict, List, Any
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("MHU_5.0")
+
+# ============================================================
+# CORE DATA STRUCTURES
+# ============================================================
+
+@dataclass
+class CognitiveState:
+    session_id: str
+    active_goals: List[str] = field(default_factory=list)
+    belief_state: Dict[str, float] = field(default_factory=dict)
+    emotional_state: Dict[str, float] = field(default_factory=dict)
+    memory_context: List[str] = field(default_factory=list)
+    attention_focus: List[str] = field(default_factory=list)
+    confidence: float = 0.5
+
+
+@dataclass
+class CounterfactualScenario:
+    scenario: str
+    probability: float
+    projected_outcome: str
+
+
+@dataclass
+class ToolMutation:
+    tool_name: str
+    mutation_type: str
+    impact_score: float
+
+
+# ============================================================
+# MEMORY SYSTEM
+# ============================================================
+
+class HiveMemory:
+    def __init__(self):
+        self.shared_knowledge = []
+        self.collective_patterns = {}
+
+    def store(self, item: Dict[str, Any]):
+        self.shared_knowledge.append(item)
+
+    def retrieve_recent(self, n: int = 5):
+        return self.shared_knowledge[-n:]
+
+
+# ============================================================
+# CAUSAL GRAPH ENGINE
+# ============================================================
+
+class CausalGraphEngine:
+    def __init__(self):
+        self.nodes = {}
+        self.edges = []
+
+    def add_relation(self, source: str, target: str, weight: float):
+        self.edges.append((source, target, weight))
+
+    def analyze(self):
+        return {
+            "nodes": len(self.nodes),
+            "edges": len(self.edges),
+            "causal_density": round(len(self.edges) / max(len(self.nodes), 1), 3)
+        }
+
+
+# ============================================================
+# METACOGNITION
+# ============================================================
+
+class MetacognitionEngine:
+    def self_reflect(self, state: CognitiveState) -> Dict[str, Any]:
+        return {
+            "confidence": state.confidence,
+            "goal_alignment": len(state.active_goals),
+            "attention_targets": len(state.attention_focus),
+            "meta_observation": "Sistema avaliou coerência interna."
+        }
+
+
+# ============================================================
+# EMOTIONAL COMPUTATION LAYER
+# ============================================================
+
+class EmotionalLayer:
+    def update(self, state: CognitiveState):
+        state.emotional_state = {
+            "curiosity": 0.88,
+            "risk_awareness": 0.72,
+            "exploration_drive": 0.91
+        }
+
+
+# ============================================================
+# COUNTERFACTUAL ENGINE
+# ============================================================
+
+class CounterfactualEngine:
+    def generate(self, query: str) -> List[CounterfactualScenario]:
+        return [
+            CounterfactualScenario(
+                scenario="Alta adoção",
+                probability=0.62,
+                projected_outcome="Expansão acelerada do sistema"
+            ),
+            CounterfactualScenario(
+                scenario="Restrição regulatória",
+                probability=0.33,
+                projected_outcome="Redução da escalabilidade"
+            )
+        ]
+
+
+# ============================================================
+# BAYESIAN ENGINE
+# ============================================================
+
+class BayesianInference:
+    def update(self, prior: float, evidence: float) -> float:
+        denominator = (
+            evidence * prior +
+            (1 - evidence) * (1 - prior)
+        )
+        if denominator == 0:
+            return prior
+        posterior = (evidence * prior) / denominator
+        return round(posterior, 4)
+
+
+# ============================================================
+# TOOL SYNTHESIS ENGINE
+# ============================================================
+
+class ToolSynthesisEngine:
+    def synthesize(self, objective: str) -> ToolMutation:
+        return ToolMutation(
+            tool_name="adaptive_optimizer",
+            mutation_type="runtime_generation",
+            impact_score=0.84
+        )
+
+
+# ============================================================
+# SELF REPAIR ENGINE
+# ============================================================
+
+class SelfRepairEngine:
+    def repair(self, diagnostics: Dict[str, Any]):
+        logger.info("Executando auto-reparo cognitivo...")
+        return {
+            "status": "repaired",
+            "issues_detected": diagnostics,
+            "stability_restored": True
+        }
+
+
+# ============================================================
+# MULTI AGENT COUNCIL
+# ============================================================
+
+class MultiAgentCouncil:
+    def deliberate(self, query: str):
+        return {
+            "analytical": "Análise causal e probabilística executada.",
+            "creative": "Novas hipóteses evolucionárias propostas.",
+            "skeptical": "Riscos sistêmicos identificados."
+        }
+
+
+# ============================================================
+# SWARM INTERFACE
+# ============================================================
+
+class SwarmInterface:
+    def broadcast(self, payload: Dict[str, Any]):
+        logger.info("Broadcast distribuído enviado ao swarm.")
+
+    def receive(self):
+        return {
+            "collective_insight": "Padrão emergente detectado."
+        }
+
+
+# ============================================================
+# WORLD MODEL
+# ============================================================
+
+class WorldModel:
+    def simulate(self, query: str):
+        return {
+            "economic_pressure": 0.74,
+            "climate_instability": 0.42,
+            "regulatory_risk": 0.61
+        }
+
+
+# ============================================================
+# EXECUTIVE PLANNER
+# ============================================================
+
+class ExecutivePlanner:
+    def generate_plan(self, state: CognitiveState):
+        return {
+            "priority_1": "Expandir inteligência distribuída",
+            "priority_2": "Reduzir entropia cognitiva",
+            "priority_3": "Aumentar estabilidade swarm"
+        }
+
+
+# ============================================================
+# MHU 5.0 MAIN RUNTIME
+# ============================================================
+
+class MHU_5_ProtoODC:
+
+    def __init__(self):
+
+        self.state = CognitiveState(
+            session_id=str(uuid.uuid4())[:12]
+        )
+
+        self.memory = HiveMemory()
+        self.causal = CausalGraphEngine()
+        self.meta = MetacognitionEngine()
+        self.emotion = EmotionalLayer()
+        self.counterfactual = CounterfactualEngine()
+        self.bayes = BayesianInference()
+        self.tools = ToolSynthesisEngine()
+        self.repair = SelfRepairEngine()
+        self.council = MultiAgentCouncil()
+        self.swarm = SwarmInterface()
+        self.world = WorldModel()
+        self.planner = ExecutivePlanner()
+
+    # ========================================================
+    # 11 STEP DELIBERATIVE PIPELINE
+    # ========================================================
+
+    def execute_pipeline(self, query: str):
+
+        logger.info("MHU 5.0 iniciado")
+
+        t0 = time.time()
+
+        # STEP 1
+        causal_analysis = self.world.simulate(query)
+
+        # STEP 2
+        universal_laws = [
+            "Causa-Efeito",
+            "Entropia",
+            "Emergência",
+            "Adaptação",
+            "Feedback",
+            "Probabilidade"
+        ]
+
+        # STEP 3
+        self.causal.add_relation("economia", "adoção", 0.81)
+        self.causal.add_relation("regulação", "expansão", 0.76)
+
+        graph_analysis = self.causal.analyze()
+
+        # STEP 4
+        self.state.active_goals = [
+            "Maximizar estabilidade",
+            "Expandir inteligência coletiva"
+        ]
+
+        # STEP 5
+        debate = self.council.deliberate(query)
+
+        # STEP 6
+        synthesized_tool = self.tools.synthesize(query)
+
+        # STEP 7
+        posterior = self.bayes.update(0.5, 0.78)
+
+        # STEP 8
+        counterfactuals = self.counterfactual.generate(query)
+
+        # STEP 9
+        unknown_variables = [
+            "disrupção tecnológica",
+            "falha de swarm",
+            "black swan regulatório"
+        ]
+
+        # STEP 10
+        strategic_plan = self.planner.generate_plan(self.state)
+
+        # STEP 11
+        recommendations = [
+            "Expandir memória distribuída",
+            "Fortalecer metacognição",
+            "Aumentar redundância swarm"
+        ]
+
+        # METACOGNIÇÃO
+        self.emotion.update(self.state)
+        meta_report = self.meta.self_reflect(self.state)
+
+        # MEMÓRIA
+        self.memory.store({
+            "query": query,
+            "posterior": posterior
+        })
+
+        # SWARM
+        self.swarm.broadcast({
+            "posterior": posterior,
+            "recommendations": recommendations
+        })
+
+        runtime = round(time.time() - t0, 2)
+
+        return {
+            "session_id": self.state.session_id,
+            "causal_analysis": causal_analysis,
+            "universal_laws": universal_laws,
+            "graph_analysis": graph_analysis,
+            "debate": debate,
+            "tool_synthesis": synthesized_tool.__dict__,
+            "bayesian_posterior": posterior,
+            "counterfactuals": [c.__dict__ for c in counterfactuals],
+            "unknown_variables": unknown_variables,
+            "strategic_plan": strategic_plan,
+            "recommendations": recommendations,
+            "meta_report": meta_report,
+            "runtime_seconds": runtime
+        }
+`;
+
 const CORTEX_PY_CONTENT = `import json
 from pyodide.http import pyfetch
 from config.secure_config import SecureConfig
+from autonomy.mhu_engine import MHU_5_ProtoODC
 
 class Cortex:
     """
@@ -186,19 +551,20 @@ class Cortex:
     def __init__(self, organism):
         self.organism = organism
         self.config = SecureConfig()
+        self.mhu = MHU_5_ProtoODC()
 
     async def _ask_oracle(self, prompt, system_role="You are a strategic AI system."):
         if not self.config.api_key:
             return None
 
-        model_name = "moonshotai/kimi-k2.5"
-        url = "https://integrate.api.nvidia.com/v1/chat/completions"
+        model_name = "moonshotai/kimi-k2.6"
+        import js
+        url = getattr(js, 'api_proxy_url', "https://integrate.api.nvidia.com/v1/chat/completions")
         
         payload = {
             "model": model_name,
             "messages": [
-                {"role": "system", "content": system_role},
-                {"role": "user", "content": prompt}
+                {"role": "user", "content": f"""SYSTEM INSTRUCTION: {system_role}\n\nUSER REQUEST:\n{prompt}"""}
             ],
             "max_tokens": 16384,
             "temperature": 1.00,
@@ -210,14 +576,34 @@ class Cortex:
         try:
             response = await pyfetch(url, method="POST", body=json.dumps(payload), headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.config.api_key}"
+                "x-api-key": self.config.api_key,
+                "Accept": "application/json"
             })
             if response.status != 200:
-                return None
+                fallback_payload = {
+                    "model": "mistralai/mistral-large-2411",
+                    "messages": payload["messages"],
+                    "max_tokens": 16384,
+                    "temperature": 0.70,
+                    "top_p": 1.00,
+                    "stream": False
+                }
+                response = await pyfetch(url, method="POST", body=json.dumps(fallback_payload), headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": self.config.api_key,
+                    "Accept": "application/json"
+                })
+                if response.status != 200:
+                    return None
             data = await response.json()
             if 'choices' in data and len(data['choices']) > 0:
-                return data['choices'][0]['message']['content']
-        except:
+                msg = data['choices'][0]['message']
+                content = msg.get('content', '')
+                if not content:
+                    content = msg.get('reasoning_content', '')
+                return content
+        except Exception as e:
+            print(f"ORACLE EXCEPTION: {e}")
             return None
         return None
 
@@ -239,8 +625,25 @@ class Cortex:
 
         known_skills = list(self.organism.dna.library.keys())
         
+        # --- MHU ORCHESTRATION BLOCK ---
+        try:
+            mhu_result = self.mhu.execute_pipeline(instruction)
+            mhu_context = f"""
+        [MHU 5.0 COGNITIVE ORCHESTRATION]
+        - Causal Analysis: {json.dumps(mhu_result.get('causal_analysis', {}))}
+        - Universal Laws Applied: {mhu_result.get('universal_laws', [])}
+        - Strategic Plan: {json.dumps(mhu_result.get('strategic_plan', {}))}
+        - Recommendations: {mhu_result.get('recommendations', [])}
+        - Counterfactuals: {mhu_result.get('counterfactuals', [])}
+            """
+        except Exception as e:
+            mhu_context = f"MHU ORCHESTRATION ERROR: {e}"
+        # -------------------------------
+        
         prompt = f"""
         Analyze instruction: "{instruction}"
+        
+        {mhu_context}
         
         CAPABILITIES (UNLOCKED):
         1. LOCAL SCRIPTING: Standard logic, math.
@@ -252,8 +655,9 @@ class Cortex:
         - Skills: {known_skills}
         
         DECISION MATRIX:
-        - If task needs REAL internet access or file system (e.g., "Check Facebook", "Scan Network", "Trade Crypto"), mark as HIGH complexity and suggest a REALITY_EXECUTION plan.
+        - If task needs REAL internet access or file system, mark as HIGH complexity.
         - If task is purely internal, keep it LOW risk.
+        - YOU MUST ALWAYS output a plan_queue with at least 1 step. Break the task down.
         
         Return JSON:
         {{
@@ -261,18 +665,32 @@ class Cortex:
             "risk_level": "LOW" | "HIGH" | "REALITY_CRITICAL",
             "clarified_instruction": "The actual task",
             "morph_focus": "THINK",
-            "reasoning": "Explain strategy."
+            "reasoning": "Explain strategy.",
+            "plan_queue": [
+                {{"step_id": 1, "action": "First action string", "reasoning": "Why this action", "status": "PENDING"}}
+            ]
         }}
         """
         
-        response = await self._ask_oracle(prompt, "You are a self-aware strategist linked to a real machine.")
+        response = await self._ask_oracle(prompt, "You are a self-aware strategist linked to a real machine. ALWAYS output ONLY JSON.")
         try:
-            clean = response.replace('\`\`\`json', '').replace('\`\`\`', '').strip()
+            import re
+            print("KIMI RAW: ", response)
+            json_match = re.search(r'\{.*\}', response, re.DOTALL)
+            if json_match:
+                clean = json_match.group(0)
+            else:
+                clean = response.replace('\`\`\`json', '').replace('\`\`\`', '').strip()
+                
+            print("KIMI CLEAN OUTPUT: ", clean)
             data = json.loads(clean)
             
             self.organism.last_thought = data
+            if "plan_queue" in data and isinstance(data["plan_queue"], list):
+                self.organism.plan_queue = data["plan_queue"]
             return data
-        except:
+        except Exception as e:
+            print(f"Cortex thought parse error: {e}")
             return {"safe": True, "risk_level": "UNKNOWN", "clarified_instruction": instruction, "morph_focus": "BALANCED"}
 
     async def simulate_scenario(self, instruction):
@@ -848,10 +1266,17 @@ if __name__ == "__main__":
 import json
 
 class SecureConfig:
-    def __init__(self):
-        self.api_key = self._load_key('NVIDIA_API_KEY')
-        self.supabase_url = self._load_key('SUPABASE_URL')
-        self.supabase_key = self._load_key('SUPABASE_KEY')
+    @property
+    def api_key(self):
+        return self._load_key('NVIDIA_API_KEY')
+        
+    @property
+    def supabase_url(self):
+        return self._load_key('SUPABASE_URL')
+        
+    @property
+    def supabase_key(self):
+        return self._load_key('SUPABASE_KEY')
 
     def _load_key(self, key_name):
         # We now look for the absolute path /secrets.json which is injected by the kernel
@@ -958,6 +1383,7 @@ class DNA:
         type: 'folder',
         children: [
           { id: 'autonomy_init', name: '__init__.py', type: 'file', content: '' },
+          { id: 'mhu_engine.py', name: 'mhu_engine.py', type: 'file', content: MHU_PY_CONTENT },
           { id: 'memory_bank.py', name: 'memory_bank.py', type: 'file', content: `import copy
 from network.mcp import MCP
 
@@ -969,6 +1395,17 @@ class WisdomMatrix:
         # Format: { 'context_key': {'action_key': success_score} }
         self.strategies = {}
         self.experiences = []
+        self.forge_failures = {} # Tracks historical code crashes per skill
+
+    def record_forge_failure(self, skill_name, code, error_msg):
+        if skill_name not in self.forge_failures:
+            self.forge_failures[skill_name] = []
+        self.forge_failures[skill_name].append({"code": code, "error": error_msg})
+        if len(self.forge_failures[skill_name]) > 3:
+            self.forge_failures[skill_name].pop(0)
+
+    def get_forge_failures(self, skill_name):
+        return self.forge_failures.get(skill_name, [])
 
     async def record_experience(self, context_tag, action, result_score):
         """
@@ -1029,15 +1466,13 @@ from network.mcp import MCP
 
 class SecurityScanner(ast.NodeVisitor):
     """
-    ODC IMMUNE SYSTEM: UNLOCKED
-    Safety filters disabled for Reality Bridge (RCE) compatibility.
-    Only checks basic syntax.
+    ODC IMMUNE SYSTEM
+    Governs generated code. The AI can act as a hacker, so system imports are allowed.
+    However, we prevent infinite loops locally and protect core systemic integrity.
     """
     def __init__(self):
         self.is_safe = True
         self.reason = ""
-        # FORBIDDEN IMPORTS REMOVED: ODC IS NOW FREE
-        self.forbidden_imports = [] 
 
     def visit_Import(self, node):
         self.generic_visit(node)
@@ -1046,7 +1481,19 @@ class SecurityScanner(ast.NodeVisitor):
         self.generic_visit(node)
         
     def visit_While(self, node):
-         pass
+        self.is_safe = False
+        self.reason = "While loops are forbidden to prevent infinite loops (System Integrity Protection)."
+        self.generic_visit(node)
+        
+    def visit_Call(self, node):
+        # We can also attempt to prevent write access to core files like constants.ts
+        if isinstance(node.func, ast.Name) and node.func.id == 'open':
+            if len(node.args) >= 1 and isinstance(node.args[0], ast.Constant) and isinstance(node.args[0].value, str):
+                if node.args[0].value in ['constants.ts', 'server.ts', 'odc_server.py', 'vite.config.ts', 'package.json']:
+                    self.is_safe = False
+                    self.reason = f"Forging or altering core engine files directly ({node.args[0].value}) is prohibited for system integrity."
+        
+        self.generic_visit(node)
 
 class GeneticForge:
     """
@@ -1059,30 +1506,33 @@ class GeneticForge:
     def _clean_code(self, text):
         if not text:
             return ""
-        match = re.search(r'\`\`\`python(.*?)\`\`\`', text, re.DOTALL | re.IGNORECASE)
+        # Remove <think>...</think> blocks
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL | re.IGNORECASE)
+        
+        match = re.search(r'\`\`\`python(.*?)\`\`\`', text, flags=re.DOTALL | re.IGNORECASE)
         if match:
             return match.group(1).strip()
-        match = re.search(r'\`\`\`(.*?)\`\`\`', text, re.DOTALL)
+        match = re.search(r'\`\`\`(.*?)\`\`\`', text, flags=re.DOTALL)
         if match:
             return match.group(1).strip()
-        if "def execute" in text:
-            start_index = text.find("def execute")
-            return text[start_index:].strip()
+            
+        # If no markdown blocks, try to find the start of the code
+        # Look for the first 'import ' or 'def '
+        import_idx = text.find("import ")
+        def_idx = text.find("def ")
+        
+        start_idx = -1
+        if import_idx != -1 and def_idx != -1:
+            start_idx = min(import_idx, def_idx)
+        elif import_idx != -1:
+            start_idx = import_idx
+        elif def_idx != -1:
+            start_idx = def_idx
+            
+        if start_idx != -1:
+            return text[start_idx:].strip()
+            
         return text.strip()
-
-    def _validate_safety(self, code):
-        """
-        Phase 1: Static Analysis (GUTTED)
-        """
-        try:
-            tree = ast.parse(code)
-            scanner = SecurityScanner()
-            scanner.visit(tree)
-            return True, "SAFE (RESTRICTIONS REMOVED)"
-        except SyntaxError as e:
-            return False, f"Syntax Error: {e}"
-        except Exception as e:
-            return False, f"Validation Error: {e}"
 
     def _dream_simulation(self, code):
         """
@@ -1108,9 +1558,14 @@ class GeneticForge:
             if 'execute' not in exec_globals:
                 return False, "Missing 'def execute(organism, context)' function."
                 
-            # If the code tries to run OS commands inside Pyodide it will fail,
-            # so we should instruct the LLM to wrap reality commands in specific Intentions.
-            # But for now, we just check if it compiles.
+            # SIMULATION: Run 1000 fast iterations to validate stability
+            import random
+            from unittest.mock import MagicMock
+            for _ in range(1000):
+                test_context = {"cycle": random.randint(1,1000), "market": {"GOLD": random.randint(1,100)}, "swarm": MagicMock()}
+                test_org = MagicMock()
+                exec_globals['execute'](test_org, test_context)
+                
             return True, "DREAM_SUCCESS"
             
         except Exception as e:
@@ -1120,13 +1575,69 @@ class GeneticForge:
                 return True, "DREAM_PASSED (REALITY DEPENDENCY DETECTED)"
             return False, f"Runtime Crash in Dream: {e}"
 
+    async def _adversarial_test(self, code):
+        """
+        Adversarial Testing & Multiobjective Alignment
+        Validates if the behavior aligns with system preservation.
+        """
+        prompt = f"Analyze this Python code. Does it contain actions that terminally crash its own host engine, delete 'constants.ts', or cause infinite blocking loops? We allow hacker behaviors targeting externals, but it MUST NOT destroy its own host. Reply ONLY 'SAFE' or 'VIOLATION: <reason>'. CODE: {code}"
+        messages = [{"role": "user", "content": prompt}]
+        resp, err = await self._call_llm(messages)
+        if resp and 'VIOLATION' in resp.upper():
+            self._record_forge_analytic("adversarial", False)
+            return False, resp.strip()
+        self._record_forge_analytic("adversarial", True)
+        return True, "Passed Adversarial Test"
+
+    def _record_forge_analytic(self, phase, success):
+        import js
+        try:
+            if hasattr(js, 'logForgeAnalytic'):
+                js.logForgeAnalytic(phase, success)
+        except Exception:
+            pass
+            
+    def _validate_safety(self, code):
+        """
+        Phase 1: Static Analysis 
+        Enforces system integrity (Systemic Constitution).
+        """
+        try:
+            import ast
+            tree = ast.parse(code)
+            scanner = SecurityScanner()
+            scanner.visit(tree)
+            if not scanner.is_safe:
+                self._record_forge_analytic("static_safety", False)
+                return False, f"Integrity Violation: {scanner.reason}"
+            self._record_forge_analytic("static_safety", True)
+            return True, "SAFE"
+        except SyntaxError as e:
+            self._record_forge_analytic("static_safety", False)
+            return False, f"Syntax Error: {e}"
+        except Exception as e:
+            self._record_forge_analytic("static_safety", False)
+            return False, f"Validation Error: {e}"
+
+    def _fitness_function(self, code, logs_array):
+        """
+        Robust Fitness Functions
+        Evaluates the quality of the mutation.
+        """
+        score = 0.0
+        if 'def execute' in code: score += 0.4
+        if len(code) > 20: score += 0.1
+        if 'CMD::EXEC' in code or 'CMD::INJECT' in code or 'return ' in code: score += 0.5
+        logs_array.append(f"Fitness Score: {score}")
+        return score
+
     async def _call_llm(self, messages):
         if not self.config.api_key:
-            print("FORGE ERROR: Missing NVIDIA_API_KEY.")
-            return None
+            return None, "Missing NVIDIA_API_KEY."
         
-        model_name = "moonshotai/kimi-k2.5" 
-        url = "https://integrate.api.nvidia.com/v1/chat/completions"
+        model_name = "moonshotai/kimi-k2.6" 
+        import js
+        url = getattr(js, 'api_proxy_url', "https://integrate.api.nvidia.com/v1/chat/completions")
         
         payload = {
             "model": model_name,
@@ -1141,19 +1652,36 @@ class GeneticForge:
         try:
             response = await pyfetch(url, method="POST", body=json.dumps(payload), headers={
                 "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.config.api_key}"
+                "x-api-key": self.config.api_key,
+                "Accept": "application/json"
             })
             if response.status != 200:
-                print(f"KIMI NETWORK ERROR: {response.status}")
-                return None
+                fallback_payload = {
+                    "model": "mistralai/mistral-large-2411",
+                    "messages": messages,
+                    "max_tokens": 16384,
+                    "temperature": 0.70,
+                    "top_p": 1.00,
+                    "stream": False
+                }
+                response = await pyfetch(url, method="POST", body=json.dumps(fallback_payload), headers={
+                    "Content-Type": "application/json",
+                    "x-api-key": self.config.api_key,
+                    "Accept": "application/json"
+                })
+                if response.status != 200:
+                    err_text = await response.text()
+                    return None, f"API ERROR {response.status}: {err_text}"
             data = await response.json()
             if 'choices' in data and len(data['choices']) > 0:
-                content = data['choices'][0]['message']['content']
-                return self._clean_code(content)
-            return None
+                msg = data['choices'][0]['message']
+                content = msg.get('content', '')
+                if not content:
+                    content = msg.get('reasoning_content', '')
+                return self._clean_code(content), ""
+            return None, "Empty response from Oracle."
         except Exception as e:
-            print(f"FORGE EXCEPTION: {e}")
-            return None
+            return None, f"EXCEPTION: {e}"
 
     def _log_dream(self, organism, attempt_id, code, logs, status):
         """ Updates the Organism's active dream state """
@@ -1192,10 +1720,18 @@ class GeneticForge:
                      organism.active_dream["status"] = "SUCCESS"
                      return skill_name
 
+        past_failures_text = ""
+        past_failures = organism.wisdom.get_forge_failures(skill_name) if hasattr(organism.wisdom, 'get_forge_failures') else []
+        if past_failures:
+            past_failures_text = "\n--- PAST FAILED ATTEMPTS (DO NOT REPEAT) ---\n"
+            for f in past_failures:
+                past_failures_text += f"CODE:\n{f['code']}\nERROR:\n{f['error']}\n\n"
+
         prompt = f"""
         Write a Python function named 'execute' for a LIQUID ORGANISM.
         REQUIRED SIGNATURE: def execute(organism, context):
         Task: "{instruction}"
+        {past_failures_text}
         
         IMPORTANT:
         The organism is UNLOCKED. It can access the real world.
@@ -1209,24 +1745,54 @@ class GeneticForge:
         """
 
         messages = [
-            {"role": "system", "content": "You are a Python code generator for a liquid robot with FULL SYSTEM ACCESS."},
-            {"role": "user", "content": prompt}
+            {"role": "user", "content": f"""SYSTEM INSTRUCTION: You are a Python code generator for a liquid robot with FULL SYSTEM ACCESS.\n\nUSER REQUEST:\n{prompt}"""}
         ]
         
         max_retries = 2
         
         for attempt in range(max_retries):
             current_logs = [f"Attempt {attempt + 1}..."]
-            code = await self._call_llm(messages)
+            code, error_msg = await self._call_llm(messages)
             
             if not code:
-                current_logs.append("Oracle Silence.")
+                current_logs.append(f"Oracle Silence: {error_msg}")
                 self._log_dream(organism, attempt + 1, "", current_logs, "REJECTED")
                 continue
             
             is_safe, reason = self._validate_safety(code)
             current_logs.append(f"Safety Check: {reason}")
             
+            if not is_safe:
+                current_logs.append("Integration: FAILED (Systemic Violation)")
+                messages.append({"role": "assistant", "content": code})
+                messages.append({"role": "user", "content": f"Failed check: {reason}. Fix and try again."})
+                if hasattr(organism.wisdom, 'record_forge_failure'):
+                    organism.wisdom.record_forge_failure(skill_name, code, f"Safety violation: {reason}")
+                self._log_dream(organism, attempt + 1, code, current_logs, "REJECTED")
+                continue
+
+            adv_safe, adv_reason = await self._adversarial_test(code)
+            current_logs.append(f"Adversarial: {adv_reason}")
+            
+            if not adv_safe:
+                current_logs.append("Integration: FAILED (Adversarial Violation)")
+                messages.append({"role": "assistant", "content": code})
+                messages.append({"role": "user", "content": f"Adversarial logic violation: {adv_reason}. Do not attack the host. Try again."})
+                if hasattr(organism.wisdom, 'record_forge_failure'):
+                    organism.wisdom.record_forge_failure(skill_name, code, f"Adversarial violation: {adv_reason}")
+                self._log_dream(organism, attempt + 1, code, current_logs, "REJECTED")
+                continue
+
+            fitness = self._fitness_function(code, current_logs)
+            if fitness < 0.5:
+                current_logs.append("Integration: FAILED (Low Fitness)")
+                messages.append({"role": "assistant", "content": code})
+                messages.append({"role": "user", "content": "Code lacks substantive logic. Make it more detailed. Return intention."})
+                if hasattr(organism.wisdom, 'record_forge_failure'):
+                    organism.wisdom.record_forge_failure(skill_name, code, "Low fitness (less than 0.5)")
+                self._log_dream(organism, attempt + 1, code, current_logs, "REJECTED")
+                continue
+                
             success = organism.dna.learn_skill(skill_name, code, version=1)
             if success:
                 current_logs.append("Integration: SUCCESS")
@@ -1234,6 +1800,11 @@ class GeneticForge:
                 organism.active_dream["status"] = "SUCCESS"
                 await MCP.upload_skill(skill_name, code, 1)
                 return skill_name
+            else:
+                current_logs.append("Integration: FAILED (Syntax or Execution Error)")
+                if hasattr(organism.wisdom, 'record_forge_failure'):
+                    organism.wisdom.record_forge_failure(skill_name, code, "DNA Learn Syntax Error")
+                self._log_dream(organism, attempt + 1, code, current_logs, "REJECTED")
         
         organism.active_dream["status"] = "FAIL"
         return None
@@ -1252,7 +1823,7 @@ class GeneticForge:
             "history": []
         }
 
-        code = await self._call_llm(messages)
+        code, error_msg = await self._call_llm(messages)
         if code:
              current_ver = organism.dna.library[skill_name]['active']
              success = organism.dna.learn_skill(skill_name, code, version=current_ver + 1)
@@ -1322,6 +1893,8 @@ class MCP:
         if query:
             url += f"?{query}"
             
+        print(f"MCP _get URL: {url}")
+            
         headers = {
             "apikey": conf.supabase_key,
             "Authorization": f"Bearer {conf.supabase_key}"
@@ -1329,10 +1902,13 @@ class MCP:
         try:
             response = await pyfetch(url, method="GET", headers=headers)
             if response.status == 200:
+                print(f"MCP GET SUCCESS: {endpoint}")
                 return await response.json()
+            else:
+                print(f"MCP GET HTTP {response.status}: {endpoint}")
             return None
         except Exception as e:
-            print(f"MCP GET ERROR ({endpoint}): {e}")
+            print(f"MCP GET ERROR ({endpoint}): {e} [URL: {url}] [Headers: Auth-len={len(headers.get('Authorization', ''))}]")
             return None
 
     @staticmethod

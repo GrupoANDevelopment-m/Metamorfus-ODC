@@ -25,8 +25,8 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
   // Mode State
   const [mode, setMode] = useState<SimulationMode>(SimulationMode.BROWSER);
   
-  // Browser (Pyodide) State
-  const [pyodide, setPyodide] = useState<any>(null);
+  // Browser (Pyodide) State - NOW EXECUTED VIA WEB WORKER
+  const workerRef = useRef<Worker | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
@@ -40,12 +40,110 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
   const [cycle, setCycle] = useState(0);
   const [organisms, setOrganisms] = useState<OrganismState[]>([]);
   const [logs, setLogs] = useState<EcosystemLog[]>([]);
+  const [forgeStats, setForgeStats] = useState({
+      static_safety: { success: 0, fail: 0 },
+      adversarial: { success: 0, fail: 0 }
+  });
+  const [mindState, setMindState] = useState<any>(null);
+  const logsRef = useRef<EcosystemLog[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
+
+  // Worker setup
+  const stepPromiseResolveRef = useRef<((value: any) => void) | null>(null);
+
+  useEffect(() => {
+    addLog('Booting Web Worker (Quarantine Area)...', 'SYSTEM');
+    const worker = new Worker(new URL('./pyodide.worker.ts', import.meta.url), { type: 'module' });
+    workerRef.current = worker;
+    
+    worker.onerror = (err) => {
+        console.error("Worker fatal error:", err);
+        addLog(`Worker Fatal Error: ${err.message || 'Unknown. Check console.'}`, 'SYSTEM');
+        setInitError(err.message || 'Worker failed to load.');
+        setIsLoading(false);
+    };
+
+    worker.onmessage = (e) => {
+        const { type, payload } = e.data;
+        
+        switch (type) {
+            case 'FORGE_ANALYTIC':
+                setForgeStats(prev => {
+                    const phaseStats = prev[payload.phase as keyof typeof prev] || { success: 0, fail: 0 };
+                    return {
+                        ...prev,
+                        [payload.phase]: {
+                            ...phaseStats,
+                            [payload.success ? 'success' : 'fail']: phaseStats[payload.success ? 'success' : 'fail'] + 1
+                        }
+                    };
+                });
+                break;
+            case 'LOG':
+                addLog(payload.message, payload.source);
+                break;
+            case 'INIT_COMPLETE':
+                setIsReady(true);
+                setIsLoading(false);
+                setOrganisms(payload.organisms);
+                if (payload.mind_state) {
+                    setMindState(payload.mind_state);
+                    if (onMindUpdate) onMindUpdate(payload.mind_state);
+                }
+                addLog('Web Worker Quarantined Pyodide Ready.', 'SYSTEM');
+                break;
+            case 'STEP_COMPLETE':
+                setOrganisms(payload.organisms);
+                setCycle(payload.cycle);
+                if (payload.mind_state) {
+                    setMindState(payload.mind_state);
+                    if (onMindUpdate) onMindUpdate(payload.mind_state);
+                }
+                if (stepPromiseResolveRef.current) {
+                    stepPromiseResolveRef.current(true);
+                    stepPromiseResolveRef.current = null;
+                }
+                break;
+            case 'ERROR':
+                addLog(`Worker Error: ${payload}`, 'SYSTEM');
+                if (!isReady) {
+                    setInitError(payload);
+                    setIsLoading(false);
+                } else {
+                    setIsRunning(false); // Stop on run error
+                }
+                if (stepPromiseResolveRef.current) {
+                    stepPromiseResolveRef.current(false);
+                    stepPromiseResolveRef.current = null;
+                }
+                break;
+        }
+    };
+    
+    worker.postMessage({ 
+        type: 'INIT', 
+        payload: {
+            NVIDIA_API_KEY: config.nvidiaApiKey,
+            SUPABASE_URL: config.supabaseUrl,
+            SUPABASE_KEY: config.supabaseKey,
+            MARKET_ENDPOINT: "https://api.market-data.com/v1"
+        }
+    });
+    
+    return () => {
+        worker.terminate();
+    };
+  }, []);
+
+  // Expose to window for ChatPanel Context Windows
+  useEffect(() => {
+    (window as any).getOdcLogs = () => logsRef.current;
+  }, []);
   
   // Instruction State
   const [prompt, setPrompt] = useState("");
   const [currentInstruction, setCurrentInstruction] = useState("Survive and Prosper");
-  
+
   // Sensor State Cache
   const [sensorData, setSensorData] = useState<any>({
       location: null,
@@ -53,10 +151,7 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
       network: null,
       platform: typeof navigator !== 'undefined' ? navigator.platform : 'Unknown'
   });
-  
-  // Ref to track if we've initialized to prevent double-init in StrictMode
-  const initialized = useRef(false);
-  
+
   // Lock for file system sync operations
   const isSyncing = useRef(false);
 
@@ -67,7 +162,11 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
 
   const addLog = (message: string, source: EcosystemLog['source']) => {
     const timestamp = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { timestamp, message, source }].slice(-50));
+    setLogs(prev => {
+        const newLogs = [...prev, { timestamp, message, source }].slice(-50);
+        logsRef.current = newLogs;
+        return newLogs;
+    });
   };
 
   // --- SENSORIUM: REAL WORLD DATA COLLECTION ---
@@ -80,31 +179,26 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
         cores: navigator.hardwareConcurrency || 1,
     };
 
-    // 1. Battery
     try {
         if (navigator.getBattery) {
             const battery = await navigator.getBattery();
             data.battery = {
-                level: battery.level, // 0.0 to 1.0
+                level: battery.level,
                 charging: battery.charging
             };
         }
     } catch (e) {}
 
-    // 2. Network (Experimental)
     try {
         if (navigator.connection) {
             data.network = {
-                type: navigator.connection.effectiveType, // '4g', '3g', etc
+                type: navigator.connection.effectiveType,
                 downlink: navigator.connection.downlink,
                 rtt: navigator.connection.rtt
             };
         }
     } catch (e) {}
 
-    // 3. Geolocation (Only if permitted, non-blocking)
-    // We update this asynchronously via state, here we just read the cached state if needed
-    // or we assume the geolocation hook handles it.
     if (sensorData.location) {
         data.location = sensorData.location;
     }
@@ -112,7 +206,6 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
     return data;
   };
 
-  // Geolocation Effect
   useEffect(() => {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
@@ -122,431 +215,71 @@ const Simulation: React.FC<SimulationProps> = ({ isActive, config, onMindUpdate 
                     location: { lat: pos.coords.latitude, lng: pos.coords.longitude }
                 }));
             }, 
-            (err) => {
-                // Permission denied or error, ignore silent
-            }
+            (err) => {}
         );
     }
   }, []);
 
-  // --- BROWSER MODE: FILESYSTEM HELPERS ---
-
-  const safeSyncFS = async (py: any) => {
-    if (isSyncing.current) return;
-    isSyncing.current = true;
-    
-    return new Promise<void>((resolve) => {
-        let resolved = false;
-        const timeout = setTimeout(() => {
-            if (!resolved) {
-                resolved = true;
-                isSyncing.current = false;
-                console.warn("FS Sync Timeout");
-                resolve();
-            }
-        }, 3000);
-
-        try {
-            py.FS.syncfs(false, (err: any) => {
-                if (resolved) return;
-                resolved = true;
-                clearTimeout(timeout);
-                isSyncing.current = false;
-                if (err) {
-                    console.error("FS Sync Error:", err);
-                }
-                resolve();
-            });
-        } catch (e) {
-            if (resolved) return;
-            resolved = true;
-            clearTimeout(timeout);
-            console.error("FS Sync Exception:", e);
-            isSyncing.current = false;
-            resolve();
-        }
-    });
-  };
-
-  const writeFileSystem = (py: any, nodes: any[], parentPath: string = '/home/pyodide') => {
-    nodes.forEach(node => {
-      // Use explicit absolute paths to avoid confusion
-      const path = `${parentPath}/${node.name}`;
-      
-      if (node.type === 'folder') {
-        try {
-          py.FS.mkdir(path);
-        } catch (e) {
-          // Folder might exist, ignore
-        }
-        if (node.children) {
-          writeFileSystem(py, node.children, path);
-        }
-      } else if (node.type === 'file' && node.content !== undefined) {
-        try {
-            py.FS.writeFile(path, node.content);
-        } catch (e) {
-            console.error(`Failed to write file ${path}:`, e);
-        }
-      }
-    });
-  };
-  
   // --- SECRET INJECTION ---
-  const updateSecrets = async (py: any, cfg: SystemConfig) => {
-      if (!py) return;
-      try {
-        const secrets = JSON.stringify({
-            NVIDIA_API_KEY: cfg.nvidiaApiKey,
-            SUPABASE_URL: cfg.supabaseUrl,
-            SUPABASE_KEY: cfg.supabaseKey,
-            MARKET_ENDPOINT: "https://api.market-data.com/v1"
-        });
-        
-        py.FS.writeFile('/secrets.json', secrets);
-        addLog('System Configuration Updated (Secrets Injected).', 'SYSTEM');
-        await py.runPythonAsync("await init_system()");
-        
-      } catch (e: any) {
-          addLog(`Config Update Failed: ${e.message}`, 'SYSTEM');
-      }
-  };
-  
   useEffect(() => {
-      if (isReady && pyodide) {
-          updateSecrets(pyodide, config);
+      if (isReady && workerRef.current) {
+          workerRef.current.postMessage({ 
+              type: 'SECRETS', 
+              payload: {
+                  NVIDIA_API_KEY: config.nvidiaApiKey,
+                  SUPABASE_URL: config.supabaseUrl,
+                  SUPABASE_KEY: config.supabaseKey,
+                  MARKET_ENDPOINT: "https://api.market-data.com/v1"
+              }
+          });
+          addLog('System Configuration Transmitted to Worker.', 'SYSTEM');
       }
-  }, [config, isReady, pyodide]);
+  }, [config, isReady]);
 
-  // --- FETCH SKILL SOURCE CODE ---
-  const fetchSkillSource = async (skillName: string) => {
-    if (mode === SimulationMode.BROWSER && pyodide) {
-        try {
-           const code = await pyodide.runPythonAsync(`
-skill = organisms[0].dna.get_skill_source("${skillName}")
-skill if skill else "No source found"
-           `);
-           return code;
-        } catch (e) {
-            return "Error retrieving DNA source.";
-        }
-    }
-    return "Source viewing only available in Sandbox Mode currently.";
-  };
-
-  // --- INITIALIZATION ---
-
+  // --- RUNTIME LOOP (BROWSER MODE) ---
   useEffect(() => {
-    async function initPython() {
-      if (initialized.current) return;
-      initialized.current = true;
+    let timeoutId: NodeJS.Timeout;
+    let isExecuting = false;
+    
+    const runCycle = async () => {
+        if (mode === SimulationMode.BROWSER && isRunning && workerRef.current && isReady && !isExecuting) {
+            isExecuting = true;
+            try {
+                const nextCycle = cycle + 1;
+                const sensors = await gatherRealWorldData();
+                
+                // Add a timeout watcher to kill runaway worker!
+                const deadManSwitch = setTimeout(() => {
+                    addLog('Worker Quarantined (Timeout). Rebooting...', 'SYSTEM');
+                    workerRef.current?.terminate();
+                    setIsRunning(false);
+                }, 300000); // 5 minutes timeout
 
-      try {
-        addLog('Initializing Python Runtime (Pyodide)...', 'SYSTEM');
-        const pyPromise = window.loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.25.0/full/"
-        });
-        const pyTimeout = new Promise<any>((_, reject) => 
-            setTimeout(() => reject(new Error("Pyodide Download Timeout")), 30000)
-        );
-        const py = await Promise.race([pyPromise, pyTimeout]);
-        
-        const pkgPromise = py.loadPackage(["micropip", "sqlite3"]);
-        const pkgTimeout = new Promise<void>((_, reject) => 
-            setTimeout(() => reject(new Error("Package Download Timeout")), 30000)
-        );
-        await Promise.race([pkgPromise, pkgTimeout]);
-        addLog('Loading dependencies (micropip, sqlite3)...', 'SYSTEM');
-        
-        addLog('Mounting Persistent Storage (IndexedDB)...', 'SYSTEM');
-        try { py.FS.mkdir('/odc_data'); } catch(e) {}
-        try {
-            py.FS.mount(py.FS.filesystems.IDBFS, {}, '/odc_data');
-            await new Promise<void>((resolve) => {
-                let resolved = false;
-                const timeout = setTimeout(() => {
-                    if (!resolved) {
-                        resolved = true;
-                        addLog('Storage Sync Timeout. Proceeding without persistent storage.', 'SYSTEM');
-                        resolve();
-                    }
-                }, 3000);
-
-                py.FS.syncfs(true, (err: any) => {
-                    if (resolved) return;
-                    resolved = true;
-                    clearTimeout(timeout);
-                    if (err) {
-                        addLog(`Storage Sync Error: ${err}. Proceeding without persistence.`, 'SYSTEM');
-                    } else {
-                        addLog('Storage Synchronized.', 'SYSTEM');
-                    }
-                    resolve();
+                const workerStepComplete = new Promise((resolve) => {
+                    stepPromiseResolveRef.current = resolve;
                 });
-            });
-        } catch (e) {
-            addLog(`IDBFS Mount Error: ${e}. Proceeding without persistence.`, 'SYSTEM');
+                
+                // Tell worker to step
+                workerRef.current.postMessage({ type: 'STEP', payload: { cycle: nextCycle, sensorData: sensors } });
+                
+                await workerStepComplete;
+                clearTimeout(deadManSwitch);
+                
+            } catch (e: any) {
+                addLog(`Execution Error: ${e.message}`, 'SYSTEM');
+                setIsRunning(false);
+            }
+            isExecuting = false;
         }
-        
-        addLog('Mounting ODC File System...', 'SYSTEM');
-        try { py.FS.mkdir('/home/pyodide'); } catch(e) {}
-        
-        writeFileSystem(py, INITIAL_FILE_SYSTEM, '/home/pyodide');
-        
-        // Initial Secret Write
-        const secrets = JSON.stringify({
-            NVIDIA_API_KEY: config.nvidiaApiKey,
-            SUPABASE_URL: config.supabaseUrl,
-            SUPABASE_KEY: config.supabaseKey,
-            MARKET_ENDPOINT: "https://api.market-data.com/v1"
-        });
-        py.FS.writeFile('/secrets.json', secrets);
-
-        // --- PRE-LOAD DRIVER CODE ---
-        addLog('Loading ODC Kernel Drivers...', 'SYSTEM');
-        
-        const driverCode = `
-import sys
-import random
-import os
-import asyncio
-import json
-
-project_path = '/home/pyodide/odc-cognitive-ecosystem'
-
-if os.path.exists(project_path):
-    if project_path not in sys.path:
-        sys.path.append(project_path)
-else:
-    print(f"SYSTEM ERROR: Path not found! CWD is {os.getcwd()}")
-
-try:
-    from config.secure_config import SecureConfig
-    from economy.core import EconomicLedger
-    from kernel.odc import ODCKernel
-    from ecosystem.organism import Organism
-    from ecosystem.governance import EcosystemGovernance
-    from ecosystem.environment import Entropy, Market
-    from ecosystem.sensorium import Sensorium
-    from memory.storage import SoulStone
-    from network.swarm import SwarmNetwork
-    from network.mcp import MCP
-    import main 
-except ImportError as e:
-    print(f"SYSTEM CRITICAL IMPORT ERROR: {e}")
-    raise e
-
-# Global State
-organisms = []
-governance = None
-soul_stone = None
-entropy = None
-market = None
-swarm = None
-sensorium = None
-cycle_count = 0
-
-async def init_system():
-    global organisms, governance, cycle_count, soul_stone, entropy, market, swarm, sensorium
-    cycle_count = 0
-    config = SecureConfig()
+    };
     
-    if not config.api_key:
-        print("SYSTEM CHECK: Failed to load API Key. Check /secrets.json")
-    
-    organisms = []
-    
-    soul_stone = SoulStone()
-    entropy = Entropy()
-    market = Market()
-    swarm = SwarmNetwork()
-    sensorium = Sensorium() # Initialize Real World Sensors
-    
-    existing_ids = soul_stone.get_living_organisms()
-    
-    ledger = EconomicLedger()
-    kernel = ODCKernel(ledger, entropy, market, sensorium)
-    
-    if existing_ids and len(existing_ids) > 0:
-        print(f"Resurrecting {len(existing_ids)} organisms...")
-        for org_id in existing_ids:
-            data = soul_stone.load(org_id)
-            if data:
-                org = Organism(kernel=kernel, economy=ledger, purpose="Adapt")
-                org.id = data['id']
-                org.energy = data['energy']
-                org.generation = data['generation']
-                org.economy.balance = data['balance']
-                
-                from autonomy.executor import CognitiveExecutor
-                org.executor = CognitiveExecutor()
-                
-                if data['dna_code']:
-                    try:
-                        org.dna.import_library(json.loads(data['dna_code']))
-                    except:
-                        pass
-                organisms.append(org)
-    else:
-        # Genesis
-        organism = Organism(
-            kernel=kernel,
-            economy=ledger,
-            purpose="Adapt"
-        )
-        organism.id = 1
-        soul_stone.save(organism)
-        organisms.append(organism)
-
-    governance = EcosystemGovernance()
-    return f"Initialized {len(organisms)} organisms."
-
-def set_global_instruction(text):
-    main.GLOBAL_INSTRUCTION = text
-    return True
-
-async def step(current_cycle_input):
-    global organisms, governance, cycle_count, soul_stone, entropy, market, swarm, sensorium
-    
-    cycle_count = current_cycle_input
-    market.fluctuate(cycle_count)
-    
-    # 1. READ REAL WORLD DATA
-    sensorium.perceive() 
-    
-    # Sync Swarm State
-    remote_nodes = swarm.sync_state(cycle_count)
-    
-    new_borns = []
-    
-    for org in organisms:
-        if getattr(org, 'alive', True):
-            org.instruction = main.GLOBAL_INSTRUCTION
-            
-            # Metabolism (Now affected by Sensorium Battery data)
-            org.kernel.apply_metabolism(org, cycle_count)
-            
-            # Cognition
-            if hasattr(org, 'executor'):
-                history = soul_stone.recall(org.id)
-                swarm_context = {"nodes": len(organisms) + len(remote_nodes)}
-                # Pass sensor data to the brain
-                env_context = sensorium.get_data()
-                await org.executor.deliberate(org, cycle_count, market.get_prices(), history, swarm_context, env_context)
-            
-            # Reproduction Strategy
-            
-            # A) Local Mitose
-            if org.energy > 200 and org.attributes.get('cpu', 0) < 60:
-                child = org.reproduce()
-                if child:
-                    existing_ids = [o.id for o in organisms] + [o.id for o in new_borns]
-                    child.id = (max(existing_ids) if existing_ids else 0) + 1
-                    new_borns.append(child)
-                    org.energy -= 100 
-                    org.action = f"MITOSIS -> {child.id}"
-                    soul_stone.save(org)
-
-            # B) Network Deployment
-            elif org.energy > 150 and org.attributes.get('cpu', 0) >= 60:
-                 if "DEPLOY" in org.action or "EXPAND" in org.instruction.upper():
-                    deployment_packet = org.uplink.prepare_deploy()
-                    if deployment_packet:
-                        node_id = swarm.deploy_node(deployment_packet)
-                        org.energy -= 120 
-                        org.action = f"UPLINK -> NODE_{node_id}"
-                        await MCP.upload_memory(f"DEPLOYMENT_EVENT", f"Node_{node_id} deployed", 10)
-                        print(f"NETWORK: Node {node_id} deployed to Cloud Grid.")
-            
-            # Persistence
-            if soul_stone:
-                if cycle_count % 50 == 0:
-                    soul_stone.save(org)
-                if hasattr(org, 'action') and org.action != "IDLE":
-                     soul_stone.remember(org.id, cycle_count, org.action)
-            
-            if not hasattr(org, 'action'):
-                org.action = "IDLE"
-
-    if new_borns:
-        for baby in new_borns:
-            soul_stone.save(baby)
-        organisms.extend(new_borns)
-        
-    organisms = governance.step(organisms)
-    
-    state = []
-    for org in organisms:
-        state.append({
-            "id": getattr(org, 'id', 0),
-            "energy": getattr(org, 'energy', 0),
-            "status": "ALIVE" if getattr(org, 'alive', True) else "DEAD",
-            "action": getattr(org, 'action', "Processing"),
-            "instruction": getattr(org, 'instruction', ""),
-            "attributes": getattr(org, 'attributes', {}),
-            "is_remote": False
-        })
-        
-    for node in remote_nodes:
-        state.append({
-            "id": getattr(node, 'id', 0),
-            "energy": getattr(node, 'energy', 0),
-            "status": getattr(node, 'status', "REMOTE"),
-            "action": getattr(node, 'action', "COMPUTING"),
-            "instruction": getattr(node, 'instruction', ""),
-            "attributes": getattr(node, 'attributes', {}),
-            "is_remote": True
-        })
-        
-    mind_state = {
-        "dna_library": {},
-        "last_thought": None,
-        "active_dream": None,
-        "plan_queue": []
+    if (isRunning) {
+        timeoutId = setInterval(runCycle, 3000);
     }
     
-    if organisms and len(organisms) > 0:
-        main_org = organisms[0]
-        if hasattr(main_org, 'dna'):
-             for k, v in main_org.dna.library.items():
-                 mind_state["dna_library"][k] = v.get('active', 1)
-        if hasattr(main_org, 'last_thought'):
-             mind_state["last_thought"] = main_org.last_thought
-        if hasattr(main_org, 'active_dream'):
-             mind_state["active_dream"] = main_org.active_dream
-        if hasattr(main_org, 'plan_queue'):
-             mind_state["plan_queue"] = main_org.plan_queue
-        
-    return {"organisms": state, "mind_state": mind_state}
-`;
-      
-        // Run driver code with timeout
-        const runPromise = py.runPythonAsync(driverCode);
-        const timeoutPromise = new Promise((_, reject) => 
-            setTimeout(() => reject(new Error("Python Kernel Initialization Timeout")), 15000)
-        );
-        await Promise.race([runPromise, timeoutPromise]);
+    return () => clearInterval(timeoutId);
+  }, [isRunning, isReady, cycle, mode, sensorData]);
 
-        (window as any).getSkillSource = async (name: string) => {
-            return await fetchSkillSource(name);
-        };
-
-        setPyodide(py);
-        setIsReady(true);
-        setIsLoading(false);
-        setInitError(null);
-        addLog('Environment Ready. Swarm Network Initialized.', 'SYSTEM');
-
-      } catch (error: any) {
-        const errMsg = error.message || "Unknown Initialization Error";
-        addLog(`Critical Error: ${errMsg}`, 'SYSTEM');
-        setInitError(errMsg);
-        setIsLoading(false);
-      }
-    }
-
-    initPython();
-  }, []);
 
   const handleModeChange = (newMode: SimulationMode) => {
     setIsRunning(false);
@@ -603,75 +336,10 @@ async def step(current_cycle_input):
     }
   };
 
-  // --- RUNTIME LOOP (BROWSER MODE) ---
-  const setupBrowserSimulation = async () => {
-    if (!pyodide) return;
-    try {
-      addLog('Booting ODC Kernel v5.5 (Browser Sandbox)...', 'SYSTEM');
-      const result = await pyodide.runPythonAsync("await init_system()");
-      addLog(result, 'SYSTEM');
-      
-      const payloadProxy = await pyodide.runPythonAsync("await step(0)");
-      const payload = payloadProxy.toJs({ dict_converter: Object.fromEntries });
-      payloadProxy.destroy();
-      
-      await safeSyncFS(pyodide);
-      setOrganisms(payload.organisms);
-      setCycle(0);
-      
-      if (onMindUpdate && payload.mind_state) {
-          onMindUpdate(payload.mind_state);
-      }
-      
-    } catch (e: any) {
-      addLog(`Runtime Error: ${e.message}`, 'SYSTEM');
-      setIsRunning(false);
-    }
-  };
-
-  useEffect(() => {
-    let intervalId: ReturnType<typeof setInterval>;
-
-    if (mode === SimulationMode.BROWSER && isRunning && pyodide && isReady) {
-      intervalId = setInterval(async () => {
-        try {
-          const nextCycle = cycle + 1;
-          
-          // 1. GATHER REAL SENSORS
-          const sensors = await gatherRealWorldData();
-          // 2. INJECT INTO VIRTUAL FS
-          try {
-              pyodide.FS.writeFile('/sensor_data.json', JSON.stringify(sensors));
-          } catch(e) { console.error("Sensor Inject Fail", e); }
-          
-          // 3. STEP
-          const payloadProxy = await pyodide.runPythonAsync(`await step(${nextCycle})`);
-          const payload = payloadProxy.toJs({ dict_converter: Object.fromEntries });
-          payloadProxy.destroy();
-          await safeSyncFS(pyodide);
-          
-          setOrganisms(payload.organisms);
-          setCycle(nextCycle);
-          
-          if (onMindUpdate && payload.mind_state) {
-            onMindUpdate(payload.mind_state);
-          }
-
-        } catch (e: any) {
-          addLog(`Execution Error: ${e.message}`, 'SYSTEM');
-          setIsRunning(false);
-        }
-      }, 3000); 
-    }
-
-    return () => clearInterval(intervalId);
-  }, [isRunning, pyodide, isReady, cycle, mode, sensorData]); // Added sensorData dependency to ensure fresh location
+  // --- RUNTIME DEPRECATED BROWSER SIMULATION START MOVED TO WORKER ---
 
   const handleToggleRun = async () => {
     if (mode === SimulationMode.BROWSER) {
-        if (!isRunning && cycle === 0) {
-          await setupBrowserSimulation();
-        }
         setIsRunning(!isRunning);
     } else {
         if (!isConnected) {
@@ -691,12 +359,12 @@ async def step(current_cycle_input):
     setOrganisms([]);
     setLogs([]);
     
-    if (mode === SimulationMode.BROWSER && pyodide) {
-        try {
-            pyodide.runPython("import os; os.remove('/odc_data/odc_memory.db')");
-            await safeSyncFS(pyodide);
-            addLog('Persistence Layer Wiped.', 'SYSTEM');
-        } catch(e) {}
+    if (mode === SimulationMode.BROWSER) {
+        if (workerRef.current) {
+            addLog('Rebooting Worker for Reset...', 'SYSTEM');
+            workerRef.current.terminate();
+            window.location.reload(); 
+        }
     } else if (mode === SimulationMode.LOCAL && socket && isConnected) {
         addLog('SENDING SYS_CONTROL: RESET', 'SYSTEM');
         socket.send(JSON.stringify({ type: "SYSTEM_CONTROL", payload: "RESET" }));
@@ -713,10 +381,10 @@ async def step(current_cycle_input):
       
       addLog(`COMMAND: ${instruction}`, 'GOVERNANCE');
 
-      if (mode === SimulationMode.BROWSER && pyodide) {
-           try {
-              pyodide.runPython(`set_global_instruction("${instruction}")`);
-          } catch(e) { console.error(e); }
+      if (mode === SimulationMode.BROWSER) {
+           if (workerRef.current && isReady) {
+               workerRef.current.postMessage({ type: 'INSTRUCTION', payload: instruction });
+           }
       } else if (mode === SimulationMode.LOCAL && socket && isConnected) {
           socket.send(JSON.stringify({ type: "INSTRUCTION", payload: instruction }));
       } else {
@@ -729,6 +397,14 @@ async def step(current_cycle_input):
       <div className="h-full flex items-center justify-center bg-odc-bg text-odc-accent flex-col gap-4">
         <Activity className="animate-spin" size={48} />
         <div className="font-mono">Loading Python Runtime & IDBFS...</div>
+        <div className="mt-8 bg-black/40 p-4 border border-white/10 rounded w-full max-w-2xl">
+           <h3 className="text-xs uppercase text-odc-muted mb-2">Worker Status</h3>
+           <div className="font-mono text-xs text-gray-300 space-y-1">
+              {logs.slice(-5).map((log, i) => (
+                 <div key={i}><span className="text-odc-muted opacity-50">[{log.timestamp}]</span> {log.message}</div>
+              ))}
+           </div>
+        </div>
       </div>
     );
   }
@@ -836,6 +512,34 @@ async def step(current_cycle_input):
                             {isConnected ? "LINKED" : "OFFLINE"}
                         </span>
                     )}
+                </div>
+            </div>
+
+            {/* Forge Analytics Dashboard */}
+            <div className="bg-odc-panel rounded-lg border border-white/10 p-4 shrink-0 grid grid-cols-2 gap-4">
+                <div>
+                    <div className="text-[10px] text-odc-muted uppercase tracking-wider mb-2">Static Safety Checks</div>
+                    <div className="flex items-center gap-2">
+                       <div className="text-green-500 font-mono text-sm">Pass: {forgeStats.static_safety.success}</div>
+                       <div className="text-red-500 font-mono text-sm">Fail: {forgeStats.static_safety.fail}</div>
+                    </div>
+                </div>
+                <div>
+                    <div className="text-[10px] text-odc-muted uppercase tracking-wider mb-2">Adversarial Alignment</div>
+                    <div className="flex items-center gap-2">
+                       <div className="text-green-500 font-mono text-sm">Pass: {forgeStats.adversarial.success}</div>
+                       <div className="text-red-500 font-mono text-sm">Fail: {forgeStats.adversarial.fail}</div>
+                    </div>
+                </div>
+                <div className="col-span-2 pt-2 border-t border-white/5">
+                    <div className="text-[10px] text-odc-muted uppercase tracking-wider mb-2 flex justify-between">
+                       <span>Population Census</span>
+                       <span>Variants Injected: {mindState?.dna_library ? Object.keys(mindState.dna_library).length : 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm font-mono">
+                       <span className="text-odc-accent">Active Organisms / Nodes</span>
+                       <span className="text-white">{organisms.length}</span>
+                    </div>
                 </div>
             </div>
 

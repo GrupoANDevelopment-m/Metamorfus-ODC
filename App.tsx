@@ -7,7 +7,8 @@ import CodeEditor from './components/CodeEditor';
 import Simulation from './components/Simulation';
 import Neuroscope from './components/Neuroscope';
 import SettingsModal from './components/SettingsModal';
-import { Terminal, Code, Settings, Menu, Database, Activity } from 'lucide-react';
+import ChatPanel from './components/ChatPanel';
+import { Terminal, Code, Settings, Menu, Database, Activity, MessageSquare } from 'lucide-react';
 
 const OdcLogo = ({ className }: { className?: string }) => (
   <img 
@@ -61,20 +62,30 @@ export default function App() {
   // Load config from localStorage on mount
   useEffect(() => {
     const savedConfig = localStorage.getItem('odc_config');
+    let parsed: any = {};
     if (savedConfig) {
       try {
-        const parsed = JSON.parse(savedConfig);
-        if (!parsed.nvidiaApiKey) {
-            parsed.nvidiaApiKey = getEnvApiKey() || "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";
-        }
-        setConfig(prev => ({ ...prev, ...parsed }));
+        parsed = JSON.parse(savedConfig);
       } catch(e) {}
     }
+    
+    setConfig(prev => ({
+       ...prev,
+       ...parsed,
+       // Force these core infrastructure keys to be correct
+       supabaseUrl: "https://vswawfqzocydtwgwiqqv.supabase.co",
+       supabaseKey: "sb_publishable_aeDLN0jr5xjiCKlXfRgCGQ_pXH-bIab"
+    }));
   }, []);
 
   const handleSaveConfig = (newConfig: SystemConfig) => {
-    setConfig(newConfig);
-    localStorage.setItem('odc_config', JSON.stringify(newConfig));
+    const forcedConfig = {
+      ...newConfig,
+      supabaseUrl: "https://vswawfqzocydtwgwiqqv.supabase.co",
+      supabaseKey: "sb_publishable_aeDLN0jr5xjiCKlXfRgCGQ_pXH-bIab"
+    };
+    setConfig(forcedConfig);
+    localStorage.setItem('odc_config', JSON.stringify(forcedConfig));
   };
 
   const handleSelectFile = (node: FileNode) => {
@@ -136,6 +147,12 @@ export default function App() {
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm transition-all ${viewMode === ViewMode.SIMULATION ? 'bg-odc-accent/20 text-odc-accent shadow-sm' : 'text-odc-muted hover:text-white'}`}
             >
                 <Terminal size={16} /> <span className="hidden sm:inline">Runtime Loop</span>
+            </button>
+            <button 
+                onClick={() => setViewMode(ViewMode.CHAT)}
+                className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm transition-all ${viewMode === ViewMode.CHAT ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-odc-muted hover:text-white'}`}
+            >
+                <MessageSquare size={16} /> <span className="hidden sm:inline">Comm Link</span>
             </button>
         </div>
 
@@ -199,15 +216,19 @@ export default function App() {
 
         {/* Workspace */}
         <main className="flex-1 flex flex-col min-w-0 bg-odc-bg relative">
-            {viewMode === ViewMode.CODE ? (
-                <CodeEditor file={selectedFile} />
-            ) : (
+            <div className={`flex-1 flex flex-col ${viewMode === ViewMode.CODE ? 'block' : 'hidden'}`}>
+                 <CodeEditor file={selectedFile} />
+            </div>
+            <div className={`flex-1 flex flex-col ${viewMode === ViewMode.SIMULATION ? 'block' : 'hidden'}`}>
                 <Simulation 
                     isActive={viewMode === ViewMode.SIMULATION} 
                     config={config}
                     onMindUpdate={setMindState}
                 />
-            )}
+            </div>
+            <div className={`flex-1 flex flex-col ${viewMode === ViewMode.CHAT ? 'block' : 'hidden'}`}>
+                 <ChatPanel config={config} mindState={mindState} />
+            </div>
         </main>
       </div>
       
@@ -215,10 +236,10 @@ export default function App() {
       <footer className="h-6 bg-odc-panel border-t border-white/5 flex items-center px-3 text-[10px] text-odc-muted justify-between shrink-0 select-none">
         <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5">
-                <div className={`w-2 h-2 rounded-full ${viewMode === ViewMode.SIMULATION ? 'bg-green-500 animate-pulse' : 'bg-blue-500'}`}></div>
+                <div className={`w-2 h-2 rounded-full ${viewMode === ViewMode.SIMULATION ? 'bg-green-500 animate-pulse' : (viewMode === ViewMode.CHAT ? 'bg-purple-500' : 'bg-blue-500')}`}></div>
                 ODC KERNEL: READY
             </span>
-            <span>{selectedFile ? selectedFile.name : 'NO FILE SELECTED'}</span>
+            <span>{viewMode === ViewMode.CHAT ? 'COMM LINK ACTIVE' : (selectedFile ? selectedFile.name : 'NO FILE SELECTED')}</span>
         </div>
         <div className="flex items-center gap-4">
              <span>Python 3.11</span>

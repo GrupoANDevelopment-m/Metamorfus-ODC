@@ -69,7 +69,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
                 placeholder="nvapi-..."
                 className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-odc-text focus:border-odc-accent focus:outline-none font-mono"
               />
-              <p className="text-[10px] text-odc-muted">Used for Cognitive Cortex & Genetic Forge logic (Kimi-k2.5).</p>
+              <p className="text-[10px] text-odc-muted">Used for Cognitive Cortex & Genetic Forge logic (Kimi-k2.6 or Mistral).</p>
             </div>
 
             <div className="border-t border-white/5 my-4"></div>
@@ -85,7 +85,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
                 value={formData.supabaseUrl}
                 onChange={handleChange}
                 placeholder="https://xyz.supabase.co"
-                className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-odc-text focus:border-odc-accent focus:outline-none font-mono"
+                readOnly
+                disabled
+                className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-odc-text focus:border-odc-accent focus:outline-none font-mono opacity-50 cursor-not-allowed"
               />
             </div>
 
@@ -99,7 +101,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, config, 
                 value={formData.supabaseKey}
                 onChange={handleChange}
                 placeholder="eyJh..."
-                className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-odc-text focus:border-odc-accent focus:outline-none font-mono"
+                readOnly
+                disabled
+                className="w-full bg-black/40 border border-white/10 rounded px-3 py-2 text-sm text-odc-text focus:border-odc-accent focus:outline-none font-mono opacity-50 cursor-not-allowed"
               />
               <p className="text-[10px] text-odc-muted">Used for shared memory and swarm telepathy.</p>
             </div>
