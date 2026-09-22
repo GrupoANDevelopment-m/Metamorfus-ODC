@@ -1,0 +1,98 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "_meta": {
+    "purpose": "Defines the static skill vocabulary of the Metamorfus ODC organism. These are NOT run-time tools (those live in organism.dna.library in the Python ecosystem). They are the semantic vocabulary the Cortex uses when emitting a plan_queue and the Executor uses when interpreting each step. Option B will register a subset of these as actual OpenCode tools so the agents can call them directly.",
+    "mapping": {
+      "scan_codebase_protocol": "→ host reads directory tree; surfaces file contents",
+      "propose_improvement_protocol": "→ host calls Cortex agent again with focused prompt",
+      "vision_describe_protocol": "→ host calls POST /api/vision (server/vision-tool.ts)",
+      "forge_skill_protocol": "→ host invokes the `forge` subagent"
+    }
+  },
+  "skill_vocabulary": [
+    {
+      "key": "scan_codebase_protocol",
+      "kind": "cognitive",
+      "returns_intention": {
+        "action": "SCAN_CODEBASE",
+        "intensity": 0.3,
+        "required_attributes": { "cpu": 20 },
+        "version": 1,
+        "params": { "root": "<path or '.'>" }
+      },
+      "side_effect": "host reads .ts files; summarizes sizes, exports, complexity hints"
+    },
+    {
+      "key": "propose_improvement_protocol",
+      "kind": "cognitive",
+      "returns_intention": {
+        "action": "PROPOSE_IMPROVEMENT",
+        "intensity": 0.4,
+        "required_attributes": { "cpu": 30 },
+        "version": 1,
+        "params": { "target": "<file_or_module>", "goal": "<what to improve>" }
+      },
+      "side_effect": "host re-invokes Cortex with a focused preprocessor prompt"
+    },
+    {
+      "key": "vision_describe_protocol",
+      "kind": "cognitive",
+      "returns_intention": {
+        "action": "VISION_DESCRIBE",
+        "intensity": 0.5,
+        "required_attributes": { "cpu": 30 },
+        "version": 1,
+        "params": { "image_url": "<url>", "prompt": "<optional question>" }
+      },
+      "side_effect": "host calls POST /api/vision; NVIDIA kimi-k3 multimodal response"
+    },
+    {
+      "key": "forge_skill_protocol",
+      "kind": "meta",
+      "returns_intention": {
+        "action": "FORGE_SKILL",
+        "intensity": 0.9,
+        "required_attributes": { "cpu": 80 },
+        "version": 1,
+        "params": { "skill_name": "<snake_case>_protocol", "instruction": "<what it does>" }
+      },
+      "side_effect": "host invokes the `forge` subagent; result is registered in organism.dna.library"
+    },
+    {
+      "key": "mine_protocol",
+      "kind": "primitive",
+      "returns_intention": { "action": "MINE", "intensity": 0.6, "required_attributes": { "strength": 30 }, "version": 1 },
+      "side_effect": "kernel action; resource yield scales with strength attribute"
+    },
+    {
+      "key": "hunt_protocol",
+      "kind": "primitive",
+      "returns_intention": { "action": "HUNT", "intensity": 0.6, "required_attributes": { "agility": 30 }, "version": 1 },
+      "side_effect": "kernel action; resource yield scales with agility"
+    },
+    {
+      "key": "gather_protocol",
+      "kind": "primitive",
+      "returns_intention": { "action": "GATHER", "intensity": 0.4, "required_attributes": { "agility": 15 }, "version": 1 },
+      "side_effect": "kernel action; baseline yield"
+    },
+    {
+      "key": "trade_protocol",
+      "kind": "primitive",
+      "returns_intention": { "action": "TRADE", "intensity": 0.5, "required_attributes": { "cpu": 10, "agility": 10 }, "version": 1 },
+      "side_effect": "kernel action; balanced yield"
+    },
+    {
+      "key": "hack_protocol",
+      "kind": "primitive",
+      "returns_intention": { "action": "HACK", "intensity": 0.7, "required_attributes": { "cpu": 50 }, "version": 1 },
+      "side_effect": "kernel action; chance = cpu/100; high risk, high reward"
+    },
+    {
+      "key": "think_protocol",
+      "kind": "primitive",
+      "returns_intention": { "action": "THINK", "intensity": 0.3, "required_attributes": { "cpu": 5 }, "version": 1 },
+      "side_effect": "kernel action; emits cognitive reflection only"
+    }
+  ]
+}

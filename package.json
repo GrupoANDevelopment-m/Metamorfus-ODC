@@ -1,28 +1,28 @@
 {
-  "name": "metamorfos-odc-dashboard",
+  "name": "metamorfus-opencode",
+  "version": "0.1.0",
+  "description": "Unified monorepo for the Metamorfus ODC × OpenCode fusion — cognitive organism + AI coding tool.",
   "private": true,
-  "version": "0.0.0",
   "type": "module",
+  "packageManager": "bun@1.3.14",
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "tsx server.ts",
-    "build": "vite build",
-    "start": "node dist/server.cjs",
-    "preview": "vite preview"
+    "dev": "bun run --filter '*' dev",
+    "build": "bun run --filter '*' build",
+    "typecheck": "tsc -b",
+    "lint": "oxlint",
+    "test": "bun test",
+    "clean": "rm -rf node_modules packages/*/node_modules packages/*/dist .turbo"
   },
-  "dependencies": {
-    "cors": "^2.8.6",
-    "express": "^5.2.1",
-    "lucide-react": "^0.562.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3"
+  "engines": {
+    "node": ">=20.0.0",
+    "bun": ">=1.3.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "tsx": "^4.21.0",
     "typescript": "~5.8.2",
-    "vite": "^6.2.0"
+    "oxlint": "^0.16.0",
+    "@types/node": "^22.14.0"
   }
 }

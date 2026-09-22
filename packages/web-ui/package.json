@@ -1,0 +1,23 @@
+{
+  "name": "@metamorfus/web-ui",
+  "version": "0.1.0",
+  "description": "Web frontend for the Metamorfus × OpenCode fusion. Placeholder — implementation in phase 1.",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "echo \"web-ui: vite dev server is implemented in phase 1\" && exit 0",
+    "build": "echo \"web-ui: vite build is implemented in phase 1\" && exit 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@metamorfus/mhu-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.2"
+  }
+}

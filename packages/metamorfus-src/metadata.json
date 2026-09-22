@@ -1,0 +1,7 @@
+{
+  "name": "Metamorfos ODC Dashboard",
+  "description": "The interface for Metamorfos ODC, a cognitive liquid organism created by Antonio Brelo Buaca Ndombe (AN Technology Deep Search). Features self-scaling architecture and metacognition.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}

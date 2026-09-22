@@ -1,0 +1,101 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {},
+  "permission": {},
+  "tools": {
+    "vision_describe": {
+      "description": "Describe an image URL using NVIDIA NIM moonshotai/kimi-k3. Backs the organism's vision_describe_protocol skill.",
+      "module": "../server/opencode-tools/registry.ts",
+      "export": "visionDescribe",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "imageUrl": { "type": "string", "description": "Public URL of the image." },
+          "prompt":   { "type": "string", "description": "Optional question. Defaults to 'Describe this image in detail.'" }
+        },
+        "required": ["imageUrl"]
+      }
+    },
+    "scan_codebase": {
+      "description": "Scan a workspace subtree and return file count, bytes, extension histogram, line counts, and TODO markers. Backs scan_codebase_protocol.",
+      "module": "../server/opencode-tools/registry.ts",
+      "export": "scanCodebase",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "root": { "type": "string", "description": "Subpath under workspaceRoot. Default '.'." },
+          "includeLineCounts": { "type": "boolean", "description": "Default true." }
+        }
+      }
+    },
+    "forge_skill": {
+      "description": "Write a new skill into the organism's DNA library. The python source must define def skill(organism, context) and return an intention dict. Backs forge_skill_protocol.",
+      "module": "../server/opencode-tools/registry.ts",
+      "export": "forgeSkill",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "skillKey": { "type": "string", "description": "Snake_case key, must end with _protocol." },
+          "pythonSource": { "type": "string", "description": "Full Python source." },
+          "dryRun": { "type": "boolean", "description": "If true, only validate, do not write." }
+        },
+        "required": ["skillKey", "pythonSource"]
+      }
+    }
+  },
+  "agent": {
+    "cortex": {
+      "description": "Metamorfus ODC Cortex (System 2): strategic planner wired to the MHU 5.0 cognitive preprocessor. Default agent for /api/chat calls proxied through the Metamorfus server. Has access to vision_describe, scan_codebase, and forge_skill tools.",
+      "mode": "primary",
+      "prompt": "{file:./prompts/cortex.txt}",
+      "temperature": 0.7,
+      "tools": ["vision_describe", "scan_codebase", "forge_skill"],
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "edit": "ask",
+        "bash": "ask",
+        "webfetch": "ask",
+        "websearch": "ask",
+        "skill": "ask"
+      }
+    },
+    "executor": {
+      "description": "Metamorfus ODC Executor (System 1): fast action agent. Takes concrete steps, calls tools, returns results. Used as a subagent by the Cortex when a plan needs to be carried out. Has access to all three tools.",
+      "mode": "subagent",
+      "prompt": "{file:./prompts/executor.txt}",
+      "temperature": 0.3,
+      "tools": ["vision_describe", "scan_codebase", "forge_skill"],
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "edit": "ask",
+        "bash": "ask",
+        "webfetch": "ask",
+        "websearch": "ask",
+        "skill": "ask"
+      }
+    },
+    "forge": {
+      "description": "Metamorfus ODC Forge: meta-programmer. Replaces the GeneticForge in the Python simulation when the organism needs to grow a new skill that no built-in tool covers. Writes code, tests it, registers the result. Has forge_skill tool to write into the DNA library.",
+      "mode": "subagent",
+      "prompt": "{file:./prompts/forge.txt}",
+      "temperature": 0.8,
+      "tools": ["scan_codebase", "forge_skill"],
+      "permission": {
+        "read": "allow",
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "edit": "ask",
+        "bash": "ask",
+        "websearch": "ask",
+        "skill": "ask"
+      }
+    }
+  }
+}

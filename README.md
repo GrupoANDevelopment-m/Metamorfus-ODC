@@ -1,109 +1,140 @@
-# Metamorfos ODC Dashboard - Sistema de Interfaces Metacognitivas
+# Metamorfus × OpenCode — Unified Monorepo
 
-Bem-vindo ao **Metamorfos ODC Dashboard**, a central de controle e simulação para o **Metamorfos ODC**, um organismo líquido cognitivo criado por **Antonio Brelo Buaca Ndombe (AN Technology Deep Search)**. Este ecossistema foi projetado com uma arquitetura auto-escalável, metacognitiva e tolerante a falhas.
-
-Este documento serve como o manual definitivo de handover para preparar o sistema completo para o GitHub e guiar o próximo agente de IA no desenvolvimento contínuo da aplicação.
-
----
-
-## 🌌 Conceito e Arquitetura do Sistema
-
-O Metamorfos ODC opera como uma rede inteligente distribuída integrando interfaces visuais ricas, execução local via WebAssembly (Pyodide), raciocínio bayesiano, planejamento executivo e canais de comunicação com múltiplos modelos de linguagem (LLMs).
-
-O ecossistema é dividido em três camadas principais:
-
-### 1. Núcleo Cognitivo: MHU 5.0 (`mhu_engine.ts`)
-O mecanismo MHU 5.0 coordena a orquestração cognitiva do organismo através dos seguintes componentes integrados:
-* **CausalGraphEngine**: Analisa densidade causal e cria relações dinâmicas de causa-efeito.
-* **MetacognitionEngine**: Modera a coerência interna do raciocínio e avalia a confiança.
-* **ExecutivePlanner**: Gera e prioriza metas estratégicas de estabilidade e expansão.
-* **BayesianInference**: Atualiza dinamicamente as probabilidades de sucesso baseando-se em novos insights.
-* **SelfRepairEngine**: Auto-diagnostica e restaura a estabilidade lógica em caso de inconsistências.
-* **CounterfactualEngine & SwarmInterface**: Simula cenários hipotéticos de risco e propaga as descobertas em broadcast distribuído.
-
-### 2. Interface de Usuário (React + Vite)
-Uma aplicação SPA de alta fidelidade visual (com o tema Dark de alta percepção estética) contendo:
-* **Editor**: Visualização e navegação pelo sistema de arquivos virtuais do organismo.
-* **Runtime Loop (Simulation)**: Painel interativo demonstrando loops contínuos de execução e evolução celular do organismo.
-* **Comm Link (Chat)**: Canal de comunicação direta conectado aos cérebros cognitivos do Metamorfos.
-* **Neuroscope**: Mapeador visual dos padrões de pensamento, DNA metabólico e árvore do Chain-of-Thought (CoT).
-
-### 3. Proxy de Backend Inteligente (`server.ts`)
-Um servidor Express de nível de produção que serve de proxy para impedir vazamento de chaves no navegador e implementa:
-* **Fila de Fallback de APIs**: Caso uma chamada de modelo falhe ou uma API Key esteja ausente, o sistema transaciona inteligentemente entre Nvidia NIM (`NVIDIA_API_KEY`), Kimi/Moonshot (`KIMI_API_KEY`) e Mistral (`MISTRAL_API_KEY`).
-* **Segurança e Controle de Custos (Kill-Switch)**: Monitoramento em tempo real de tokens consumidos na sessão para evitar loops infinitos caros. Ao atingir o limite estipulado, o kill-switch entra em ação automaticamente.
-* **Injeção do MHU Pipeline**: Todas as interações do usuário no chat passam primeiro por uma análise enriquecida do pipeline cognitivo do MHU 5.0, fornecendo contexto bayesiano e counterfactual para a IA responder.
+> **Cognitive organism + AI coding tool.** A single workspace that fuses the
+> **Metamorfus ODC** metacognitive engine with the **OpenCode** AI development
+> platform.
 
 ---
 
-## 📂 Mapa de Arquivos do Workspace
+## 🎯 What is this?
 
-A estrutura do projeto está organizada de forma modular de acordo com as diretrizes do framework:
+This monorepo hosts the fusion of two independent systems:
 
-* 📄 `/package.json`: Configurações de scripts (Express + Vite) e dependências (como `cors`, `lucide-react`, `tsx` e `vite`).
-* 📄 `/metadata.json`: Informações de registro e permissões do frame concedidas para o App.
-* 📄 `/vite.config.ts`: Configurações do compilador Vite e injeção controlada de variáveis de ambiente.
-* 📄 `/types.ts`: Definições globais de TypeScript (`MindState`, `OrganismState`, `SystemConfig`, `DreamState`, etc.).
-* 📄 `/constants.ts`: Definições constantes do sistema interno.
-* 📄 `/server.ts`: Servidor Express com a cadeia inteligente de proxy e MHU integration.
-* 📄 `/mhu_engine.ts`: O motor de orquestração cognitiva do MHU 5.0.
-* 📁 `/components`:
-  * 📄 `ChatPanel.tsx` — Painel interativo de diálogo ("Comm Link").
-  * 📄 `CodeEditor.tsx` — Painel visual de códigos com editor de sintaxe embutido.
-  * 📄 `FileExplorer.tsx` — Árvore de navegação do sistema de arquivos e códigos virtuais.
-  * 📄 `Neuroscope.tsx` — Leitor de estados mentais cognitivos e CoT.
-  * 📄 `SettingsModal.tsx` — Configurações avançadas e inserção de credenciais de faturamento customizadas.
-  * 📄 `Simulation.tsx` — Simulação cibernética e de engenhosidade do organismo.
-  * 📄 `pyodide.worker.ts` — Web worker para execução rápida e segura de scripts Python.
-* 📄 `/.env.example`: Modelo de declaração de variáveis de ambiente do projeto.
+| Project | What it brings |
+| --- | --- |
+| **[Metamorfus ODC](./packages/metamorfus-src/)** | The MHU 5.0 cognitive engine — causal graphs, metacognition, Bayesian inference, counterfactual simulation, swarm broadcast, and an executive planner. 12 cognitive engines orchestrated as a single liquid organism. |
+| **[OpenCode](./packages/opencode-src/)** | An AI-powered development tool with a code editor, agent runtime, terminal UI, and an extensible tool/plugin model. The execution substrate for synthesized tools and runtime mutations. |
+
+The fusion produces a system where the **cognitive engine drives tool
+synthesis, swarm coordination, and self-repair inside an AI coding tool's
+runtime** — the organism plans, the tool executes, the organism reflects.
 
 ---
 
-## 🛠️ Instruções para Execução Local e Testes
+## 📁 Repository Layout
 
-Siga as instruções abaixo para ligar o sistema localmente:
-
-### Requisitos Prévios
-* **Node.js** v18 ou superior instalado.
-* **npm** v9 ou superior.
-
-### Instalação de Dependências
-Na raiz do projeto, instale as dependências executando:
-```bash
-npm install
+```
+metamorfus-opencode/
+├── package.json                 # Root workspaces (bun)
+├── tsconfig.base.json           # Strict TypeScript baseline
+├── docs/
+│   └── design.md                # ⭐ THE shared contract for mhu-core & mhu-bridge
+├── packages/
+│   ├── opencode-src/            # 🔌 OpenCode snapshot (frozen source of truth)
+│   ├── metamorfus-src/          # 🧠 Metamorfus ODC snapshot (frozen source of truth)
+│   ├── mhu-core/                # ⚙️  Re-implementation of the 12 engines (new, strict)
+│   ├── mhu-bridge/              # 🌉 Glue between mhu-core and OpenCode's runtime
+│   ├── web-ui/                  # 🖥️  Web frontend (placeholder, phase 1+)
+│   └── server/                  # 🚀 Backend (placeholder, phase 1+)
 ```
 
-### Configurar Variáveis de Ambiente
-Copie o arquivo `.env.example` para `.env` e preencha com as respectivas chaves de faturamento:
-```bash
-cp .env.example .env
-```
-
-### Inicializar em modo de Desenvolvimento
-Execute o comando de dev. Devido à integração full-stack Express + Vite, isto inicializará o servidor Express na porta `3000` suportando Hot Module Replacement do Vite em conjunto com os endpoints Proxy API:
-```bash
-npm run dev
-```
-Abra [http://localhost:3000](http://localhost:3000) no seu navegador.
-
-### Compilação e Build de Produção
-Para compilar e empacotar o projeto para produção:
-```bash
-npm run build
-npm start
-```
+The `-src` packages are **read-only snapshots** of the upstream projects. They
+are kept as references and as fallback behavior; **new development happens in
+`mhu-core`, `mhu-bridge`, `web-ui`, and `server`**.
 
 ---
 
-## 🤖 Manual de Diretrizes para o Próximo Agente de IA
+## 🏗️ Architecture at a Glance
 
-Se você é o agente encarregado de continuar e concluir este trabalho, atente-se rigorosamente às seguintes diretrizes estipuladas pelo usuário e pelo ecossistema:
+```
+┌────────────────────────────────────────────────────────────────────┐
+│                          web-ui  (React)                           │
+└──────────────────────────────┬─────────────────────────────────────┘
+                               │ HTTP / WS
+┌──────────────────────────────▼─────────────────────────────────────┐
+│                          server  (Express)                         │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │                       mhu-bridge                             │  │
+│  │   translates cognitive plans → OpenCode tool invocations     │  │
+│  └──────────────────────────────┬───────────────────────────────┘  │
+│                                 │                                  │
+│  ┌──────────────────────────────▼───────────────────────────────┐  │
+│  │                       mhu-core                               │  │
+│  │   12 engines, execute_pipeline(), strict TypeScript contract │  │
+│  └──────────────────────────────┬───────────────────────────────┘  │
+│                                 │                                  │
+│  ┌──────────────────────────────▼───────────────────────────────┐  │
+│  │                  opencode runtime                            │  │
+│  │   tools, agent loop, terminal UI, LLM provider registry      │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+└────────────────────────────────────────────────────────────────────┘
+```
 
-1. **Preservação de Escopo e Funcionalidades**: Não delete nem altere as lógicas existentes de metacognição, o engine do MHU 5.0 ou a cadeia de fallback de APIs em `server.ts` sem autorização expressa do usuário. Use escalonação incremental.
-2. **Strict Type Safety**: Mantenha a integridade dos contratos de tipos (`/types.ts`). Qualquer modificação deve atualizar o scaffold sem quebrar a compilação.
-3. **Lazy SDK Initialization**: Garanta que o servidor ou os clientes de APIs nunca quebrem na inicialização caso uma chave ambiental esteja temporariamente ausente. Trate erros graciosamente exibindo feedbacks claros.
-4. **Respeito às Restrições de iFrame e Sandbox**: Evite o uso de APIs restritas no navegador (`window.open`, `window.alert`), optando por modais elegantes ou states internos.
-5. **Estilo Declarativo**: O sistema é implementado com Tailwind CSS e fonts modernas. Preserve a densidade e o ritmo da tipografia visual.
+The contract between `mhu-core`, `mhu-bridge`, and the OpenCode runtime is
+**frozen in [`docs/design.md`](./docs/design.md)**. Any engine, tool, or bridge
+change must update that file first.
 
 ---
-*Ecossistema Metamorfos ODC preparado com êxito e pronto para deploy ou versionamento no GitHub.*
+
+## 🚀 Quick Start (dev)
+
+```bash
+# 1. Install bun (one-time)
+curl -fsSL https://bun.sh/install | bash
+
+# 2. Install all workspaces from the repo root
+cd metamorfus-opencode
+bun install
+
+# 3. Type-check everything
+bun run typecheck
+
+# 4. (Phase 1+) Run the dev server
+bun run dev
+```
+
+> **Heads up:** `bun install` is intentionally not run as part of the
+> monorepo setup. It is a per-developer step because it pulls native binaries
+> (pty, sqlite, etc.) that depend on the host OS.
+
+---
+
+## 🧠 The 12 Cognitive Engines
+
+`mhu-core` re-implements the engine set first prototyped in
+`packages/metamorfus-src/mhu_engine.ts`, this time with a strict TypeScript
+contract:
+
+1. **HiveMemory** — LRU + `retrieve_recent`
+2. **CausalGraphEngine** — DAG + `analyze`
+3. **MetacognitionEngine** — `self_reflect`
+4. **EmotionalLayer** — `update(state)`
+5. **CounterfactualEngine** — `generate(query)`
+6. **BayesianInference** — `update(prior, evidence)`
+7. **ToolSynthesisEngine** — `synthesize(objective)`
+8. **SelfRepairEngine** — `repair(diagnostics)`
+9. **MultiAgentCouncil** — `deliberate(query)` (3+ perspectives)
+10. **SwarmInterface** — `broadcast` / `receive`
+11. **WorldModel** — `simulate(query)`
+12. **ExecutivePlanner** — `generate_plan(state)`
+
+See [`docs/design.md`](./docs/design.md) for the full TypeScript contract,
+shared types, and the `execute_pipeline()` semantics.
+
+---
+
+## 📚 Documentation
+
+- [`docs/design.md`](./docs/design.md) — Shared contract for `mhu-core` and
+  `mhu-bridge`. **Start here.**
+- [`packages/metamorfus-src/README.md`](./packages/metamorfus-src/README.md) —
+  The original Metamorfus ODC handbook.
+- [`packages/opencode-src/AGENTS.md`](./packages/opencode-src/AGENTS.md) —
+  OpenCode's agent-development guide.
+
+---
+
+## 📜 License
+
+This monorepo is private. Sub-project licenses are inherited from
+`packages/*-src/`.

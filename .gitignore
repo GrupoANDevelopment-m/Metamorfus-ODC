@@ -1,24 +1,46 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Build outputs
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+.vite/
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# OS / IDE
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
+logs/
+
+# Test artifacts / temp
+.tmp/
+.cache/
+coverage/
+.tmp-*.py
+.tmp-*.mjs
+.tmp-*.ts
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# The OpenCode source clone (anomalyco/opencode) — too big for this repo.
+# It was used for analysis and adaptation; users can clone separately.
+packages/opencode-src/
+
+# The dna_library holds the organism's forged skills.
+# It is data, not source. Exclude by default; users can re-forge.
+packages/metamorfus-src/dna_library/manifest.json
+packages/metamorfus-src/dna_library/*.py
+

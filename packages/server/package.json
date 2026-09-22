@@ -1,0 +1,24 @@
+{
+  "name": "@metamorfus/server",
+  "version": "0.1.0",
+  "description": "Backend (Express) for the Metamorfus × OpenCode fusion. Placeholder — implementation in phase 1.",
+  "type": "module",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "echo \"server: nodemon/tsx is implemented in phase 1\" && exit 0",
+    "build": "echo \"server: tsc build is implemented in phase 1\" && exit 0",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@metamorfus/mhu-core": "workspace:*",
+    "@metamorfus/mhu-bridge": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.2"
+  }
+}
