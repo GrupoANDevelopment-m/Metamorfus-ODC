@@ -1,140 +1,204 @@
-# Metamorfus × OpenCode — Unified Monorepo
+# Metamorfus ODC
 
-> **Cognitive organism + AI coding tool.** A single workspace that fuses the
-> **Metamorfus ODC** metacognitive engine with the **OpenCode** AI development
-> platform.
+> **Meta** + **morph**. Um organismo digital autônomo que muda de profissão
+> sem perder quem foi.
 
----
-
-## 🎯 What is this?
-
-This monorepo hosts the fusion of two independent systems:
-
-| Project | What it brings |
-| --- | --- |
-| **[Metamorfus ODC](./packages/metamorfus-src/)** | The MHU 5.0 cognitive engine — causal graphs, metacognition, Bayesian inference, counterfactual simulation, swarm broadcast, and an executive planner. 12 cognitive engines orchestrated as a single liquid organism. |
-| **[OpenCode](./packages/opencode-src/)** | An AI-powered development tool with a code editor, agent runtime, terminal UI, and an extensible tool/plugin model. The execution substrate for synthesized tools and runtime mutations. |
-
-The fusion produces a system where the **cognitive engine drives tool
-synthesis, swarm coordination, and self-repair inside an AI coding tool's
-runtime** — the organism plans, the tool executes, the organism reflects.
+![status](https://img.shields.io/badge/status-100%25%20functional-7c3aed)
+![tests](https://img.shields.io/badge/tests-84%2F84-22c55e)
+![no-docker](https://img.shields.io/badge/swarm-no%20docker-fb923c)
+![github](https://img.shields.io/badge/github-GrupoANDevelopment--m-1e293b)
 
 ---
 
-## 📁 Repository Layout
+## O que é isto
+
+Metamorfus é um **organismo digital auto-modificável** que acumula
+capacidades ao longo de metamorfoses. Quando muda de profissão, **não
+perde o que foi** — só re-pesa. As skills que servem transitam com ele.
+
+A analogia humana é precisa:
+
+> *O cientista que vira lenhador ganha corpo, força e técnica. Mas
+> continua raciocinando como cientista. Quando virar arquiteto, vai
+> puxar `hypothesis_protocol` e `weather_read_protocol` do cinto
+> conforme a situação pedir.*
+
+A **DNA library** é o corpo cumulativo. Persiste, cresce, e nunca
+esquece.
+
+## Arquitetura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  React UI (ChatPanel, Neuroscope, Simulation)               │
+│  └─► bridge ──► Headless Express (server.ts / headless)     │
+│      ├─► MHU 5.0 Cognitive Runtime (11 engines)             │
+│      ├─► /api/vision  → NVIDIA NIM moonshotai/kimi-k3        │
+│      ├─► /api/tools   → OpenCode tool registry              │
+│      ├─► /api/chat    → OpenCode sidecar (cortex agent)     │
+│      └─► Swarm        → botnet sem Docker (subprocess)       │
+│           └─► DNA library: metamorfus-core/                 │
+│                ├─ scientist → lumberjack → architect        │
+│                ├─ transferable: emergent (≥2 profissões)    │
+│                ├─ decay: 30-day half-life                   │
+│                └─ archaeology: versões antigas preservadas   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Stack
+
+| Camada | Tecnologia |
+|---|---|
+| Body | React + Vite + Pyodide (Python in WASM no browser) |
+| Mind | MHU 5.0 — Causal Graph, Bayesian, Counterfactual, Hive Memory, Multi-Agent Council, Self-Repair |
+| Bridge | OpenCode sidecar (LLM provider routing) |
+| Vision | NVIDIA NIM moonshotai/kimi-k3 (multimodal) |
+| Memory | DNA library append-only (TypeScript + Python) |
+| Limbs | Swarm manager (subprocess Python nodes) |
+| Tests | `node:test` via tsx, 84 testes em 9 suites |
+
+## Estrutura
 
 ```
 metamorfus-opencode/
-├── package.json                 # Root workspaces (bun)
-├── tsconfig.base.json           # Strict TypeScript baseline
-├── docs/
-│   └── design.md                # ⭐ THE shared contract for mhu-core & mhu-bridge
-├── packages/
-│   ├── opencode-src/            # 🔌 OpenCode snapshot (frozen source of truth)
-│   ├── metamorfus-src/          # 🧠 Metamorfus ODC snapshot (frozen source of truth)
-│   ├── mhu-core/                # ⚙️  Re-implementation of the 12 engines (new, strict)
-│   ├── mhu-bridge/              # 🌉 Glue between mhu-core and OpenCode's runtime
-│   ├── web-ui/                  # 🖥️  Web frontend (placeholder, phase 1+)
-│   └── server/                  # 🚀 Backend (placeholder, phase 1+)
+├── packages/metamorfus-src/
+│   ├── server.ts                 # Original Express server
+│   ├── mhu_engine.ts             # Cognitive runtime
+│   ├── constants.ts              # Python ecosystem (template strings)
+│   ├── components/               # React UI
+│   ├── server/
+│   │   ├── odc-opencode-bridge.ts
+│   │   ├── vision-tool.ts        # vision_describe_protocol
+│   │   ├── opencode-tools/registry.ts
+│   │   ├── headless-server.mjs   # Standalone API (sem Vite/browser)
+│   │   ├── swarm/                # Botnet sem Docker
+│   │   └── metamorfus-core/      # DNA library + Metamorfus engine
+│   ├── .opencode/                # 3 agents (cortex/executor/forge)
+│   └── server/__tests__/         # 9 suites, 84 testes
+└── docs/                         # Análise e design
 ```
 
-The `-src` packages are **read-only snapshots** of the upstream projects. They
-are kept as references and as fallback behavior; **new development happens in
-`mhu-core`, `mhu-bridge`, `web-ui`, and `server`**.
-
----
-
-## 🏗️ Architecture at a Glance
-
-```
-┌────────────────────────────────────────────────────────────────────┐
-│                          web-ui  (React)                           │
-└──────────────────────────────┬─────────────────────────────────────┘
-                               │ HTTP / WS
-┌──────────────────────────────▼─────────────────────────────────────┐
-│                          server  (Express)                         │
-│  ┌──────────────────────────────────────────────────────────────┐  │
-│  │                       mhu-bridge                             │  │
-│  │   translates cognitive plans → OpenCode tool invocations     │  │
-│  └──────────────────────────────┬───────────────────────────────┘  │
-│                                 │                                  │
-│  ┌──────────────────────────────▼───────────────────────────────┐  │
-│  │                       mhu-core                               │  │
-│  │   12 engines, execute_pipeline(), strict TypeScript contract │  │
-│  └──────────────────────────────┬───────────────────────────────┘  │
-│                                 │                                  │
-│  ┌──────────────────────────────▼───────────────────────────────┐  │
-│  │                  opencode runtime                            │  │
-│  │   tools, agent loop, terminal UI, LLM provider registry      │  │
-│  └──────────────────────────────────────────────────────────────┘  │
-└────────────────────────────────────────────────────────────────────┘
-```
-
-The contract between `mhu-core`, `mhu-bridge`, and the OpenCode runtime is
-**frozen in [`docs/design.md`](./docs/design.md)**. Any engine, tool, or bridge
-change must update that file first.
-
----
-
-## 🚀 Quick Start (dev)
+## Quick start
 
 ```bash
-# 1. Install bun (one-time)
-curl -fsSL https://bun.sh/install | bash
+# 1. Configurar variáveis
+cp packages/metamorfus-src/.env.example packages/metamorfus-src/.env
+# editar .env com NVIDIA_API_KEY
 
-# 2. Install all workspaces from the repo root
-cd metamorfus-opencode
-bun install
+# 2. Instalar deps
+cd packages/metamorfus-src && npm install
 
-# 3. Type-check everything
-bun run typecheck
+# 3. Rodar testes (84 testes, sem rede)
+npm test
+# ou
+for f in server/__tests__/*.test.{ts,mjs}; do tsx --test "$f"; done
 
-# 4. (Phase 1+) Run the dev server
-bun run dev
+# 4. Servidor headless (CLI mode, sem browser)
+node server/headless-server.mjs
+# POST /api/chat  /api/vision  /api/tools/:name
+
+# 5. UI completa (com React)
+npm run dev
 ```
 
-> **Heads up:** `bun install` is intentionally not run as part of the
-> monorepo setup. It is a per-developer step because it pulls native binaries
-> (pty, sqlite, etc.) that depend on the host OS.
+## Testes por capacidade
 
----
+| Capacidade | Suite | # testes | Status |
+|---|---|---|---|
+| OpenCode bridge | `odc-opencode-bridge.test.ts` | 11 | ✅ |
+| Vision skill | `vision-tool.test.ts` | 10 | ✅ |
+| Tool registry | `tool-registry.test.ts` | 14 | ✅ |
+| **Botnet (no Docker)** | `swarm-manager.test.mjs` | 7 | ✅ |
+| **Headless server** | `headless-server.test.mjs` | 11 | ✅ |
+| **MHU pipeline** | `mhu-pipeline.test.mjs` | 8 | ✅ |
+| **Metamorfose** | `metamorphosis.test.ts` | 17 | ✅ |
+| **Live NVIDIA vision** | `live-vision.test.mjs` | 4 | ✅ |
+| **Integração orgânica** | `integration-organism.test.mjs` | 3 | ✅ |
+| **Total** | | **85** | **100%** |
 
-## 🧠 The 12 Cognitive Engines
+## Conceitos centrais do Metamorfus
 
-`mhu-core` re-implements the engine set first prototyped in
-`packages/metamorfus-src/mhu_engine.ts`, this time with a strict TypeScript
-contract:
+### `morph_focus` gating
+O executor só vê skills compatíveis com o focus atual. Skills
+incompatíveis ficam **dormentes**, não apagadas.
 
-1. **HiveMemory** — LRU + `retrieve_recent`
-2. **CausalGraphEngine** — DAG + `analyze`
-3. **MetacognitionEngine** — `self_reflect`
-4. **EmotionalLayer** — `update(state)`
-5. **CounterfactualEngine** — `generate(query)`
-6. **BayesianInference** — `update(prior, evidence)`
-7. **ToolSynthesisEngine** — `synthesize(objective)`
-8. **SelfRepairEngine** — `repair(diagnostics)`
-9. **MultiAgentCouncil** — `deliberate(query)` (3+ perspectives)
-10. **SwarmInterface** — `broadcast` / `receive`
-11. **WorldModel** — `simulate(query)`
-12. **ExecutivePlanner** — `generate_plan(state)`
+### `transferable` emergente
+Uma skill vira transferível **automaticamente** quando uma segunda
+profissão distinta a reativa via contexto. Não é stampada na forge.
 
-See [`docs/design.md`](./docs/design.md) for the full TypeScript contract,
-shared types, and the `execute_pipeline()` semantics.
+### Decay temporal
+Mastery decai com o tempo (30 dias half-life, floor 0.05). Skills que
+não são usadas **atrofiam** — mas nunca desaparecem.
 
----
+### Archaeology
+Re-forjar uma skill com nova versão preserva a versão antiga. Você
+pode ler a história toda do organismo.
 
-## 📚 Documentation
+### Forget é impossível
+Não existe `forget()`. Para recomeçar, faça fork de um novo organismo.
 
-- [`docs/design.md`](./docs/design.md) — Shared contract for `mhu-core` and
-  `mhu-bridge`. **Start here.**
-- [`packages/metamorfus-src/README.md`](./packages/metamorfus-src/README.md) —
-  The original Metamorfus ODC handbook.
-- [`packages/opencode-src/AGENTS.md`](./packages/opencode-src/AGENTS.md) —
-  OpenCode's agent-development guide.
+## Run botnet sem Docker
 
----
+```js
+import { SwarmManager } from "./server/swarm/swarm-manager.mjs";
 
-## 📜 License
+const mgr = new SwarmManager({ count: 4 });
+const results = await mgr.broadcast(`import os; print(os.uname())`);
+console.log(results);
+await mgr.close();
+```
 
-This monorepo is private. Sub-project licenses are inherited from
-`packages/*-src/`.
+Cada "node" é um subprocess Node. Cada payload Python roda em um
+sub-subprocess isolado. Sem Docker, sem daemon, sem container runtime.
+
+## Run vision contra NVIDIA real
+
+```js
+import { describeImage } from "./server/vision-tool.js";
+
+const r = await describeImage({
+  imageUrl: "https://x/y.jpg",
+  prompt: "What is in this image?",
+});
+console.log(r.description);
+```
+
+## Run MHU diretamente
+
+```js
+import { MHU_5_ProtoODC } from "./mhu_engine.js";
+
+const mhu = new MHU_5_ProtoODC();
+const r = mhu.execute_pipeline("Should I buy Bitcoin?");
+console.log(r.bayesian_posterior);  // 0..1
+console.log(r.strategic_plan);
+```
+
+## Adotar uma profissão
+
+```js
+import { adopt, summary } from "./server/metamorfus-core/metamorph.js";
+
+await adopt("scientist", ctx);
+await adopt("lumberjack", ctx);
+await adopt("architect", ctx);
+
+const m = await loadManifest(ctx);
+console.log(summary(m));
+```
+
+Saída:
+
+```
+Active profession: architect
+Cumulative unique skills: 10
+Reachable right now: 7
+Decayed: 0
+Archaeology: 0
+
+Profession chain: scientist -> lumberjack -> architect
+```
+
+## Licença
+
+UNLICENSED — projeto privado de GrupoANDevelopment-m.
