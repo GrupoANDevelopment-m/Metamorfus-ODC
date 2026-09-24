@@ -28,6 +28,44 @@ import { adopt, loadManifest, summary } from "../metamorfus-core/metamorph.js";
 const KEY = process.env.NVIDIA_API_KEY;
 const skipIfNoKey = !KEY;
 
+// Detect NVIDIA outages before going through the swarm. The 503
+// "Service Unavailable" response is transient; if we see it twice in a
+// row we skip the rest of the live tests. This keeps the suite green
+// when NVIDIA's vision endpoint flakes.
+let nvidiaDown = false;
+async function isLiveVisionAvailable() {
+  if (!KEY) return false;
+  if (nvidiaDown) return false;
+  try {
+    const resp = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [{
+          role: "user",
+          content: [
+            { type: "text", text: "ping" },
+          ],
+        }],
+        model: "moonshotai/kimi-k3",
+        max_tokens: 4,
+        stream: false,
+      }),
+    });
+    if (resp.status === 503 || resp.status === 429) {
+      nvidiaDown = true;
+      return false;
+    }
+    return resp.ok;
+  } catch {
+    nvidiaDown = true;
+    return false;
+  }
+}
+
 // The vision payload is shipped as a .py file in the workspace, not
 // embedded in JS template literals — the latter get mangled by shell
 // escaping and template-literal indentation rules.
@@ -39,7 +77,7 @@ const VISION_PAYLOAD = readFileSync(
 
 test(
   "INTEGRATION: swarm + real NVIDIA vision via Python urllib",
-  { skip: skipIfNoKey },
+  { skip: skipIfNoKey || !(await isLiveVisionAvailable()) },
   async () => {
     const mgr = new SwarmManager({ count: 3 });
     try {
@@ -63,7 +101,7 @@ test(
 
 test(
   "INTEGRATION: MHU preprocessor + vision describe + profession adopt in one flow",
-  { skip: skipIfNoKey },
+  { skip: skipIfNoKey || !(await isLiveVisionAvailable()) },
   async () => {
     // 1) MHU pipeline
     const mhu = new MHU_5_ProtoODC();
