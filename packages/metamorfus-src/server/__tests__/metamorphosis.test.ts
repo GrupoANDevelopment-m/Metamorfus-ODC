@@ -56,6 +56,8 @@ after(async () => {
 const ctx = () => ({
   workspaceRoot,
   forgeSkill: async (args: any) => {
+    // Real call into the in-process registry. Writes a real .py file
+    // to disk under <workspaceRoot>/metamorfus-src/dna_library/.
     const result = await executeBridgeTool("forge_skill", args, {
       workspaceRoot,
       dnaDir: "metamorfus-src/dna_library",

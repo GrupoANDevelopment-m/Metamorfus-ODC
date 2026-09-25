@@ -54,6 +54,10 @@ export async function startHeadlessServer(opts = {}) {
   const FALLBACK_TOOLS = opts.FALLBACK_TOOLS ?? (await loadDefault("FALLBACK_TOOLS", "./odc-opencode-bridge.js"));
   const MHU_5_ProtoODC = opts.MHU_5_ProtoODC ?? (await loadDefault("MHU_5_ProtoODC", "../mhu_engine.js"));
   const mhuEngine = opts.mhuEngine ?? new MHU_5_ProtoODC();
+  // Direct NVIDIA NIM adapter. Always available when NVIDIA_API_KEY
+  // is set in env. Used as the fallback LLM backend when OpenCode
+  // sidecar isn't reachable.
+  const { nvidiaComplete, nvidiaAvailable, PROVIDER_NAME } = await import("./nvidia-direct.mjs");
 
   const app = express();
   app.use(cors());
@@ -109,15 +113,20 @@ export async function startHeadlessServer(opts = {}) {
     }
   });
 
-  // ─── /api/chat — with MHU pipeline + OpenCode completion ─────────
+  // ─── /api/chat — with MHU pipeline + real LLM (OpenCode or NVIDIA) ─
   app.post("/api/chat", async (req, res) => {
     try {
-      // Fail fast with a clear 503 if OpenCode is down. Mirrors server.ts.
-      if (!(await opencodePing())) {
+      // Pick a backend. Prefer OpenCode sidecar when reachable; fall
+      // back to NVIDIA NIM direct. Both are real LLM backends — no
+      // mocks, no fake responses.
+      const ocReachable = await opencodePing();
+      let useNvidia = !ocReachable;
+      if (useNvidia && !nvidiaAvailable()) {
         return res.status(503).json({
           error:
-            "OpenCode server not reachable. Start it with `opencode serve` " +
-            "(default http://localhost:4096) or set OPENCODE_URL in .env.",
+            "No LLM backend reachable. Either start OpenCode " +
+            "(`opencode serve`, default :4096) and set OPENCODE_URL, " +
+            "or set NVIDIA_API_KEY for the direct NVIDIA NIM backend.",
         });
       }
 
@@ -149,7 +158,14 @@ export async function startHeadlessServer(opts = {}) {
         }
       }
 
-      const result = await opencodeComplete({
+      const result = useNvidia
+        ? await nvidiaComplete({
+            messages,
+            ...(reqModel ? { model: reqModel } : {}),
+            temperature: typeof req.body?.temperature === "number" ? req.body.temperature : 0.7,
+            maxTokens: typeof req.body?.max_tokens === "number" ? req.body.max_tokens : 4096,
+          })
+        : await opencodeComplete({
         messages,
         ...(reqModel ? { model: reqModel } : {}),
         temperature: typeof req.body?.temperature === "number" ? req.body.temperature : 0.7,
@@ -170,7 +186,18 @@ export async function startHeadlessServer(opts = {}) {
         },
       });
     } catch (e) {
-      return res.status(500).json({ error: e?.message ?? "chat error" });
+      const msg = e?.message ?? "chat error";
+      console.error("CHAT ERROR:", msg);
+      // If upstream is rate-limited or down, propagate the right code
+      // so callers (tests, real clients) can distinguish transient
+      // outages from internal bugs.
+      if (msg.includes("429") || msg.includes("rate")) {
+        return res.status(429).json({ error: "rate limited" });
+      }
+      if (msg.includes("503") || msg.includes("unavailable")) {
+        return res.status(503).json({ error: "upstream unavailable" });
+      }
+      return res.status(500).json({ error: msg });
     }
   });
 
