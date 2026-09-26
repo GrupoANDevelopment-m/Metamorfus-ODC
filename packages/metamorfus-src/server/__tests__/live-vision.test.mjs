@@ -10,6 +10,7 @@ import { describeImage } from "../vision-tool.js";
 
 const KEY = process.env.NVIDIA_API_KEY;
 const skipIfNoKey = !KEY;
+const AUTH = { authorization: "Bearer dev-secret-local" };
 
 let ctx;
 let nvidiaDown = false;
@@ -48,7 +49,7 @@ after(async () => {
 const baseUrl = () => `http://127.0.0.1:${ctx.port}`;
 
 test("LIVE: headless server is reachable", { skip: skipIfNoKey }, async () => {
-  const r = await fetch(`${baseUrl()}/api/health`);
+  const r = await fetch(`${baseUrl()}/api/health`, { headers: AUTH });
   const j = await r.json();
   assert.equal(r.status, 200);
   assert.equal(j.status, "ok");
@@ -60,7 +61,7 @@ test(
   async () => {
     const r = await fetch(`${baseUrl()}/api/vision`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...AUTH, "Content-Type": "application/json" },
       body: JSON.stringify({
         imageUrl: "https://assets.ngc.nvidia.com/products/api-catalog/phi-3-5-vision/example1b.jpg",
         prompt: "Em uma frase: o que tem nesta imagem?",
@@ -86,7 +87,7 @@ test(
   async () => {
     const r = await fetch(`${baseUrl()}/api/vision`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...AUTH, "Content-Type": "application/json" },
       body: JSON.stringify({ imageUrl: "https://nonexistent-host-xyz.invalid/x.jpg" }),
     });
     assert.ok(
@@ -102,7 +103,7 @@ test(
   async () => {
     const r = await fetch(`${baseUrl()}/api/tools/scan_codebase`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { ...AUTH, "Content-Type": "application/json" },
       body: JSON.stringify({}),
     });
     assert.equal(r.status, 200);

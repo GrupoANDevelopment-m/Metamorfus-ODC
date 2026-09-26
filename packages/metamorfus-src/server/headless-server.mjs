@@ -58,10 +58,20 @@ export async function startHeadlessServer(opts = {}) {
   // is set in env. Used as the fallback LLM backend when OpenCode
   // sidecar isn't reachable.
   const { nvidiaComplete, nvidiaAvailable, PROVIDER_NAME } = await import("./nvidia-direct.mjs");
+  // Auth + sync modules (pure JS).
+  const { tenantAuth, reloadTenants, listTenants, getTenant } = await import("./auth/tenant-auth.mjs");
+  const { pushDna, pullDna } = await import("./sync/dna-git-sync.mjs");
 
   const app = express();
   app.use(cors());
   app.use(express.json({ limit: "50mb" }));
+
+  // Multi-tenant auth. Each request carries a bearer token; we attach
+  // `req.tenant` so handlers can scope work to the right DNA library.
+  // The auth module loads the tenant registry from TENANTS_JSON env
+  // or tenants.json in the workspace root.
+  await reloadTenants({ workspaceRoot: opts.workspaceRoot });
+  app.use(tenantAuth());
 
   // ─── /api/admin/system_status ────────────────────────────────────
   app.get("/api/admin/system_status", async (_req, res) => {
@@ -204,6 +214,39 @@ export async function startHeadlessServer(opts = {}) {
   // ─── /api/health ─────────────────────────────────────────────────
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", server: "headless", ts: new Date().toISOString() });
+  });
+
+  // ─── /api/admin/tenants (list tenants; requires auth) ─────────────
+  app.get("/api/admin/tenants", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const tenants = listTenants().map((t) => ({
+      id: t.id,
+      displayName: t.displayName,
+      scopes: t.scopes,
+      dnaDir: t.dnaDir,
+    }));
+    res.json({ tenants });
+  });
+
+  // ─── /api/admin/sync (push / pull the tenant's DNA library) ─────
+  app.post("/api/admin/sync", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const action = String(req.body?.action ?? "pull");
+    const remote = typeof req.body?.remote === "string" ? req.body.remote : undefined;
+    const dnaDir = path.resolve(opts.workspaceRoot ?? process.cwd(), req.tenant.dnaDir);
+    try {
+      if (action === "push") {
+        const r = await pushDna({ dnaDir, tenantId: req.tenant.id, ...(remote ? { remote } : {}) });
+        return res.json(r);
+      }
+      if (action === "pull") {
+        const r = await pullDna({ dnaDir, tenantId: req.tenant.id, ...(remote ? { remote } : {}) });
+        return res.json(r);
+      }
+      return res.status(400).json({ error: `unknown action: ${action}` });
+    } catch (e) {
+      return res.status(500).json({ error: e?.message ?? "sync failed" });
+    }
   });
 
   const port = opts.port ?? Number(process.env.PORT ?? 3000);
