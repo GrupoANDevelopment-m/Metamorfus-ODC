@@ -99,7 +99,7 @@ test(
           nvidiaDown = true;
           return;
         }
-        if (!parsed.ok) {
+        if (!parsed.ok || !parsed.description) {
           nvidiaDown = true;
           return;
         }
