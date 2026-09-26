@@ -2,309 +2,148 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Metamorfos ODC</title>
 <style>
-  :root {
-    --bg-deep:        #050b18;
-    --bg-mid:         #0a1628;
-    --bg-soft:        #0f1f38;
-    --accent-cyan:    #22d3ee;
-    --accent-teal:    #14b8a6;
-    --accent-blue:    #3b82f6;
-    --accent-glow:    #67e8f9;
-    --text-primary:   #e0f2fe;
-    --text-muted:     #94a3b8;
-    --grid-line:      rgba(34, 211, 238, 0.08);
-  }
-
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
     height: 100%;
     width: 100%;
-    background: var(--bg-deep);
-    color: var(--text-primary);
-    font-family: 'Inter', 'Helvetica Neue', system-ui, -apple-system, sans-serif;
+    background: #050b18;
     overflow: hidden;
+    font-family: 'Helvetica Neue', 'Inter', system-ui, sans-serif;
   }
 
-  body {
-    background:
-      radial-gradient(ellipse 80% 60% at 20% 30%, rgba(34, 211, 238, 0.06), transparent 50%),
-      radial-gradient(ellipse 70% 50% at 80% 70%, rgba(20, 184, 166, 0.05), transparent 60%),
-      linear-gradient(135deg, var(--bg-deep) 0%, var(--bg-mid) 50%, var(--bg-deep) 100%);
-  }
-
-  #canvas-root {
+  #scene {
     position: fixed;
     inset: 0;
     z-index: 0;
   }
 
-  /* Decorative grid overlay */
-  .grid-overlay {
+  /* Vignette: keep edges dark so the swirl is the focal point. */
+  .vignette {
     position: fixed;
     inset: 0;
-    pointer-events: none;
-    background-image:
-      linear-gradient(var(--grid-line) 1px, transparent 1px),
-      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-    background-size: 80px 80px;
     z-index: 1;
-    opacity: 0.6;
-    mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 40%, transparent 80%);
-    -webkit-mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 40%, transparent 80%);
+    pointer-events: none;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 30%, rgba(5, 11, 24, 0.55) 70%, #050b18 100%);
   }
 
-  /* Top status bar */
-  .topbar {
+  /* Brand mark + wordmark, positioned to the right of the swirl. */
+  .wordmark {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 10;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 18px 32px;
-    background: linear-gradient(180deg, rgba(5, 11, 24, 0.85) 0%, rgba(5, 11, 24, 0) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(34, 211, 238, 0.1);
+    top: 50%;
+    right: 8%;
+    transform: translateY(-50%);
+    z-index: 5;
+    color: #e0f7fa;
+    text-align: left;
+    user-select: none;
   }
 
-  .brand {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-  .brand-mark {
-    width: 32px;
-    height: 32px;
-    position: relative;
-  }
-
-  .brand-mark svg { width: 100%; height: 100%; }
-
-  .brand-name {
-    font-size: 16px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-teal) 100%);
+  .wordmark .name {
+    display: block;
+    font-size: clamp(48px, 6.5vw, 120px);
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    line-height: 1;
+    background: linear-gradient(180deg, #f0fdff 0%, #67e8f9 55%, #14b8a6 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
+    text-shadow: 0 0 60px rgba(34, 211, 238, 0.18);
+    white-space: nowrap;
   }
 
-  .brand-tag {
+  .wordmark .sub {
+    display: block;
+    margin-top: 14px;
+    font-size: clamp(36px, 5vw, 90px);
+    font-weight: 300;
+    letter-spacing: 0.02em;
+    background: linear-gradient(180deg, #67e8f9 0%, #22d3ee 60%, #14b8a6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    white-space: nowrap;
+  }
+
+  /* Subtle tag below the wordmark. */
+  .tagline {
+    margin-top: 28px;
     font-size: 11px;
-    color: var(--text-muted);
-    letter-spacing: 0.12em;
+    letter-spacing: 0.32em;
     text-transform: uppercase;
-    margin-left: 4px;
+    color: rgba(180, 220, 240, 0.45);
+    font-weight: 300;
   }
 
-  .topbar-meta {
+  /* Top-left small mark. */
+  .corner {
+    position: fixed;
+    top: 28px;
+    left: 32px;
+    z-index: 5;
     display: flex;
     align-items: center;
-    gap: 24px;
-    font-size: 12px;
-    color: var(--text-muted);
+    gap: 10px;
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(180, 220, 240, 0.55);
+    user-select: none;
   }
 
-  .status-dot {
+  .corner-dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: var(--accent-teal);
-    box-shadow: 0 0 8px var(--accent-teal);
-    display: inline-block;
-    margin-right: 8px;
-    animation: pulse 2.5s ease-in-out infinite;
+    background: #67e8f9;
+    box-shadow: 0 0 10px #67e8f9;
+    animation: pulse 2.6s ease-in-out infinite;
   }
 
   @keyframes pulse {
     0%, 100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.6; transform: scale(0.85); }
+    50%      { opacity: 0.55; transform: scale(0.7); }
   }
 
-  /* Center hero */
-  .hero {
+  /* Top-right build tag. */
+  .build {
     position: fixed;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
+    top: 28px;
+    right: 32px;
     z-index: 5;
-    text-align: center;
-    pointer-events: none;
-    padding: 0 32px;
-  }
-
-  .hero-eyebrow {
-    font-size: 11px;
-    color: var(--accent-cyan);
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    margin-bottom: 24px;
-    opacity: 0.85;
-  }
-
-  .hero-title {
-    font-size: clamp(40px, 7vw, 110px);
-    font-weight: 200;
-    line-height: 0.95;
-    letter-spacing: -0.04em;
-    margin: 0;
-    background: linear-gradient(180deg, #f0fdff 0%, #67e8f9 60%, #14b8a6 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 80px rgba(34, 211, 238, 0.15);
-    white-space: nowrap;
-  }
-
-  .hero-sub {
-    font-size: 12px;
-    font-weight: 300;
-    color: var(--text-muted);
-    margin-top: 22px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-  }
-
-  /* Bottom info strip */
-  .strip {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
-    padding: 18px 32px;
-    background: linear-gradient(0deg, rgba(5, 11, 24, 0.85) 0%, rgba(5, 11, 24, 0) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-top: 1px solid rgba(34, 211, 238, 0.1);
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 32px;
-  }
-
-  .cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .cell-label {
     font-size: 10px;
-    letter-spacing: 0.18em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
-    color: var(--text-muted);
+    color: rgba(180, 220, 240, 0.35);
+    user-select: none;
   }
-
-  .cell-value {
-    font-size: 18px;
-    font-weight: 300;
-    color: var(--text-primary);
-    letter-spacing: 0.02em;
-  }
-
-  .cell-value .unit {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-left: 6px;
-  }
-
-  /* Side accents */
-  .accent-left,
-  .accent-right {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 4;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .accent-left { left: 32px; }
-  .accent-right { right: 32px; align-items: flex-end; }
-
-  .corner-mark {
-    font-size: 10px;
-    color: var(--text-muted);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    writing-mode: vertical-rl;
-  }
-
-  .accent-right .corner-mark { transform: rotate(180deg); }
 </style>
 </head>
 <body>
 
-<canvas id="canvas-root"></canvas>
-<div class="grid-overlay"></div>
+<canvas id="scene"></canvas>
+<div class="vignette"></div>
 
-<header class="topbar">
-  <div class="brand">
-    <div class="brand-mark">
-      <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bg1" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#67e8f9"/>
-            <stop offset="100%" stop-color="#14b8a6"/>
-          </linearGradient>
-        </defs>
-        <path d="M4 22 Q 12 4, 18 14 Q 24 24, 28 8" stroke="url(#bg1)" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <circle cx="4" cy="22" r="2" fill="#67e8f9"/>
-        <circle cx="18" cy="14" r="2" fill="#22d3ee"/>
-        <circle cx="28" cy="8" r="2" fill="#14b8a6"/>
-      </svg>
-    </div>
-    <span class="brand-name">Metamorfos ODC</span>
-    <span class="brand-tag">Cognitive Organism</span>
-  </div>
-  <div class="topbar-meta">
-    <span><span class="status-dot"></span>Cortex online</span>
-    <span>MHU 5.0 / 11 engines</span>
-    <span id="ts">--:--:--</span>
-  </div>
-</header>
+<div class="corner">
+  <span class="corner-dot"></span>
+  <span>Cortex online</span>
+  <span style="opacity:0.4; margin: 0 8px;">/</span>
+  <span>MHU 5.0</span>
+  <span style="opacity:0.4; margin: 0 8px;">/</span>
+  <span>DNA Library persistent</span>
+</div>
 
-<aside class="accent-left">
-  <span class="corner-mark">AN-design / 2026</span>
-</aside>
+<div class="build">Build 2026 · AN-design</div>
 
-<aside class="accent-right">
-  <span class="corner-mark">DNA Library / Persistent</span>
-</aside>
-
-<section class="hero">
-  <div class="hero-eyebrow">Autonomous Dev Assistant</div>
-  <h1 class="hero-title">Metamorfos</h1>
-  <div class="hero-sub">Self-improving · Cross-profession · Append-only memory</div>
-</section>
-
-<footer class="strip">
-  <div class="cell">
-    <span class="cell-label">Cumulative Skills</span>
-    <span class="cell-value">10 <span class="unit">forged</span></span>
-  </div>
-  <div class="cell">
-    <span class="cell-label">Active Profession</span>
-    <span class="cell-value">Architect</span>
-  </div>
-  <div class="cell">
-    <span class="cell-label">Transferable</span>
-    <span class="cell-value">5 <span class="unit">emergent</span></span>
-  </div>
-  <div class="cell">
-    <span class="cell-label">Metamorphoses</span>
-    <span class="cell-value">3 <span class="unit">recorded</span></span>
-  </div>
-</footer>
+<div class="wordmark">
+  <span class="name">Metamorfos</span>
+  <span class="sub">ODC</span>
+  <div class="tagline">Autonomous · Self-improving · Cross-profession</div>
+</div>
 
 <script type="importmap">
 {
@@ -318,236 +157,272 @@
 import * as THREE from 'three';
 
 // ─── Renderer ──────────────────────────────────────────────────────────────
-const canvas = document.getElementById('canvas-root');
+const canvas = document.getElementById('scene');
 const renderer = new THREE.WebGLRenderer({
   canvas,
   antialias: true,
-  alpha: true,
+  alpha: false,
   powerPreference: 'high-performance',
 });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.15;
+renderer.toneMappingExposure = 1.1;
 
-// ─── Scene & camera ────────────────────────────────────────────────────────
 const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x050b18, 0.045);
+scene.background = new THREE.Color(0x050b18);
+scene.fog = new THREE.FogExp2(0x050b18, 0.035);
 
+// Camera framed so the swirl sits on the LEFT and the wordmark on the RIGHT.
 const camera = new THREE.PerspectiveCamera(
-  55,
+  46,
   window.innerWidth / window.innerHeight,
   0.1,
   100,
 );
-camera.position.set(0, 0.5, 7.5);
-camera.lookAt(0, 0, 0);
+camera.position.set(2.2, 0, 8.5);
+camera.lookAt(-0.6, 0, 0);
 
 // ─── Lights ────────────────────────────────────────────────────────────────
-const ambient = new THREE.AmbientLight(0x1e3a5f, 0.4);
+const ambient = new THREE.AmbientLight(0x1e3a5f, 0.5);
 scene.add(ambient);
 
-const keyLight = new THREE.DirectionalLight(0x67e8f9, 1.2);
-keyLight.position.set(4, 6, 4);
-scene.add(keyLight);
+const key = new THREE.DirectionalLight(0x67e8f9, 1.0);
+key.position.set(3, 4, 4);
+scene.add(key);
 
-const rimLight = new THREE.DirectionalLight(0x14b8a6, 0.7);
-rimLight.position.set(-5, -2, -3);
-scene.add(rimLight);
+const fill = new THREE.DirectionalLight(0x22d3ee, 0.6);
+fill.position.set(-3, -2, 2);
+scene.add(fill);
 
-const cyanPoint = new THREE.PointLight(0x22d3ee, 1.4, 18);
-cyanPoint.position.set(-2.5, 1, 3);
-scene.add(cyanPoint);
+const rim = new THREE.DirectionalLight(0x14b8a6, 0.7);
+rim.position.set(0, -3, -3);
+scene.add(rim);
 
-const tealPoint = new THREE.PointLight(0x14b8a6, 1.2, 18);
-tealPoint.position.set(2.8, -1.5, 2);
-scene.add(tealPoint);
+const accent = new THREE.PointLight(0x67e8f9, 1.2, 16);
+accent.position.set(-2, 1, 2);
+scene.add(accent);
 
-// ─── Helper: ribbon mesh (flowing metamorphosis strokes) ─────────────────
-function makeRibbon(curve, opts = {}) {
-  const tubularSegments = opts.segments ?? 200;
-  const radius = opts.radius ?? 0.06;
-  const radialSegments = opts.radial ?? 8;
-  const geometry = new THREE.TubeGeometry(curve, tubularSegments, radius, radialSegments, false);
-  // Build a flowing gradient that breathes along the length.
+// ─── Ribbon builder ───────────────────────────────────────────────────────
+// Build a single ribbon mesh from a list of points with a given thickness
+// and color gradient. The mesh is a TubeGeometry swept along a
+// CatmullRomCurve3 — gives the smooth flowing look the logo has.
+function makeRibbon(points, opts = {}) {
+  const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
+  const segments = opts.segments ?? 280;
+  const radius = opts.radius ?? 0.05;
+  const radial = opts.radial ?? 10;
+  const geometry = new THREE.TubeGeometry(curve, segments, radius, radial, false);
+
   const count = geometry.attributes.position.count;
   const colors = new Float32Array(count * 3);
   const c1 = new THREE.Color(opts.colorA ?? 0x67e8f9);
   const c2 = new THREE.Color(opts.colorB ?? 0x14b8a6);
+  const tmp = new THREE.Color();
   for (let i = 0; i < count; i++) {
-    const t = (i / count);
-    const c = c1.clone().lerp(c2, t);
-    colors[i * 3 + 0] = c.r;
-    colors[i * 3 + 1] = c.g;
-    colors[i * 3 + 2] = c.b;
+    const t = i / count;
+    // Slight banding — looks like the highlight banding in the reference.
+    const band = 0.85 + 0.15 * Math.sin(t * 18 + opts.bandOffset ?? 0);
+    tmp.copy(c1).lerp(c2, t).multiplyScalar(band);
+    colors[i * 3 + 0] = tmp.r;
+    colors[i * 3 + 1] = tmp.g;
+    colors[i * 3 + 2] = tmp.b;
   }
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
   const material = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    metalness: 0.55,
-    roughness: 0.18,
+    metalness: 0.7,
+    roughness: 0.2,
     emissive: opts.emissive ?? 0x22d3ee,
-    emissiveIntensity: 0.55,
+    emissiveIntensity: 0.5,
     transparent: true,
-    opacity: 0.92,
+    opacity: 0.95,
   });
 
   const mesh = new THREE.Mesh(geometry, material);
+  if (opts.position) mesh.position.set(...opts.position);
+  if (opts.rotation) {
+    mesh.rotation.x = opts.rotation[0];
+    mesh.rotation.y = opts.rotation[1];
+    mesh.rotation.z = opts.rotation[2];
+  }
   return { mesh, geometry, material };
 }
 
-// ─── Curve 1: large sweeping metamorphosis ribbon (logo echo) ─────────────
-function buildSweepCurve() {
+// ─── Curve generators ─────────────────────────────────────────────────────
+// All curves are in the YZ plane (vertical spiral) — the swirl in the
+// reference image is clearly vertical, not horizontal. The camera
+// frames it from a slight 3/4 angle.
+
+// Curve A: the BIG primary ribbon — a vertical spiral that comes in
+// from the top, curves around the right, dips through the center, and
+// exits down to the lower-left. This is the dominant swirl.
+function bigSpiral() {
+  const pts = [];
+  const N = 160;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    // Parametric spiral: angle increases with t, radius oscillates so
+    // the ribbon coils inward then back out.
+    const angle = -Math.PI * 1.5 + t * Math.PI * 2.6;
+    const radius = 1.4 + 0.55 * Math.sin(t * Math.PI * 1.4);
+    const x = Math.cos(angle) * radius - 0.4;
+    const y = (t - 0.5) * 3.6 + Math.sin(t * Math.PI * 1.2) * 0.35;
+    const z = Math.sin(angle) * radius * 0.6 + 0.5;
+    pts.push(new THREE.Vector3(x, y, z));
+  }
+  return pts;
+}
+
+// Curve B: a counter-rotating inner spiral that crosses through the
+// main one — gives the woven/intertwined look the reference has.
+function innerSpiral() {
+  const pts = [];
+  const N = 140;
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const angle = Math.PI * 1.3 - t * Math.PI * 2.2;
+    const radius = 0.95 + 0.3 * Math.sin(t * Math.PI * 1.6 + 0.5);
+    const x = Math.cos(angle) * radius - 0.4;
+    const y = (t - 0.5) * 3.2 + Math.cos(t * Math.PI * 1.4) * 0.3;
+    const z = Math.sin(angle) * radius * 0.7 + 0.2;
+    pts.push(new THREE.Vector3(x, y, z));
+  }
+  return pts;
+}
+
+// Curve C: a long top-to-bottom diagonal sweep — the ribbon that
+// crosses the whole swirl vertically like a slash.
+function diagonalSlash() {
   const pts = [];
   const N = 80;
   for (let i = 0; i <= N; i++) {
-    const t = (i / N) * Math.PI * 2.5;
-    const r = 1.6 + 0.7 * Math.sin(t * 1.2);
-    const y = Math.sin(t) * 1.2;
-    const x = Math.cos(t) * r;
-    const z = Math.sin(t * 0.7) * 0.6;
+    const t = i / N;
+    const x = (t - 0.5) * 0.9 - 0.4 + Math.sin(t * Math.PI * 0.6) * 0.4;
+    const y = (t - 0.5) * 4.2;
+    const z = (1 - t) * 1.0 - 0.2;
     pts.push(new THREE.Vector3(x, y, z));
   }
-  return new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+  return pts;
 }
 
-// ─── Curve 2: tight helical ribbon (DNA echo) ─────────────────────────────
-function buildHelixCurve() {
-  const pts = [];
-  const N = 120;
-  for (let i = 0; i <= N; i++) {
-    const t = (i / N) * Math.PI * 6;
-    const r = 0.9;
-    const y = (i / N - 0.5) * 3.6;
-    const x = Math.cos(t) * r;
-    const z = Math.sin(t) * r;
-    pts.push(new THREE.Vector3(x, y, z));
-  }
-  return new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.6);
-}
-
-// ─── Curve 3: long horizontal arc (foreground) ────────────────────────────
-function buildArcCurve() {
+// Curve D: a wide arc that ties the bottom of the swirl together,
+// giving the swirl a closed feel at the base.
+function bottomArc() {
   const pts = [];
   const N = 60;
   for (let i = 0; i <= N; i++) {
     const t = i / N;
-    const x = (t - 0.5) * 6.5;
-    const y = -1.4 + Math.sin(t * Math.PI) * 0.5;
-    const z = Math.cos(t * Math.PI) * 0.3;
+    const angle = -Math.PI * 0.2 + t * Math.PI * 0.9;
+    const x = Math.cos(angle) * 1.7 - 0.4;
+    const y = -1.7 + Math.sin(t * Math.PI) * 0.15;
+    const z = Math.sin(angle) * 0.6 - 0.3;
     pts.push(new THREE.Vector3(x, y, z));
   }
-  return new THREE.CatmullRomCurve3(pts, false, 'catmullrom', 0.5);
+  return pts;
 }
 
 const ribbons = [
-  makeRibbon(buildSweepCurve(), { colorA: 0x67e8f9, colorB: 0x14b8a6, radius: 0.08 }),
-  makeRibbon(buildHelixCurve(), { colorA: 0x22d3ee, colorB: 0x3b82f6, radius: 0.05, emissive: 0x3b82f6 }),
-  makeRibbon(buildArcCurve(),  { colorA: 0x14b8a6, colorB: 0x22d3ee, radius: 0.045 }),
+  // Primary big spiral — the dominant swirl.
+  makeRibbon(bigSpiral(), {
+    colorA: 0x67e8f9,
+    colorB: 0x14b8a6,
+    radius: 0.085,
+    emissive: 0x22d3ee,
+    emissiveIntensity: 0.65,
+    bandOffset: 0,
+  }),
+  // Inner counter-rotating spiral — the woven effect.
+  makeRibbon(innerSpiral(), {
+    colorA: 0x22d3ee,
+    colorB: 0x3b82f6,
+    radius: 0.055,
+    emissive: 0x3b82f6,
+    emissiveIntensity: 0.55,
+    bandOffset: 1.7,
+  }),
+  // Diagonal slash — the long vertical stroke through the swirl.
+  makeRibbon(diagonalSlash(), {
+    colorA: 0x67e8f9,
+    colorB: 0x22d3ee,
+    radius: 0.05,
+    emissive: 0x14b8a6,
+    emissiveIntensity: 0.55,
+    bandOffset: 2.3,
+  }),
+  // Bottom tie-in arc.
+  makeRibbon(bottomArc(), {
+    colorA: 0x14b8a6,
+    colorB: 0x67e8f9,
+    radius: 0.045,
+    emissive: 0x22d3ee,
+    emissiveIntensity: 0.5,
+    bandOffset: 0.9,
+  }),
 ];
-ribbons.forEach((r, i) => {
-  r.mesh.position.z = -1.5 + i * 0.4;
-  r.mesh.rotation.z = i * 0.4;
-  scene.add(r.mesh);
-});
 
-// ─── Neural network node cluster (skill nodes) ────────────────────────────
-function makeSkillNode(x, y, z, color) {
-  const g = new THREE.IcosahedronGeometry(0.13, 0);
+ribbons.forEach((r) => scene.add(r.mesh));
+
+// ─── Floating cube accents ───────────────────────────────────────────────
+// A few small cubes around the swirl like the reference. Cyan/teal
+// metallic, slightly emissive.
+function makeCube(size, color, emissive) {
+  const g = new THREE.BoxGeometry(size, size, size);
   const m = new THREE.MeshStandardMaterial({
     color,
-    metalness: 0.7,
-    roughness: 0.25,
-    emissive: color,
-    emissiveIntensity: 0.6,
+    metalness: 0.95,
+    roughness: 0.18,
+    emissive: emissive ?? color,
+    emissiveIntensity: 0.45,
   });
-  const mesh = new THREE.Mesh(g, m);
-  mesh.position.set(x, y, z);
-  return mesh;
+  return new THREE.Mesh(g, m);
 }
 
-const NODE_COUNT = 36;
-const nodesGroup = new THREE.Group();
-const nodePositions = [];
-for (let i = 0; i < NODE_COUNT; i++) {
-  const phi = Math.acos(2 * Math.random() - 1);
-  const theta = 2 * Math.PI * Math.random();
-  const r = 2.4 + Math.random() * 1.6;
-  const x = r * Math.sin(phi) * Math.cos(theta);
-  const y = r * Math.sin(phi) * Math.sin(theta) * 0.6;
-  const z = r * Math.cos(phi) - 1.5;
-  const colorChoice = [0x67e8f9, 0x22d3ee, 0x14b8a6, 0x3b82f6][i % 4];
-  const node = makeSkillNode(x, y, z, colorChoice);
-  node.userData.angle = theta + phi;
-  node.userData.radius = r;
-  node.userData.phi = phi;
-  node.userData.baseY = y;
-  nodesGroup.add(node);
-  nodePositions.push({ x, y, z, mesh: node });
-}
-scene.add(nodesGroup);
-
-// Connections between close nodes (sparse, "synapse" feel).
-const lineMaterial = new THREE.LineBasicMaterial({
-  color: 0x22d3ee,
-  transparent: true,
-  opacity: 0.18,
-});
-for (let i = 0; i < NODE_COUNT; i++) {
-  for (let j = i + 1; j < NODE_COUNT; j++) {
-    const a = nodePositions[i];
-    const b = nodePositions[j];
-    const d = Math.hypot(a.x - b.x, a.y - b.y, a.z - b.z);
-    if (d < 1.2) {
-      const geom = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(a.x, a.y, a.z),
-        new THREE.Vector3(b.x, b.y, b.z),
-      ]);
-      const line = new THREE.Line(geom, lineMaterial);
-      scene.add(line);
-    }
-  }
-}
-
-// ─── Floating cube accent (single, like the brand mark) ────────────────────
-function makeCube() {
-  const geom = new THREE.BoxGeometry(0.45, 0.45, 0.45);
-  const mat = new THREE.MeshStandardMaterial({
-    color: 0x22d3ee,
-    metalness: 0.9,
-    roughness: 0.15,
-    emissive: 0x22d3ee,
-    emissiveIntensity: 0.4,
-  });
-  return new THREE.Mesh(geom, mat);
-}
 const cubes = [
-  { mesh: makeCube(), pos: [-3.4, 1.4, -0.5] },
-  { mesh: makeCube(), pos: [3.2, -1.6, -0.3] },
-  { mesh: makeCube(), pos: [-2.0, -1.9, 1.2] },
+  { mesh: makeCube(0.36, 0x67e8f9, 0x22d3ee), pos: [-1.6, 2.0, -0.4] },
+  { mesh: makeCube(0.42, 0x14b8a6, 0x14b8a6), pos: [0.6, 1.6, 0.6] },
+  { mesh: makeCube(0.32, 0x22d3ee, 0x22d3ee), pos: [-2.2, 0.0, 0.3] },
+  { mesh: makeCube(0.38, 0x67e8f9, 0x22d3ee), pos: [-0.8, -2.2, -0.5] },
+  { mesh: makeCube(0.30, 0x14b8a6, 0x14b8a6), pos: [0.4, -1.6, 0.4] },
+  { mesh: makeCube(0.34, 0x22d3ee, 0x22d3ee), pos: [-1.8, -0.8, 0.9] },
 ];
 cubes.forEach(({ mesh, pos }) => {
+  mesh.position.set(...pos);
+  mesh.userData.basePos = [...pos];
+  scene.add(mesh);
+});
+
+// Small wireframe cubes for the geometric feel in the reference.
+function makeWireCube(size, color) {
+  const g = new THREE.EdgesGeometry(new THREE.BoxGeometry(size, size, size));
+  const m = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.55 });
+  return new THREE.LineSegments(g, m);
+}
+const wireCubes = [
+  { mesh: makeWireCube(0.55, 0x67e8f9), pos: [-2.6, 1.2, 0.1] },
+  { mesh: makeWireCube(0.45, 0x14b8a6), pos: [0.4, 0.7, 0.9] },
+  { mesh: makeWireCube(0.5, 0x22d3ee), pos: [-1.2, -1.0, 0.8] },
+];
+wireCubes.forEach(({ mesh, pos }) => {
   mesh.position.set(...pos);
   scene.add(mesh);
 });
 
-// ─── Particle field (atmosphere) ───────────────────────────────────────────
-const PARTICLE_COUNT = 600;
-const positions = new Float32Array(PARTICLE_COUNT * 3);
-const sizes = new Float32Array(PARTICLE_COUNT);
-for (let i = 0; i < PARTICLE_COUNT; i++) {
+// ─── Particle dust ────────────────────────────────────────────────────────
+const PCOUNT = 400;
+const positions = new Float32Array(PCOUNT * 3);
+const sizes = new Float32Array(PCOUNT);
+for (let i = 0; i < PCOUNT; i++) {
   positions[i * 3]     = (Math.random() - 0.5) * 22;
   positions[i * 3 + 1] = (Math.random() - 0.5) * 14;
   positions[i * 3 + 2] = (Math.random() - 0.5) * 18 - 4;
-  sizes[i] = Math.random() * 1.4 + 0.4;
+  sizes[i] = Math.random() * 1.4 + 0.3;
 }
-const particleGeom = new THREE.BufferGeometry();
-particleGeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-particleGeom.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
-
-const particleMaterial = new THREE.PointsMaterial({
+const pgeom = new THREE.BufferGeometry();
+pgeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+const pmat = new THREE.PointsMaterial({
   color: 0x67e8f9,
   size: 0.04,
   transparent: true,
@@ -556,72 +431,55 @@ const particleMaterial = new THREE.PointsMaterial({
   depthWrite: false,
   blending: THREE.AdditiveBlending,
 });
-const particles = new THREE.Points(particleGeom, particleMaterial);
+const particles = new THREE.Points(pgeom, pmat);
 scene.add(particles);
 
-// ─── Animation loop ────────────────────────────────────────────────────────
+// ─── Animation ────────────────────────────────────────────────────────────
 const clock = new THREE.Clock();
 function animate() {
   const t = clock.getElapsedTime();
-  const dt = clock.getDelta();
 
-  // Slow ribbon rotation — feels alive but never frenetic.
+  // Ribbons drift — subtle, never frenetic.
   ribbons.forEach((r, i) => {
-    r.mesh.rotation.y = t * 0.08 * (i % 2 === 0 ? 1 : -1);
-    r.mesh.rotation.x = Math.sin(t * 0.15 + i) * 0.08;
+    r.mesh.rotation.y = Math.sin(t * 0.1 + i * 0.7) * 0.05;
+    r.mesh.rotation.x = Math.cos(t * 0.08 + i * 0.5) * 0.04;
+    r.mesh.rotation.z = Math.sin(t * 0.12 + i * 1.3) * 0.03;
   });
 
-  // Cubes drift on a slow loop.
+  // Cubes rotate gently.
   cubes.forEach(({ mesh }, i) => {
-    mesh.rotation.x = t * 0.4 + i;
-    mesh.rotation.y = t * 0.5 + i * 0.7;
-    mesh.position.y = mesh.position.y + Math.sin(t * 0.8 + i * 1.3) * 0.001;
+    mesh.rotation.x = t * 0.3 + i * 0.6;
+    mesh.rotation.y = t * 0.45 + i * 0.9;
+    mesh.position.y = mesh.userData.basePos[1] + Math.sin(t * 0.7 + i * 1.4) * 0.05;
   });
-
-  // Nodes breathe in/out.
-  nodesGroup.children.forEach((node, i) => {
-    const sway = Math.sin(t * 0.5 + i * 0.7) * 0.04;
-    node.position.x = node.userData.radius * Math.sin(node.userData.angle + t * 0.04) * Math.sin(node.userData.phi);
-    node.position.y = node.userData.baseY + sway;
-    node.position.z = node.userData.radius * Math.cos(node.userData.phi) - 1.5;
-    node.rotation.x = t * 0.3 + i;
-    node.rotation.y = t * 0.4 + i * 0.5;
+  wireCubes.forEach(({ mesh }, i) => {
+    mesh.rotation.x = -t * 0.2 - i * 0.4;
+    mesh.rotation.y = t * 0.18 + i * 0.7;
   });
 
   // Particles drift.
-  const arr = particleGeom.attributes.position.array;
-  for (let i = 0; i < PARTICLE_COUNT; i++) {
-    arr[i * 3 + 1] += Math.sin(t * 0.2 + i) * 0.002;
+  const arr = pgeom.attributes.position.array;
+  for (let i = 0; i < PCOUNT; i++) {
+    arr[i * 3 + 1] += Math.sin(t * 0.15 + i) * 0.0015;
     if (arr[i * 3 + 1] > 8) arr[i * 3 + 1] = -8;
   }
-  particleGeom.attributes.position.needsUpdate = true;
+  pgeom.attributes.position.needsUpdate = true;
 
-  // Camera idle drift — very subtle parallax.
-  camera.position.x = Math.sin(t * 0.12) * 0.18;
-  camera.position.y = 0.5 + Math.cos(t * 0.09) * 0.12;
-  camera.lookAt(0, 0, 0);
+  // Camera idle parallax.
+  camera.position.x = 2.2 + Math.sin(t * 0.08) * 0.12;
+  camera.position.y = 0 + Math.cos(t * 0.07) * 0.08;
+  camera.lookAt(-0.6, 0, 0);
 
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 animate();
 
-// ─── Resize ────────────────────────────────────────────────────────────────
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
-// ─── Clock ─────────────────────────────────────────────────────────────────
-function tick() {
-  const d = new Date();
-  const t = d.toISOString().slice(11, 19) + ' UTC';
-  const el = document.getElementById('ts');
-  if (el) el.textContent = t;
-}
-setInterval(tick, 1000);
-tick();
 </script>
 </body>
 </html>
