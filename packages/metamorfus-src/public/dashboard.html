@@ -132,10 +132,9 @@
   /* Center hero */
   .hero {
     position: fixed;
-    left: 0;
-    right: 0;
+    left: 50%;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translate(-50%, -50%);
     z-index: 5;
     text-align: center;
     pointer-events: none;
@@ -152,7 +151,7 @@
   }
 
   .hero-title {
-    font-size: clamp(56px, 11vw, 168px);
+    font-size: clamp(40px, 7vw, 110px);
     font-weight: 200;
     line-height: 0.95;
     letter-spacing: -0.04em;
@@ -162,13 +161,14 @@
     background-clip: text;
     color: transparent;
     text-shadow: 0 0 80px rgba(34, 211, 238, 0.15);
+    white-space: nowrap;
   }
 
   .hero-sub {
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 300;
     color: var(--text-muted);
-    margin-top: 28px;
+    margin-top: 22px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
   }
