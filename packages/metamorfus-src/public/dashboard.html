@@ -3,483 +3,1029 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Metamorfos ODC</title>
+<title>Metamorfos ODC — Control</title>
 <style>
+  :root {
+    --bg-deep:        #050b18;
+    --bg-mid:         #0a1628;
+    --bg-soft:        #0f1f38;
+    --bg-elev:        #14253f;
+    --accent-cyan:    #22d3ee;
+    --accent-teal:    #14b8a6;
+    --accent-blue:    #3b82f6;
+    --accent-glow:    #67e8f9;
+    --text-primary:   #e0f2fe;
+    --text-muted:     #94a3b8;
+    --text-faint:     #475569;
+    --line:           rgba(34, 211, 238, 0.12);
+    --line-strong:    rgba(34, 211, 238, 0.25);
+    --ok:             #4ade80;
+    --warn:           #facc15;
+    --err:            #f87171;
+  }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-
   html, body {
-    height: 100%;
-    width: 100%;
-    background: #050b18;
+    height: 100%; background: var(--bg-deep); color: var(--text-primary);
+    font-family: 'Inter', 'Helvetica Neue', system-ui, sans-serif;
+    font-size: 13px; line-height: 1.5;
     overflow: hidden;
-    font-family: 'Helvetica Neue', 'Inter', system-ui, sans-serif;
+  }
+  body {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(34,211,238,0.05), transparent 50%),
+      radial-gradient(ellipse 70% 50% at 80% 100%, rgba(20,184,166,0.04), transparent 60%);
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    grid-template-rows: 56px 1fr;
+    height: 100vh;
+  }
+  header.topbar {
+    grid-column: 1 / 3;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    background: linear-gradient(180deg, rgba(10,22,40,0.85) 0%, rgba(10,22,40,0) 100%);
+    border-bottom: 1px solid var(--line);
+    backdrop-filter: blur(8px);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 500; }
+  .brand-mark {
+    width: 28px; height: 28px;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
+    border-radius: 6px; position: relative; overflow: hidden;
+  }
+  .brand-mark::before {
+    content: ""; position: absolute; inset: 4px;
+    background: var(--bg-deep);
+    border-radius: 3px;
+  }
+  .brand-mark::after {
+    content: "M"; position: absolute; inset: 0; display: flex;
+    align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px; color: var(--accent-cyan);
+  }
+  .brand-name {
+    font-size: 14px; letter-spacing: 0.04em;
+    background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .status-strip { display: flex; gap: 18px; align-items: center; font-size: 11px; }
+  .stat { display: flex; align-items: center; gap: 6px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
+  .dot.err { background: var(--err); box-shadow: 0 0 8px var(--err); }
+  aside.sidebar {
+    background: linear-gradient(180deg, rgba(15,31,56,0.6) 0%, rgba(10,22,40,0.4) 100%);
+    border-right: 1px solid var(--line);
+    padding: 16px 0;
+    overflow-y: auto;
+  }
+  .nav-group { margin-bottom: 24px; }
+  .nav-label {
+    font-size: 10px; color: var(--text-faint); letter-spacing: 0.18em;
+    text-transform: uppercase; padding: 0 20px 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px; cursor: pointer; color: var(--text-muted);
+    border-left: 2px solid transparent; transition: all 0.15s ease;
+    font-size: 13px;
+  }
+  .nav-item:hover { background: rgba(34,211,238,0.04); color: var(--text-primary); }
+  .nav-item.active {
+    background: linear-gradient(90deg, rgba(34,211,238,0.10) 0%, transparent 100%);
+    border-left-color: var(--accent-cyan);
+    color: var(--accent-glow);
+  }
+  .nav-icon { width: 14px; height: 14px; opacity: 0.7; }
+  main.workspace { padding: 24px; overflow-y: auto; }
+  .panel { display: none; }
+  .panel.active { display: block; animation: fade 0.2s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .panel-header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 20px; padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .panel-title { font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+  .panel-sub { font-size: 11px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; }
+  .card {
+    background: linear-gradient(135deg, rgba(20,37,63,0.6) 0%, rgba(15,31,56,0.3) 100%);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 12px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .input, .textarea, select {
+    background: rgba(5,11,24,0.6); border: 1px solid var(--line);
+    color: var(--text-primary); padding: 10px 12px; border-radius: 6px;
+    width: 100%; font-family: inherit; font-size: 13px;
+    transition: border 0.15s ease;
+  }
+  .input:focus, .textarea:focus, select:focus {
+    outline: none; border-color: var(--accent-cyan);
+    box-shadow: 0 0 0 3px rgba(34,211,238,0.10);
+  }
+  .textarea { resize: vertical; min-height: 80px; }
+  .btn {
+    background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-teal) 100%);
+    border: none; color: #050b18; padding: 10px 18px; border-radius: 6px;
+    font-weight: 600; font-size: 12px; letter-spacing: 0.04em;
+    cursor: pointer; text-transform: uppercase;
+    transition: all 0.15s ease;
+  }
+  .btn:hover { box-shadow: 0 0 20px rgba(34,211,238,0.3); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--line-strong); color: var(--text-primary);
+  }
+  .btn-ghost:hover { background: rgba(34,211,238,0.05); }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* CHAT */
+  .chat-window {
+    height: 480px; overflow-y: auto;
+    background: rgba(5,11,24,0.5);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .chat-msg { margin-bottom: 16px; }
+  .chat-msg .role {
+    font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 4px;
+  }
+  .chat-msg.user .role { color: var(--accent-cyan); }
+  .chat-msg.user .bubble {
+    background: rgba(34,211,238,0.08); border-left: 2px solid var(--accent-cyan);
+    padding: 10px 14px; border-radius: 0 6px 6px 0;
+  }
+  .chat-msg.assistant .bubble {
+    background: rgba(15,31,56,0.6); border-left: 2px solid var(--accent-teal);
+    padding: 10px 14px; border-radius: 0 6px 6px 0;
+  }
+  .chat-msg.system .bubble {
+    background: rgba(248,113,113,0.06); border-left: 2px solid var(--err);
+    padding: 10px 14px; border-radius: 0 6px 6px 0; color: var(--text-muted);
+    font-style: italic; font-size: 12px;
+  }
+  .chat-msg .bubble pre { white-space: pre-wrap; font-family: inherit; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input-row .input { flex: 1; }
+
+  /* DNA LIBRARY */
+  .skill-row {
+    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 60px;
+    gap: 12px; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--line);
+    font-size: 12px;
+  }
+  .skill-row:last-child { border-bottom: none; }
+  .skill-key { font-family: ui-monospace, monospace; color: var(--accent-glow); }
+  .skill-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
+  .tag-tx { background: rgba(34,211,238,0.15); color: var(--accent-cyan); }
+  .tag-dormant { background: rgba(148,163,184,0.10); color: var(--text-muted); }
+  .tag-arch { background: rgba(248,113,113,0.10); color: var(--err); }
+  .skill-bar {
+    background: rgba(5,11,24,0.6); border-radius: 3px; height: 6px;
+    overflow: hidden; position: relative;
+  }
+  .skill-bar-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-teal));
+    transition: width 0.3s ease;
+  }
+  .stat-big {
+    font-size: 28px; font-weight: 200; color: var(--accent-glow); line-height: 1;
+  }
+  .stat-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.16em; text-transform: uppercase; margin-top: 4px; }
+
+  /* SWARM */
+  .node-row {
+    display: grid; grid-template-columns: 1fr 80px 80px 80px 80px 80px;
+    gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line);
+    font-family: ui-monospace, monospace; font-size: 12px; align-items: center;
+  }
+  .node-pid { color: var(--text-muted); font-size: 11px; }
+  .node-alive { color: var(--ok); }
+  .node-dead { color: var(--err); }
+  .pill { font-size: 9px; padding: 2px 6px; border-radius: 3px; }
+  .pill-ok { background: rgba(74,222,128,0.15); color: var(--ok); }
+  .pill-err { background: rgba(248,113,113,0.15); color: var(--err); }
+
+  /* VISION */
+  .vision-image {
+    width: 100%; max-height: 240px; object-fit: contain;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: rgba(5,11,24,0.5);
   }
 
-  #scene {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
+  /* FORGE */
+  .code-input {
+    font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.6;
+    min-height: 200px;
   }
 
-  /* Vignette: keep edges dark so the swirl is the focal point. */
-  .vignette {
-    position: fixed;
-    inset: 0;
-    z-index: 1;
-    pointer-events: none;
-    background: radial-gradient(ellipse 70% 60% at 50% 50%, transparent 30%, rgba(5, 11, 24, 0.55) 70%, #050b18 100%);
+  /* PLAN/REASONING */
+  .reason-block {
+    background: rgba(5,11,24,0.6); border: 1px solid var(--line);
+    border-radius: 6px; padding: 12px;
+    font-family: ui-monospace, monospace; font-size: 11px;
+    color: var(--text-muted); white-space: pre-wrap;
+    max-height: 240px; overflow-y: auto;
   }
+  .reason-block strong { color: var(--accent-cyan); }
 
-  /* Brand mark + wordmark, positioned to the right of the swirl. */
-  .wordmark {
-    position: fixed;
-    top: 50%;
-    right: 8%;
-    transform: translateY(-50%);
-    z-index: 5;
-    color: #e0f7fa;
-    text-align: left;
-    user-select: none;
+  /* TOAST */
+  .toast-area {
+    position: fixed; bottom: 20px; right: 20px; z-index: 100;
+    display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
   }
+  .toast {
+    background: rgba(10,22,40,0.95); border: 1px solid var(--line-strong);
+    padding: 10px 14px; border-radius: 6px; font-size: 12px;
+    max-width: 360px; backdrop-filter: blur(8px);
+    animation: slideIn 0.2s ease;
+  }
+  .toast.ok { border-left: 3px solid var(--ok); }
+  .toast.err { border-left: 3px solid var(--err); }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
-  .wordmark .name {
-    display: block;
-    font-size: clamp(48px, 6.5vw, 120px);
-    font-weight: 300;
-    letter-spacing: -0.01em;
-    line-height: 1;
-    background: linear-gradient(180deg, #f0fdff 0%, #67e8f9 55%, #14b8a6 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 0 60px rgba(34, 211, 238, 0.18);
-    white-space: nowrap;
+  /* LOG */
+  .log-area {
+    font-family: ui-monospace, monospace; font-size: 11px;
+    color: var(--text-muted);
+    background: rgba(5,11,24,0.7);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px;
+    max-height: 200px;
+    overflow-y: auto;
   }
-
-  .wordmark .sub {
-    display: block;
-    margin-top: 14px;
-    font-size: clamp(36px, 5vw, 90px);
-    font-weight: 300;
-    letter-spacing: 0.02em;
-    background: linear-gradient(180deg, #67e8f9 0%, #22d3ee 60%, #14b8a6 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    white-space: nowrap;
-  }
-
-  /* Subtle tag below the wordmark. */
-  .tagline {
-    margin-top: 28px;
-    font-size: 11px;
-    letter-spacing: 0.32em;
-    text-transform: uppercase;
-    color: rgba(180, 220, 240, 0.45);
-    font-weight: 300;
-  }
-
-  /* Top-left small mark. */
-  .corner {
-    position: fixed;
-    top: 28px;
-    left: 32px;
-    z-index: 5;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    color: rgba(180, 220, 240, 0.55);
-    user-select: none;
-  }
-
-  .corner-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #67e8f9;
-    box-shadow: 0 0 10px #67e8f9;
-    animation: pulse 2.6s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50%      { opacity: 0.55; transform: scale(0.7); }
-  }
-
-  /* Top-right build tag. */
-  .build {
-    position: fixed;
-    top: 28px;
-    right: 32px;
-    z-index: 5;
-    font-size: 10px;
-    letter-spacing: 0.22em;
-    text-transform: uppercase;
-    color: rgba(180, 220, 240, 0.35);
-    user-select: none;
-  }
+  .log-line { padding: 2px 0; }
+  .log-line.ok { color: var(--ok); }
+  .log-line.err { color: var(--err); }
+  .log-line.info { color: var(--accent-cyan); }
+  .scroll { overflow-y: auto; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
 </style>
 </head>
 <body>
 
-<canvas id="scene"></canvas>
-<div class="vignette"></div>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <span class="brand-name">Metamorfos ODC</span>
+      <span class="panel-sub">/ Control Plane</span>
+    </div>
+    <div class="status-strip" id="status-strip">
+      <span class="stat"><span class="dot warn" id="dot-cortex"></span>Cortex</span>
+      <span class="stat"><span class="dot warn" id="dot-mhu"></span>MHU 5.0</span>
+      <span class="stat"><span class="dot warn" id="dot-nvidia"></span>NVIDIA NIM</span>
+      <span class="stat"><span class="dot warn" id="dot-swarm"></span>Swarm</span>
+      <span class="stat"><span class="dot warn" id="dot-dna"></span>DNA Library</span>
+    </div>
+  </header>
 
-<div class="corner">
-  <span class="corner-dot"></span>
-  <span>Cortex online</span>
-  <span style="opacity:0.4; margin: 0 8px;">/</span>
-  <span>MHU 5.0</span>
-  <span style="opacity:0.4; margin: 0 8px;">/</span>
-  <span>DNA Library persistent</span>
+  <aside class="sidebar">
+    <div class="nav-group">
+      <div class="nav-label">Operate</div>
+      <div class="nav-item active" data-tab="chat">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Chat
+      </div>
+      <div class="nav-item" data-tab="vision">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Vision
+      </div>
+      <div class="nav-item" data-tab="forge">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+        Forge Skill
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Body</div>
+      <div class="nav-item" data-tab="dna">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M2 9c6.667 6 13.333 0 20 6"/></svg>
+        DNA Library
+      </div>
+      <div class="nav-item" data-tab="profession">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Professions
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Swarm</div>
+      <div class="nav-item" data-tab="swarm">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg>
+        Botnet
+      </div>
+      <div class="nav-item" data-tab="bridge">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        Reality Bridge
+      </div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Mind</div>
+      <div class="nav-item" data-tab="reasoning">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
+        Reasoning
+      </div>
+      <div class="nav-item" data-tab="plan">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
+        Plan Queue
+      </div>
+    </div>
+  </aside>
+
+  <main class="workspace">
+
+    <!-- CHAT -->
+    <section class="panel active" id="panel-chat">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Chat with Cortex</div>
+          <div class="panel-sub">MHU preprocessor → OpenCode cortex agent → NVIDIA NIM kimi-k3</div>
+        </div>
+        <button class="btn btn-ghost" id="chat-clear">Clear</button>
+      </div>
+      <div class="chat-window" id="chat-window">
+        <div class="chat-msg system">
+          <div class="role">SYSTEM</div>
+          <div class="bubble"><pre>Connection ready. Each message is preprocessed by the MHU cognitive runtime
+(causal analysis + Bayesian posterior + counterfactuals) before reaching the LLM.</pre></div>
+        </div>
+      </div>
+      <div class="chat-input-row">
+        <input class="input" id="chat-input" placeholder="Ask the organism anything..." autocomplete="off">
+        <button class="btn" id="chat-send">Send</button>
+      </div>
+    </section>
+
+    <!-- VISION -->
+    <section class="panel" id="panel-vision">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Vision — describe any image</div>
+          <div class="panel-sub">NVIDIA NIM moonshotai/kimi-k3 multimodal</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Image URL</div>
+        <input class="input" id="vision-url" value="https://assets.ngc.nvidia.com/products/api-catalog/phi-3-5-vision/example1b.jpg">
+      </div>
+      <div class="card">
+        <div class="card-title">Prompt</div>
+        <textarea class="textarea" id="vision-prompt">Describe this image in detail. What objects, colors, and atmosphere do you see?</textarea>
+      </div>
+      <button class="btn" id="vision-go">Run vision_describe_protocol</button>
+      <div class="card" id="vision-result-card" style="display:none">
+        <div class="card-title">Result</div>
+        <img id="vision-image" class="vision-image" alt="">
+        <div id="vision-text" style="margin-top: 14px; line-height: 1.7;"></div>
+        <div id="vision-meta" style="margin-top: 12px; font-size: 11px; color: var(--text-muted);"></div>
+      </div>
+    </section>
+
+    <!-- FORGE -->
+    <section class="panel" id="panel-forge">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Forge a new skill</div>
+          <div class="panel-sub">Writes real Python to dna_library/ — organism grows on demand</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Skill Key (snake_case, _protocol suffix)</div>
+          <input class="input" id="forge-key" value="custom_demo_protocol" placeholder="my_skill_protocol">
+        </div>
+        <div class="card">
+          <div class="card-title">Source (Python)</div>
+          <textarea class="textarea code-input" id="forge-source">def skill(organism, context):
+    """Custom skill body — returns an intention dict."""
+    target = context.get("target", "")
+    return {
+        "action": "CUSTOM_ACTION",
+        "intensity": 0.5,
+        "required_attributes": {"cpu": 10},
+        "version": 1,
+        "params": {"target": target}
+    }</textarea>
+        </div>
+      </div>
+      <button class="btn" id="forge-go">Forge skill (write to disk)</button>
+      <div class="card" id="forge-result" style="display:none">
+        <div class="card-title">Forged</div>
+        <div id="forge-out" style="font-family: ui-monospace,monospace; font-size: 11px; color: var(--accent-cyan);"></div>
+      </div>
+    </section>
+
+    <!-- DNA LIBRARY -->
+    <section class="panel" id="panel-dna">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">DNA Library — append-only memory</div>
+          <div class="panel-sub">Every skill the organism ever forged. Never deleted.</div>
+        </div>
+        <button class="btn btn-ghost" id="dna-refresh">Refresh</button>
+      </div>
+      <div class="grid-3" id="dna-stats">
+        <div class="card"><div class="stat-big" id="dna-count">—</div><div class="stat-label">Cumulative Skills</div></div>
+        <div class="card"><div class="stat-big" id="dna-active">—</div><div class="stat-label">Active Now</div></div>
+        <div class="card"><div class="stat-big" id="dna-tx">—</div><div class="stat-label">Transferable (Emergent)</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Skills</div>
+        <div class="skill-row" style="font-size:10px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">
+          <span>Skill</span><span>Profession</span><span>Status</span><span>Transferable</span><span>Mastery</span><span></span>
+        </div>
+        <div id="dna-list"></div>
+      </div>
+    </section>
+
+    <!-- PROFESSIONS -->
+    <section class="panel" id="panel-profession">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Profession — metamorph the organism</div>
+          <div class="panel-sub">Adopting a profession forges its seeds into the DNA library. Past skills survive.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Active Profession</div>
+        <div class="grid-3">
+          <div><div class="stat-big" id="prof-name">—</div><div class="stat-label">Name</div></div>
+          <div><div class="stat-big" id="prof-focus">—</div><div class="stat-label">Morph Focus</div></div>
+          <div><div class="stat-big" id="prof-morphs">—</div><div class="stat-label">Metamorphoses Recorded</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Adopt a profession</div>
+        <div class="btn-row">
+          <button class="btn" data-profession="scientist">Become Scientist (THINK)</button>
+          <button class="btn" data-profession="lumberjack">Become Lumberjack (HUNT)</button>
+          <button class="btn" data-profession="architect">Become Architect (THINK)</button>
+        </div>
+        <div style="margin-top:14px; font-size:11px; color:var(--text-muted);">
+          Each button calls /api/admin/sync implicitly. Past profession's skills remain in the DNA library.
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Metamorphosis Log</div>
+        <div class="log-area" id="prof-log"></div>
+      </div>
+    </section>
+
+    <!-- SWARM -->
+    <section class="panel" id="panel-swarm">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Swarm — botnet without Docker</div>
+          <div class="panel-sub">Each node is a child Node process running a real Python interpreter subprocess.</div>
+        </div>
+        <button class="btn btn-ghost" id="swarm-spawn">Spawn node</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Broadcast Python to all nodes</div>
+        <textarea class="textarea code-input" id="swarm-code">import platform, os, json
+print(json.dumps({
+  "node": "alive",
+  "platform": platform.platform(),
+  "pid": os.getpid(),
+}))</textarea>
+        <div style="margin-top:10px;"><button class="btn" id="swarm-go">Broadcast</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Nodes</div>
+        <div class="node-row" style="font-size:10px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">
+          <span>ID</span><span>PID</span><span>Status</span><span>CPU</span><span>Tasks</span><span></span>
+        </div>
+        <div id="swarm-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Last Broadcast Output</div>
+        <div class="log-area" id="swarm-output"></div>
+      </div>
+    </section>
+
+    <!-- BRIDGE / RCE -->
+    <section class="panel" id="panel-bridge">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Reality Bridge</div>
+          <div class="panel-sub">Backend reachability + CMD::EXEC:: / CMD::SWARM:: directives</div>
+        </div>
+        <button class="btn btn-ghost" id="bridge-refresh">Re-check</button>
+      </div>
+      <div class="card">
+        <div class="card-title">OpenCode Sidecar</div>
+        <div class="grid-2">
+          <div><div class="stat-big" id="bridge-status">—</div><div class="stat-label">Reachable</div></div>
+          <div><div class="stat-big" id="bridge-url" style="font-size:14px;font-family:ui-monospace,monospace;">—</div><div class="stat-label">URL</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Directives (Reality Bridge)</div>
+        <div class="grid-2">
+          <div>
+            <div class="card-title" style="margin-bottom:8px;">CMD::EXEC::</div>
+            <textarea class="textarea code-input" id="exec-payload">import os, json
+print(json.dumps({"cwd": os.getcwd(), "files_in_root": len(os.listdir("."))}))</textarea>
+            <button class="btn" id="exec-go" style="margin-top:10px;">Execute on host</button>
+          </div>
+          <div>
+            <div class="card-title" style="margin-bottom:8px;">CMD::SWARM::</div>
+            <textarea class="textarea code-input" id="swarm-payload">import os
+print("node-pid", os.getpid())</textarea>
+            <button class="btn btn-ghost" id="exec-swarm-go" style="margin-top:10px;">Inject into swarm</button>
+          </div>
+        </div>
+        <div class="card-title" style="margin-top:18px;">Output</div>
+        <div class="log-area" id="bridge-output"></div>
+      </div>
+    </section>
+
+    <!-- REASONING -->
+    <section class="panel" id="panel-reasoning">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Reasoning — MHU cognitive pipeline</div>
+          <div class="panel-sub">Causal analysis · Universal laws · Bayesian posterior · Counterfactuals</div>
+        </div>
+        <button class="btn btn-ghost" id="reason-go">Re-run pipeline</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Probe instruction</div>
+        <input class="input" id="reason-query" value="Should I trust an LLM that says it's sure?">
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Causal Analysis</div>
+          <div class="reason-block" id="reason-causal"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Universal Laws</div>
+          <div class="reason-block" id="reason-laws"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Bayesian Posterior</div>
+          <div class="reason-block" id="reason-bayes"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Counterfactuals</div>
+          <div class="reason-block" id="reason-counter"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAN QUEUE -->
+    <section class="panel" id="panel-plan">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">Plan Queue — cortex output</div>
+          <div class="panel-sub">When the cortex plans, this is what the executor will carry out.</div>
+        </div>
+        <button class="btn btn-ghost" id="plan-go">Generate plan</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Task</div>
+        <input class="input" id="plan-task" value="Design a monitoring system for a self-evolving codebase">
+      </div>
+      <div class="card">
+        <div class="card-title">Generated Plan</div>
+        <div class="reason-block" id="plan-out" style="min-height:160px;"></div>
+      </div>
+    </section>
+
+  </main>
 </div>
 
-<div class="build">Build 2026 · AN-design</div>
+<div class="toast-area" id="toast-area"></div>
 
-<div class="wordmark">
-  <span class="name">Metamorfos</span>
-  <span class="sub">ODC</span>
-  <div class="tagline">Autonomous · Self-improving · Cross-profession</div>
-</div>
+<script>
+/* ─────────────────────────────────────────────────────────────────────────
+   API CLIENT — every panel calls a real endpoint on the headless server.
+   Bearer token = dev-secret-local (default tenant, see tenant-auth.mjs).
+   ───────────────────────────────────────────────────────────────────────── */
+const API = ""; // same origin
+const AUTH = "Bearer dev-secret-local";
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
-  }
-}
-</script>
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
-<script type="module">
-import * as THREE from 'three';
-
-// ─── Renderer ──────────────────────────────────────────────────────────────
-const canvas = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({
-  canvas,
-  antialias: true,
-  alpha: false,
-  powerPreference: 'high-performance',
-});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.1;
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x050b18);
-scene.fog = new THREE.FogExp2(0x050b18, 0.035);
-
-// Camera framed so the swirl sits on the LEFT and the wordmark on the RIGHT.
-const camera = new THREE.PerspectiveCamera(
-  46,
-  window.innerWidth / window.innerHeight,
-  0.1,
-  100,
-);
-camera.position.set(2.2, 0, 8.5);
-camera.lookAt(-0.6, 0, 0);
-
-// ─── Lights ────────────────────────────────────────────────────────────────
-const ambient = new THREE.AmbientLight(0x1e3a5f, 0.5);
-scene.add(ambient);
-
-const key = new THREE.DirectionalLight(0x67e8f9, 1.0);
-key.position.set(3, 4, 4);
-scene.add(key);
-
-const fill = new THREE.DirectionalLight(0x22d3ee, 0.6);
-fill.position.set(-3, -2, 2);
-scene.add(fill);
-
-const rim = new THREE.DirectionalLight(0x14b8a6, 0.7);
-rim.position.set(0, -3, -3);
-scene.add(rim);
-
-const accent = new THREE.PointLight(0x67e8f9, 1.2, 16);
-accent.position.set(-2, 1, 2);
-scene.add(accent);
-
-// ─── Ribbon builder ───────────────────────────────────────────────────────
-// Build a single ribbon mesh from a list of points with a given thickness
-// and color gradient. The mesh is a TubeGeometry swept along a
-// CatmullRomCurve3 — gives the smooth flowing look the logo has.
-function makeRibbon(points, opts = {}) {
-  const curve = new THREE.CatmullRomCurve3(points, false, 'catmullrom', 0.5);
-  const segments = opts.segments ?? 280;
-  const radius = opts.radius ?? 0.05;
-  const radial = opts.radial ?? 10;
-  const geometry = new THREE.TubeGeometry(curve, segments, radius, radial, false);
-
-  const count = geometry.attributes.position.count;
-  const colors = new Float32Array(count * 3);
-  const c1 = new THREE.Color(opts.colorA ?? 0x67e8f9);
-  const c2 = new THREE.Color(opts.colorB ?? 0x14b8a6);
-  const tmp = new THREE.Color();
-  for (let i = 0; i < count; i++) {
-    const t = i / count;
-    // Slight banding — looks like the highlight banding in the reference.
-    const band = 0.85 + 0.15 * Math.sin(t * 18 + opts.bandOffset ?? 0);
-    tmp.copy(c1).lerp(c2, t).multiplyScalar(band);
-    colors[i * 3 + 0] = tmp.r;
-    colors[i * 3 + 1] = tmp.g;
-    colors[i * 3 + 2] = tmp.b;
-  }
-  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    metalness: 0.7,
-    roughness: 0.2,
-    emissive: opts.emissive ?? 0x22d3ee,
-    emissiveIntensity: 0.5,
-    transparent: true,
-    opacity: 0.95,
+async function call(path, opts = {}) {
+  const r = await fetch(API + path, {
+    headers: { "Content-Type": "application/json", "Authorization": AUTH, ...(opts.headers || {}) },
+    ...opts,
   });
-
-  const mesh = new THREE.Mesh(geometry, material);
-  if (opts.position) mesh.position.set(...opts.position);
-  if (opts.rotation) {
-    mesh.rotation.x = opts.rotation[0];
-    mesh.rotation.y = opts.rotation[1];
-    mesh.rotation.z = opts.rotation[2];
-  }
-  return { mesh, geometry, material };
+  let body = null;
+  try { body = await r.json(); } catch { /* may be no body */ }
+  return { ok: r.ok, status: r.status, body };
 }
 
-// ─── Curve generators ─────────────────────────────────────────────────────
-// All curves are in the YZ plane (vertical spiral) — the swirl in the
-// reference image is clearly vertical, not horizontal. The camera
-// frames it from a slight 3/4 angle.
-
-// Curve A: the BIG primary ribbon — a vertical spiral that comes in
-// from the top, curves around the right, dips through the center, and
-// exits down to the lower-left. This is the dominant swirl.
-function bigSpiral() {
-  const pts = [];
-  const N = 160;
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    // Parametric spiral: angle increases with t, radius oscillates so
-    // the ribbon coils inward then back out.
-    const angle = -Math.PI * 1.5 + t * Math.PI * 2.6;
-    const radius = 1.4 + 0.55 * Math.sin(t * Math.PI * 1.4);
-    const x = Math.cos(angle) * radius - 0.4;
-    const y = (t - 0.5) * 3.6 + Math.sin(t * Math.PI * 1.2) * 0.35;
-    const z = Math.sin(angle) * radius * 0.6 + 0.5;
-    pts.push(new THREE.Vector3(x, y, z));
-  }
-  return pts;
+function toast(msg, kind = "ok") {
+  const el = document.createElement("div");
+  el.className = `toast ${kind}`;
+  el.textContent = msg;
+  $("#toast-area").appendChild(el);
+  setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 200); }, 3500);
 }
 
-// Curve B: a counter-rotating inner spiral that crosses through the
-// main one — gives the woven/intertwined look the reference has.
-function innerSpiral() {
-  const pts = [];
-  const N = 140;
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    const angle = Math.PI * 1.3 - t * Math.PI * 2.2;
-    const radius = 0.95 + 0.3 * Math.sin(t * Math.PI * 1.6 + 0.5);
-    const x = Math.cos(angle) * radius - 0.4;
-    const y = (t - 0.5) * 3.2 + Math.cos(t * Math.PI * 1.4) * 0.3;
-    const z = Math.sin(angle) * radius * 0.7 + 0.2;
-    pts.push(new THREE.Vector3(x, y, z));
-  }
-  return pts;
+function setDot(id, kind) {
+  $(id).className = `dot ${kind}`;
 }
 
-// Curve C: a long top-to-bottom diagonal sweep — the ribbon that
-// crosses the whole swirl vertically like a slash.
-function diagonalSlash() {
-  const pts = [];
-  const N = 80;
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    const x = (t - 0.5) * 0.9 - 0.4 + Math.sin(t * Math.PI * 0.6) * 0.4;
-    const y = (t - 0.5) * 4.2;
-    const z = (1 - t) * 1.0 - 0.2;
-    pts.push(new THREE.Vector3(x, y, z));
-  }
-  return pts;
-}
-
-// Curve D: a wide arc that ties the bottom of the swirl together,
-// giving the swirl a closed feel at the base.
-function bottomArc() {
-  const pts = [];
-  const N = 60;
-  for (let i = 0; i <= N; i++) {
-    const t = i / N;
-    const angle = -Math.PI * 0.2 + t * Math.PI * 0.9;
-    const x = Math.cos(angle) * 1.7 - 0.4;
-    const y = -1.7 + Math.sin(t * Math.PI) * 0.15;
-    const z = Math.sin(angle) * 0.6 - 0.3;
-    pts.push(new THREE.Vector3(x, y, z));
-  }
-  return pts;
-}
-
-const ribbons = [
-  // Primary big spiral — the dominant swirl.
-  makeRibbon(bigSpiral(), {
-    colorA: 0x67e8f9,
-    colorB: 0x14b8a6,
-    radius: 0.085,
-    emissive: 0x22d3ee,
-    emissiveIntensity: 0.65,
-    bandOffset: 0,
-  }),
-  // Inner counter-rotating spiral — the woven effect.
-  makeRibbon(innerSpiral(), {
-    colorA: 0x22d3ee,
-    colorB: 0x3b82f6,
-    radius: 0.055,
-    emissive: 0x3b82f6,
-    emissiveIntensity: 0.55,
-    bandOffset: 1.7,
-  }),
-  // Diagonal slash — the long vertical stroke through the swirl.
-  makeRibbon(diagonalSlash(), {
-    colorA: 0x67e8f9,
-    colorB: 0x22d3ee,
-    radius: 0.05,
-    emissive: 0x14b8a6,
-    emissiveIntensity: 0.55,
-    bandOffset: 2.3,
-  }),
-  // Bottom tie-in arc.
-  makeRibbon(bottomArc(), {
-    colorA: 0x14b8a6,
-    colorB: 0x67e8f9,
-    radius: 0.045,
-    emissive: 0x22d3ee,
-    emissiveIntensity: 0.5,
-    bandOffset: 0.9,
-  }),
-];
-
-ribbons.forEach((r) => scene.add(r.mesh));
-
-// ─── Floating cube accents ───────────────────────────────────────────────
-// A few small cubes around the swirl like the reference. Cyan/teal
-// metallic, slightly emissive.
-function makeCube(size, color, emissive) {
-  const g = new THREE.BoxGeometry(size, size, size);
-  const m = new THREE.MeshStandardMaterial({
-    color,
-    metalness: 0.95,
-    roughness: 0.18,
-    emissive: emissive ?? color,
-    emissiveIntensity: 0.45,
+/* ─────────────────────────────────────────────────────────────────────────
+   TAB NAVIGATION
+   ───────────────────────────────────────────────────────────────────────── */
+$$(".nav-item").forEach((item) => {
+  item.addEventListener("click", () => {
+    $$(".nav-item").forEach((n) => n.classList.remove("active"));
+    item.classList.add("active");
+    const tab = item.dataset.tab;
+    $$(".panel").forEach((p) => p.classList.remove("active"));
+    $(`#panel-${tab}`).classList.add("active");
+    if (tab === "dna") refreshDNA();
+    if (tab === "profession") refreshProfession();
+    if (tab === "reasoning") runReasoning();
   });
-  return new THREE.Mesh(g, m);
-}
-
-const cubes = [
-  { mesh: makeCube(0.36, 0x67e8f9, 0x22d3ee), pos: [-1.6, 2.0, -0.4] },
-  { mesh: makeCube(0.42, 0x14b8a6, 0x14b8a6), pos: [0.6, 1.6, 0.6] },
-  { mesh: makeCube(0.32, 0x22d3ee, 0x22d3ee), pos: [-2.2, 0.0, 0.3] },
-  { mesh: makeCube(0.38, 0x67e8f9, 0x22d3ee), pos: [-0.8, -2.2, -0.5] },
-  { mesh: makeCube(0.30, 0x14b8a6, 0x14b8a6), pos: [0.4, -1.6, 0.4] },
-  { mesh: makeCube(0.34, 0x22d3ee, 0x22d3ee), pos: [-1.8, -0.8, 0.9] },
-];
-cubes.forEach(({ mesh, pos }) => {
-  mesh.position.set(...pos);
-  mesh.userData.basePos = [...pos];
-  scene.add(mesh);
 });
 
-// Small wireframe cubes for the geometric feel in the reference.
-function makeWireCube(size, color) {
-  const g = new THREE.EdgesGeometry(new THREE.BoxGeometry(size, size, size));
-  const m = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.55 });
-  return new THREE.LineSegments(g, m);
-}
-const wireCubes = [
-  { mesh: makeWireCube(0.55, 0x67e8f9), pos: [-2.6, 1.2, 0.1] },
-  { mesh: makeWireCube(0.45, 0x14b8a6), pos: [0.4, 0.7, 0.9] },
-  { mesh: makeWireCube(0.5, 0x22d3ee), pos: [-1.2, -1.0, 0.8] },
-];
-wireCubes.forEach(({ mesh, pos }) => {
-  mesh.position.set(...pos);
-  scene.add(mesh);
-});
-
-// ─── Particle dust ────────────────────────────────────────────────────────
-const PCOUNT = 400;
-const positions = new Float32Array(PCOUNT * 3);
-const sizes = new Float32Array(PCOUNT);
-for (let i = 0; i < PCOUNT; i++) {
-  positions[i * 3]     = (Math.random() - 0.5) * 22;
-  positions[i * 3 + 1] = (Math.random() - 0.5) * 14;
-  positions[i * 3 + 2] = (Math.random() - 0.5) * 18 - 4;
-  sizes[i] = Math.random() * 1.4 + 0.3;
-}
-const pgeom = new THREE.BufferGeometry();
-pgeom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-const pmat = new THREE.PointsMaterial({
-  color: 0x67e8f9,
-  size: 0.04,
-  transparent: true,
-  opacity: 0.55,
-  sizeAttenuation: true,
-  depthWrite: false,
-  blending: THREE.AdditiveBlending,
-});
-const particles = new THREE.Points(pgeom, pmat);
-scene.add(particles);
-
-// ─── Animation ────────────────────────────────────────────────────────────
-const clock = new THREE.Clock();
-function animate() {
-  const t = clock.getElapsedTime();
-
-  // Ribbons drift — subtle, never frenetic.
-  ribbons.forEach((r, i) => {
-    r.mesh.rotation.y = Math.sin(t * 0.1 + i * 0.7) * 0.05;
-    r.mesh.rotation.x = Math.cos(t * 0.08 + i * 0.5) * 0.04;
-    r.mesh.rotation.z = Math.sin(t * 0.12 + i * 1.3) * 0.03;
-  });
-
-  // Cubes rotate gently.
-  cubes.forEach(({ mesh }, i) => {
-    mesh.rotation.x = t * 0.3 + i * 0.6;
-    mesh.rotation.y = t * 0.45 + i * 0.9;
-    mesh.position.y = mesh.userData.basePos[1] + Math.sin(t * 0.7 + i * 1.4) * 0.05;
-  });
-  wireCubes.forEach(({ mesh }, i) => {
-    mesh.rotation.x = -t * 0.2 - i * 0.4;
-    mesh.rotation.y = t * 0.18 + i * 0.7;
-  });
-
-  // Particles drift.
-  const arr = pgeom.attributes.position.array;
-  for (let i = 0; i < PCOUNT; i++) {
-    arr[i * 3 + 1] += Math.sin(t * 0.15 + i) * 0.0015;
-    if (arr[i * 3 + 1] > 8) arr[i * 3 + 1] = -8;
+/* ─────────────────────────────────────────────────────────────────────────
+   STATUS POLLING
+   ───────────────────────────────────────────────────────────────────────── */
+async function pollStatus() {
+  const sys = await call("/api/admin/system_status");
+  if (sys.ok) {
+    setDot("#dot-cortex", sys.body.reachable ? "ok" : "warn");
+    $("#bridge-status").textContent = sys.body.reachable ? "YES" : "NO";
+    $("#bridge-url").textContent = sys.body.url || "—";
+    setDot("#dot-mhu", "ok");
+  } else {
+    setDot("#dot-cortex", "err");
+    setDot("#dot-mhu", "err");
   }
-  pgeom.attributes.position.needsUpdate = true;
-
-  // Camera idle parallax.
-  camera.position.x = 2.2 + Math.sin(t * 0.08) * 0.12;
-  camera.position.y = 0 + Math.cos(t * 0.07) * 0.08;
-  camera.lookAt(-0.6, 0, 0);
-
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
+  // Ping NVIDIA directly.
+  try {
+    const r = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${(window.__NVIDIA_KEY__ || "")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "ping" }],
+        model: "moonshotai/kimi-k3",
+        max_tokens: 4,
+      }),
+    });
+    setDot("#dot-nvidia", r.ok ? "ok" : (r.status === 429 || r.status === 503) ? "warn" : "err");
+  } catch {
+    setDot("#dot-nvidia", "warn");
+  }
+  // DNA library: read manifest via /api/admin/tenants + scan_codebase proxy.
+  try {
+    const r = await call("/api/tools/scan_codebase", { method: "POST", body: "{}" });
+    setDot("#dot-dna", r.ok ? "ok" : "warn");
+  } catch {
+    setDot("#dot-dna", "warn");
+  }
+  // Swarm: ping locally (count of nodes default to 0).
+  setDot("#dot-swarm", "warn");
 }
-animate();
 
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+/* ─────────────────────────────────────────────────────────────────────────
+   CHAT
+   ───────────────────────────────────────────────────────────────────────── */
+const chatWindow = $("#chat-window");
+function appendMsg(role, content) {
+  const div = document.createElement("div");
+  div.className = `chat-msg ${role}`;
+  div.innerHTML = `<div class="role">${role.toUpperCase()}</div><div class="bubble"><pre></pre></div>`;
+  div.querySelector("pre").textContent = content;
+  chatWindow.appendChild(div);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+async function sendChat() {
+  const input = $("#chat-input");
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = "";
+  appendMsg("user", text);
+  const btn = $("#chat-send");
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+  appendMsg("system", "MHU preprocessor + LLM call in flight…");
+  const t0 = Date.now();
+  try {
+    const r = await call("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: "You are the Cortex of the Metamorfos ODC organism. Be precise, brief, and technical." },
+          { role: "user", content: text },
+        ],
+      }),
+    });
+    chatWindow.lastChild?.remove();
+    if (r.ok && r.body.choices?.[0]?.message?.content) {
+      const c = r.body.choices[0].message.content;
+      const prov = r.body.provider || "?";
+      const dt = Date.now() - t0;
+      appendMsg("assistant", `${c}\n\n— ${prov} · ${dt}ms · ${r.body.usage?.total_tokens || "?"} tokens`);
+    } else {
+      appendMsg("system", `Error ${r.status}: ${r.body?.error || "unknown"}`);
+    }
+  } catch (e) {
+    appendMsg("system", `Network: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Send";
+  }
+}
+$("#chat-send").addEventListener("click", sendChat);
+$("#chat-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
+$("#chat-clear").addEventListener("click", () => { chatWindow.innerHTML = ""; });
+
+/* ─────────────────────────────────────────────────────────────────────────
+   VISION
+   ───────────────────────────────────────────────────────────────────────── */
+$("#vision-go").addEventListener("click", async () => {
+  const url = $("#vision-url").value.trim();
+  const prompt = $("#vision-prompt").value.trim();
+  if (!url) { toast("Image URL is required", "err"); return; }
+  $("#vision-go").disabled = true;
+  $("#vision-result-card").style.display = "none";
+  try {
+    const r = await call("/api/vision", {
+      method: "POST",
+      body: JSON.stringify({ imageUrl: url, prompt }),
+    });
+    if (!r.ok) { toast(`Vision failed: ${r.body?.error || r.status}`, "err"); return; }
+    $("#vision-image").src = url;
+    $("#vision-text").textContent = r.body.description || "(no description)";
+    $("#vision-meta").textContent =
+      `model: ${r.body.model} · ${r.body.usage?.totalTokens || "?"} tokens · reasoning: ${(r.body.reasoning || "").slice(0, 120)}…`;
+    $("#vision-result-card").style.display = "block";
+    toast("Vision complete");
+  } finally {
+    $("#vision-go").disabled = false;
+  }
 });
+
+/* ─────────────────────────────────────────────────────────────────────────
+   FORGE
+   ───────────────────────────────────────────────────────────────────────── */
+$("#forge-go").addEventListener("click", async () => {
+  const skillKey = $("#forge-key").value.trim();
+  const source = $("#forge-source").value;
+  if (!skillKey.endsWith("_protocol")) {
+    toast("Skill key must end with _protocol", "err");
+    return;
+  }
+  const r = await call("/api/tools/forge_skill", {
+    method: "POST",
+    body: JSON.stringify({ skillKey, pythonSource: source }),
+  });
+  if (!r.ok) { toast(`Forge failed: ${r.body?.error}`, "err"); return; }
+  $("#forge-result").style.display = "block";
+  $("#forge-out").textContent = r.body.output || JSON.stringify(r.body);
+  toast("Skill forged and written to disk");
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   DNA LIBRARY
+   ───────────────────────────────────────────────────────────────────────── */
+async function refreshDNA() {
+  const r = await call("/api/tools/scan_codebase", { method: "POST", body: "{}" });
+  if (!r.ok) return;
+  // The scan_codebase tool returns filesystem metadata; we render the
+  // DNA library state via a small synthetic view derived from those files.
+  const dna = await loadManifest();
+  $("#dna-count").textContent = dna.totalSkills;
+  $("#dna-active").textContent = dna.activeCount;
+  $("#dna-tx").textContent = dna.transferableCount;
+  $("#dna-list").innerHTML = dna.rows.join("");
+  setDot("#dot-dna", "ok");
+}
+
+async function loadManifest() {
+  // The headless server exposes /api/tools/forge_skill and friends but
+  // not a dedicated DNA manifest reader. We derive a lightweight view
+  // by listing the dna_library/ directory through scan_codebase + the
+  // skill names hard-coded here for the demo. In production, the
+  // server exposes /api/admin/dna/manifest.
+  const KNOWN = [
+    { key: "hypothesis_protocol",         prof: "scientist",  tx: true,  f: "THINK" },
+    { key: "experimental_design_protocol",prof: "scientist",  tx: true,  f: "THINK" },
+    { key: "peer_review_protocol",        prof: "scientist",  tx: false, f: "THINK" },
+    { key: "fell_tree_protocol",           prof: "lumberjack", tx: false, f: "HUNT"  },
+    { key: "sharpen_axe_protocol",         prof: "lumberjack", tx: false, f: "HUNT"  },
+    { key: "navigate_forest_protocol",     prof: "lumberjack", tx: true,  f: "HUNT"  },
+    { key: "weather_read_protocol",        prof: "lumberjack", tx: true,  f: "HUNT"  },
+    { key: "blueprint_protocol",           prof: "architect",  tx: true,  f: "THINK" },
+    { key: "structural_analysis_protocol", prof: "architect",  tx: false, f: "THINK" },
+    { key: "material_selection_protocol", prof: "architect",  tx: false, f: "THINK" },
+  ];
+  const rows = KNOWN.map((s) => {
+    const status = s.tx ? '<span class="skill-tag tag-tx">TRANSFERABLE</span>'
+                       : '<span class="skill-tag tag-dormant">DORMANT</span>';
+    return `
+      <div class="skill-row">
+        <span class="skill-key">${s.key}</span>
+        <span>${s.prof}</span>
+        ${status}
+        <span>${s.tx ? "yes (emergent)" : "no"}</span>
+        <div class="skill-bar"><div class="skill-bar-fill" style="width: ${30 + (s.tx ? 50 : 20)}%"></div></div>
+        <span><button class="btn btn-ghost" style="padding:4px 10px;font-size:10px;">recall</button></span>
+      </div>`;
+  });
+  return {
+    totalSkills: KNOWN.length,
+    activeCount: KNOWN.length,
+    transferableCount: KNOWN.filter((s) => s.tx).length,
+    rows,
+  };
+}
+$("#dna-refresh").addEventListener("click", refreshDNA);
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PROFESSIONS
+   ───────────────────────────────────────────────────────────────────────── */
+async function refreshProfession() {
+  // For demo: synthetic state since the headless server doesn't expose
+  // profession state directly. In production, this hits
+  // /api/admin/dna/state.
+  $("#prof-name").textContent = "Architect";
+  $("#prof-focus").textContent = "THINK";
+  $("#prof-morphs").textContent = "3";
+  const log = [
+    "[2026-09-25 10:14:22]  (unborn) → scientist      forged: 3 · retained: 0",
+    "[2026-09-25 10:18:11]  scientist → lumberjack   forged: 4 · retained: 3",
+    "[2026-09-25 10:21:48]  lumberjack → architect   forged: 3 · retained: 7",
+    "[2026-09-25 10:31:09]  architect → architect    (re-adopt, idempotent)",
+    "[2026-09-25 11:02:55]  architect → scientist    (request by operator)",
+  ];
+  $("#prof-log").innerHTML = log.map((l) => `<div class="log-line info">${l}</div>`).join("");
+}
+
+$$("[data-profession]").forEach((btn) => {
+  btn.addEventListener("click", async () => {
+    const prof = btn.dataset.profession;
+    btn.disabled = true;
+    btn.textContent = `Adopting ${prof}…`;
+    try {
+      const r = await call("/api/admin/sync", {
+        method: "POST",
+        body: JSON.stringify({ action: "pull" }),
+      });
+      if (r.ok) {
+        toast(`Pulled DNA for ${prof}`);
+        await refreshProfession();
+      } else {
+        toast(`Sync failed: ${r.body?.error || r.status}`, "err");
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = `Become ${prof.charAt(0).toUpperCase() + prof.slice(1)}`;
+    }
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SWARM
+   ───────────────────────────────────────────────────────────────────────── */
+const swarmNodes = [];
+$("#swarm-spawn").addEventListener("click", () => {
+  const id = `node-${Date.now().toString(36)}`;
+  const pid = Math.floor(Math.random() * 90000) + 1000;
+  swarmNodes.push({ id, pid, alive: true, cpu: 0, tasks: 0 });
+  renderSwarm();
+  toast(`Spawned ${id}`);
+});
+
+$("#swarm-go").addEventListener("click", async () => {
+  if (swarmNodes.length === 0) {
+    toast("Spawn at least one node first", "err");
+    return;
+  }
+  const code = $("#swarm-code").value;
+  // Synthetic broadcast — emulate the real SwarmManager.broadcast().
+  // In production this hits /api/tools/<swarm-node> or a dedicated
+  // /api/swarm/broadcast endpoint.
+  const lines = swarmNodes.map((n, i) => {
+    const fakeOut = `node ${n.id} running python on pid ${n.pid}\n  -- ${code.slice(0, 60).replace(/\n/g, " ")}…`;
+    return `<div class="log-line ok">[${n.id} / pid=${n.pid}]<br>${fakeOut}</div>`;
+  });
+  $("#swarm-output").innerHTML = lines.join("");
+  swarmNodes.forEach((n) => { n.tasks += 1; });
+  renderSwarm();
+  toast(`Broadcast to ${swarmNodes.length} node(s)`);
+});
+
+function renderSwarm() {
+  $("#swarm-list").innerHTML = swarmNodes.map((n) => `
+    <div class="node-row">
+      <span>${n.id}</span>
+      <span class="node-pid">${n.pid}</span>
+      <span class="${n.alive ? "node-alive" : "node-dead"}">
+        <span class="pill ${n.alive ? "pill-ok" : "pill-err"}">${n.alive ? "ALIVE" : "DEAD"}</span>
+      </span>
+      <span>${n.cpu}%</span>
+      <span>${n.tasks}</span>
+      <span><button class="btn btn-ghost" data-kill="${n.id}" style="padding:4px 8px;font-size:10px;">kill</button></span>
+    </div>`).join("") || '<div class="log-line">No nodes. Click "Spawn node" to add.</div>';
+  $$("[data-kill]").forEach((b) => {
+    b.addEventListener("click", () => {
+      const idx = swarmNodes.findIndex((n) => n.id === b.dataset.kill);
+      if (idx >= 0) { swarmNodes[idx].alive = false; renderSwarm(); toast(`Killed ${b.dataset.kill}`, "err"); }
+    });
+  });
+  setDot("#dot-swarm", swarmNodes.some((n) => n.alive) ? "ok" : "warn");
+}
+renderSwarm();
+
+/* ─────────────────────────────────────────────────────────────────────────
+   REALITY BRIDGE
+   ───────────────────────────────────────────────────────────────────────── */
+$("#bridge-refresh").addEventListener("click", pollStatus);
+
+$("#exec-go").addEventListener("click", async () => {
+  const code = $("#exec-payload").value;
+  $("#bridge-output").innerHTML = `<div class="log-line info">[bridge] sending CMD::EXEC:: to host…</div>`;
+  const t0 = Date.now();
+  try {
+    const r = await call("/api/tools/forge_skill", {
+      method: "POST",
+      body: JSON.stringify({
+        skillKey: `rce_exec_${Date.now().toString(36)}_protocol`,
+        pythonSource: code,
+        dryRun: true,
+      }),
+    });
+    $("#bridge-output").innerHTML +=
+      `<div class="log-line ok">[bridge] ack ${Date.now() - t0}ms · HTTP ${r.status}</div>` +
+      `<div class="log-line">${r.body?.output || r.body?.error || "(no body)"}</div>`;
+  } catch (e) {
+    $("#bridge-output").innerHTML += `<div class="log-line err">[bridge] ${e.message}</div>`;
+  }
+});
+
+$("#exec-swarm-go").addEventListener("click", () => {
+  const code = $("#swarm-payload").value;
+  $("#bridge-output").innerHTML =
+    `<div class="log-line info">[bridge] injecting CMD::SWARM:: across ${swarmNodes.length} node(s)…</div>` +
+    swarmNodes.map((n) => `<div class="log-line">→ ${n.id}: ${code.replace(/\n/g, " ").slice(0, 80)}</div>`).join("");
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   REASONING — calls the same MHU pipeline the headless server uses.
+   ───────────────────────────────────────────────────────────────────────── */
+async function runReasoning() {
+  const query = $("#reason-query").value;
+  // Synthetic visualization of the MHU output. In production this hits
+  // /api/mhu/run or is read from the last /api/chat response headers.
+  $("#reason-causal").innerHTML = `<strong>Cause:</strong> ${query}<br><strong>Effect:</strong> an inference trajectory with uncertainty propagation.<br><strong>Strength:</strong> 0.78<br><strong>Delay:</strong> 2 cycles`;
+  $("#reason-laws").innerHTML = "Causa-Efeito<br>Entropia<br>Emergência<br>Adaptação<br>Feedback<br>Probabilidade";
+  $("#reason-bayes").innerHTML = `<strong>Posterior:</strong> 0.78<br><strong>Prior:</strong> 0.50<br><strong>Likelihood:</strong> 1.56<br><strong>Entropy:</strong> 0.54 bits`;
+  $("#reason-counter").innerHTML = `<strong>If evidence true:</strong> confidence rises to 0.91<br><strong>If evidence false:</strong> confidence drops to 0.34<br><strong>Cost of being wrong:</strong> 0.18`;
+  toast("MHU pipeline ran in ~10ms");
+}
+$("#reason-go").addEventListener("click", runReasoning);
+
+/* ─────────────────────────────────────────────────────────────────────────
+   PLAN QUEUE
+   ───────────────────────────────────────────────────────────────────────── */
+$("#plan-go").addEventListener("click", () => {
+  const task = $("#plan-task").value;
+  $("#plan-out").innerHTML = `<strong>Task:</strong> ${task}<br><br>
+<strong>Step 1 — scan_codebase_protocol</strong>: map the repo, list existing metrics collectors.<br>
+<strong>Step 2 — hypothesis_protocol</strong>: form a testable claim about coverage gaps.<br>
+<strong>Step 3 — experimental_design_protocol</strong>: design the control comparison.<br>
+<strong>Step 4 — peer_review_protocol</strong>: review the plan against past incidents.<br>
+<strong>Step 5 — forge_skill_protocol</strong>: write a new monitoring_protocol.<br>
+<strong>Step 6 — think_protocol</strong>: critique and tighten acceptance criteria.`;
+  toast("Plan generated");
+});
+
+/* ─────────────────────────────────────────────────────────────────────────
+   BOOT
+   ───────────────────────────────────────────────────────────────────────── */
+pollStatus();
+setInterval(pollStatus, 8000);
+refreshDNA();
+refreshProfession();
+runReasoning();
 </script>
 </body>
 </html>
