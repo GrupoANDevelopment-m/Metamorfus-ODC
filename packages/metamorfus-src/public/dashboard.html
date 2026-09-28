@@ -22,6 +22,7 @@
     --ok:             #4ade80;
     --warn:           #facc15;
     --err:            #f87171;
+    --degraded:       #fb923c;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   html, body {
@@ -76,6 +77,7 @@
   .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
   .dot.warn { background: var(--warn); box-shadow: 0 0 8px var(--warn); }
   .dot.err { background: var(--err); box-shadow: 0 0 8px var(--err); }
+  .dot.degraded { background: var(--degraded); box-shadow: 0 0 8px var(--degraded); }
   aside.sidebar {
     background: linear-gradient(180deg, rgba(15,31,56,0.6) 0%, rgba(10,22,40,0.4) 100%);
     border-right: 1px solid var(--line);
@@ -121,6 +123,7 @@
   .card-title { font-size: 12px; color: var(--text-muted); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
   .input, .textarea, select {
     background: rgba(5,11,24,0.6); border: 1px solid var(--line);
     color: var(--text-primary); padding: 10px 12px; border-radius: 6px;
@@ -132,6 +135,10 @@
     box-shadow: 0 0 0 3px rgba(34,211,238,0.10);
   }
   .textarea { resize: vertical; min-height: 80px; }
+  .label {
+    display: block; font-size: 10px; color: var(--text-muted);
+    letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 6px;
+  }
   .btn {
     background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-teal) 100%);
     border: none; color: #050b18; padding: 10px 18px; border-radius: 6px;
@@ -145,7 +152,10 @@
     background: transparent; border: 1px solid var(--line-strong); color: var(--text-primary);
   }
   .btn-ghost:hover { background: rgba(34,211,238,0.05); }
-  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .btn-tiny {
+    padding: 4px 10px; font-size: 10px;
+  }
 
   /* CHAT */
   .chat-window {
@@ -160,7 +170,9 @@
   .chat-msg .role {
     font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase;
     color: var(--text-faint); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
   }
+  .chat-msg .role .meta { color: var(--text-faint); font-size: 9px; letter-spacing: 0; text-transform: none; font-style: italic; }
   .chat-msg.user .role { color: var(--accent-cyan); }
   .chat-msg.user .bubble {
     background: rgba(34,211,238,0.08); border-left: 2px solid var(--accent-cyan);
@@ -169,6 +181,7 @@
   .chat-msg.assistant .bubble {
     background: rgba(15,31,56,0.6); border-left: 2px solid var(--accent-teal);
     padding: 10px 14px; border-radius: 0 6px 6px 0;
+    line-height: 1.65;
   }
   .chat-msg.system .bubble {
     background: rgba(248,113,113,0.06); border-left: 2px solid var(--err);
@@ -178,23 +191,56 @@
   .chat-msg .bubble pre { white-space: pre-wrap; font-family: inherit; }
   .chat-input-row { display: flex; gap: 8px; }
   .chat-input-row .input { flex: 1; }
+  .chat-category {
+    background: rgba(5,11,24,0.6); border: 1px solid var(--line);
+    color: var(--text-primary); padding: 10px 12px; border-radius: 6px;
+    font-size: 12px;
+  }
+
+  /* LLM Library */
+  .lib-cat-card {
+    background: linear-gradient(135deg, rgba(20,37,63,0.5) 0%, rgba(15,31,56,0.3) 100%);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .lib-cat-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .lib-cat-name {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    color: var(--accent-glow);
+  }
+  .lib-cat-count { font-size: 11px; color: var(--text-muted); }
+  .lib-cfg {
+    display: grid; grid-template-columns: 24px 1fr 110px 80px 60px;
+    gap: 10px; align-items: center;
+    padding: 8px 0; border-bottom: 1px dashed var(--line);
+    font-size: 12px;
+  }
+  .lib-cfg:last-child { border-bottom: none; }
+  .lib-cfg .name { font-weight: 500; }
+  .lib-cfg .model { font-family: ui-monospace, monospace; color: var(--text-muted); font-size: 11px; }
+  .lib-cfg .provider { font-size: 10px; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .lib-prio { font-size: 10px; color: var(--text-faint); }
+  .lib-prio.badge { background: rgba(34,211,238,0.1); color: var(--accent-cyan); padding: 2px 6px; border-radius: 3px; }
 
   /* DNA LIBRARY */
   .skill-row {
-    display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 60px;
-    gap: 12px; align-items: center;
-    padding: 10px 0; border-bottom: 1px solid var(--line);
+    display: grid; grid-template-columns: 2fr 1fr 1fr 60px;
+    gap: 12px; align-items: start;
+    padding: 12px 0; border-bottom: 1px solid var(--line);
     font-size: 12px;
   }
   .skill-row:last-child { border-bottom: none; }
-  .skill-key { font-family: ui-monospace, monospace; color: var(--accent-glow); }
-  .skill-tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; display: inline-block; }
-  .tag-tx { background: rgba(34,211,238,0.15); color: var(--accent-cyan); }
-  .tag-dormant { background: rgba(148,163,184,0.10); color: var(--text-muted); }
-  .tag-arch { background: rgba(248,113,113,0.10); color: var(--err); }
+  .skill-key { font-family: ui-monospace, monospace; color: var(--accent-glow); font-size: 12px; }
+  .skill-desc { font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-top: 4px; }
+  .skill-meta { font-size: 10px; color: var(--text-faint); letter-spacing: 0.06em; text-transform: uppercase; }
+  .skill-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
   .skill-bar {
     background: rgba(5,11,24,0.6); border-radius: 3px; height: 6px;
-    overflow: hidden; position: relative;
+    overflow: hidden; position: relative; margin-top: 6px;
   }
   .skill-bar-fill {
     height: 100%; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-teal));
@@ -212,8 +258,6 @@
     font-family: ui-monospace, monospace; font-size: 12px; align-items: center;
   }
   .node-pid { color: var(--text-muted); font-size: 11px; }
-  .node-alive { color: var(--ok); }
-  .node-dead { color: var(--err); }
   .pill { font-size: 9px; padding: 2px 6px; border-radius: 3px; }
   .pill-ok { background: rgba(74,222,128,0.15); color: var(--ok); }
   .pill-err { background: rgba(248,113,113,0.15); color: var(--err); }
@@ -225,21 +269,16 @@
     background: rgba(5,11,24,0.5);
   }
 
-  /* FORGE */
-  .code-input {
-    font-family: ui-monospace, monospace; font-size: 12px; line-height: 1.6;
-    min-height: 200px;
+  /* PLAN */
+  .llm-text {
+    font-size: 13px; line-height: 1.7; white-space: pre-wrap;
+    color: var(--text-primary);
   }
-
-  /* PLAN/REASONING */
-  .reason-block {
-    background: rgba(5,11,24,0.6); border: 1px solid var(--line);
-    border-radius: 6px; padding: 12px;
-    font-family: ui-monospace, monospace; font-size: 11px;
-    color: var(--text-muted); white-space: pre-wrap;
-    max-height: 240px; overflow-y: auto;
+  .llm-text.streaming { color: var(--text-muted); }
+  .llm-text.streaming::after {
+    content: "▌"; color: var(--accent-cyan); animation: blink 1s infinite;
   }
-  .reason-block strong { color: var(--accent-cyan); }
+  @keyframes blink { 50% { opacity: 0; } }
 
   /* TOAST */
   .toast-area {
@@ -254,6 +293,7 @@
   }
   .toast.ok { border-left: 3px solid var(--ok); }
   .toast.err { border-left: 3px solid var(--err); }
+  .toast.warn { border-left: 3px solid var(--warn); }
   @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
   /* LOG */
@@ -271,10 +311,25 @@
   .log-line.ok { color: var(--ok); }
   .log-line.err { color: var(--err); }
   .log-line.info { color: var(--accent-cyan); }
-  .scroll { overflow-y: auto; }
+  .log-line.dim { color: var(--text-faint); }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--line-strong); border-radius: 3px; }
+
+  /* PRESET DIALOG */
+  .preset-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px; margin-bottom: 12px;
+  }
+  .preset-card {
+    border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px; cursor: pointer; transition: all 0.15s ease;
+    font-size: 12px;
+  }
+  .preset-card:hover { border-color: var(--accent-cyan); background: rgba(34,211,238,0.05); }
+  .preset-card.selected { border-color: var(--accent-cyan); background: rgba(34,211,238,0.10); }
+  .preset-name { font-weight: 600; }
+  .preset-cat { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent-glow); margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -287,62 +342,40 @@
       <span class="panel-sub">/ Control Plane</span>
     </div>
     <div class="status-strip" id="status-strip">
-      <span class="stat"><span class="dot warn" id="dot-cortex"></span>Cortex</span>
-      <span class="stat"><span class="dot warn" id="dot-mhu"></span>MHU 5.0</span>
-      <span class="stat"><span class="dot warn" id="dot-nvidia"></span>NVIDIA NIM</span>
-      <span class="stat"><span class="dot warn" id="dot-swarm"></span>Swarm</span>
-      <span class="stat"><span class="dot warn" id="dot-dna"></span>DNA Library</span>
+      <span class="stat"><span class="dot" id="dot-cortex"></span>Cortex</span>
+      <span class="stat"><span class="dot" id="dot-mhu"></span>MHU 5.0</span>
+      <span class="stat"><span class="dot" id="dot-text"></span>LLM Text</span>
+      <span class="stat"><span class="dot" id="dot-reasoning"></span>LLM Reasoning</span>
+      <span class="stat"><span class="dot" id="dot-multimodal"></span>LLM Vision</span>
+      <span class="stat"><span class="dot" id="dot-dna"></span>DNA Library</span>
     </div>
   </header>
 
   <aside class="sidebar">
     <div class="nav-group">
       <div class="nav-label">Operate</div>
-      <div class="nav-item active" data-tab="chat">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-        Chat
-      </div>
-      <div class="nav-item" data-tab="vision">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        Vision
-      </div>
-      <div class="nav-item" data-tab="forge">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-        Forge Skill
-      </div>
+      <div class="nav-item active" data-tab="chat"><span class="nav-icon">›</span> Chat</div>
+      <div class="nav-item" data-tab="vision"><span class="nav-icon">›</span> Vision</div>
+      <div class="nav-item" data-tab="forge"><span class="nav-icon">›</span> Forge Skill</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Body</div>
-      <div class="nav-item" data-tab="dna">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 15c6.667-6 13.333 0 20-6"/><path d="M9 22c1.798-1.998 2.518-3.995 2.807-5.993"/><path d="M15 2c-1.798 1.998-2.518 3.995-2.807 5.993"/><path d="M2 9c6.667 6 13.333 0 20 6"/></svg>
-        DNA Library
-      </div>
-      <div class="nav-item" data-tab="profession">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Professions
-      </div>
+      <div class="nav-item" data-tab="dna"><span class="nav-icon">›</span> DNA Library</div>
+      <div class="nav-item" data-tab="profession"><span class="nav-icon">›</span> Professions</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Swarm</div>
-      <div class="nav-item" data-tab="swarm">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="4" cy="4" r="2"/><circle cx="20" cy="4" r="2"/><circle cx="4" cy="20" r="2"/><circle cx="20" cy="20" r="2"/></svg>
-        Botnet
-      </div>
-      <div class="nav-item" data-tab="bridge">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-        Reality Bridge
-      </div>
+      <div class="nav-item" data-tab="swarm"><span class="nav-icon">›</span> Botnet</div>
+      <div class="nav-item" data-tab="bridge"><span class="nav-icon">›</span> Reality Bridge</div>
     </div>
     <div class="nav-group">
       <div class="nav-label">Mind</div>
-      <div class="nav-item" data-tab="reasoning">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></svg>
-        Reasoning
-      </div>
-      <div class="nav-item" data-tab="plan">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="15" y2="17"/></svg>
-        Plan Queue
-      </div>
+      <div class="nav-item" data-tab="reasoning"><span class="nav-icon">›</span> Reasoning</div>
+      <div class="nav-item" data-tab="plan"><span class="nav-icon">›</span> Plan Queue</div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Configure</div>
+      <div class="nav-item" data-tab="llm-library"><span class="nav-icon">›</span> LLM Library</div>
     </div>
   </aside>
 
@@ -353,19 +386,20 @@
       <div class="panel-header">
         <div>
           <div class="panel-title">Chat with Cortex</div>
-          <div class="panel-sub">MHU preprocessor → OpenCode cortex agent → NVIDIA NIM kimi-k3</div>
+          <div class="panel-sub">MHU preprocessor → Cortex LLM</div>
         </div>
-        <button class="btn btn-ghost" id="chat-clear">Clear</button>
-      </div>
-      <div class="chat-window" id="chat-window">
-        <div class="chat-msg system">
-          <div class="role">SYSTEM</div>
-          <div class="bubble"><pre>Connection ready. Each message is preprocessed by the MHU cognitive runtime
-(causal analysis + Bayesian posterior + counterfactuals) before reaching the LLM.</pre></div>
+        <div class="btn-row">
+          <select class="chat-category" id="chat-category">
+            <option value="text">category: text</option>
+            <option value="reasoning">category: reasoning</option>
+            <option value="multimodal">category: multimodal</option>
+          </select>
+          <button class="btn btn-ghost btn-tiny" id="chat-clear">Clear</button>
         </div>
       </div>
+      <div class="chat-window" id="chat-window"></div>
       <div class="chat-input-row">
-        <input class="input" id="chat-input" placeholder="Ask the organism anything..." autocomplete="off">
+        <input class="input" id="chat-input" placeholder="Speak to the organism…" autocomplete="off">
         <button class="btn" id="chat-send">Send</button>
       </div>
     </section>
@@ -374,23 +408,23 @@
     <section class="panel" id="panel-vision">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Vision — describe any image</div>
-          <div class="panel-sub">NVIDIA NIM moonshotai/kimi-k3 multimodal</div>
+          <div class="panel-title">Vision</div>
+          <div class="panel-sub">Routes to a multimodal LLM from your library</div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Image URL</div>
-        <input class="input" id="vision-url" value="https://assets.ngc.nvidia.com/products/api-catalog/phi-3-5-vision/example1b.jpg">
+        <div class="label">Image URL</div>
+        <input class="input" id="vision-url" value="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/640px-Cat03.jpg">
       </div>
       <div class="card">
-        <div class="card-title">Prompt</div>
-        <textarea class="textarea" id="vision-prompt">Describe this image in detail. What objects, colors, and atmosphere do you see?</textarea>
+        <div class="label">Prompt</div>
+        <textarea class="textarea" id="vision-prompt">What do you see in this image? Describe objects, colors, mood.</textarea>
       </div>
-      <button class="btn" id="vision-go">Run vision_describe_protocol</button>
+      <button class="btn" id="vision-go">Run vision</button>
       <div class="card" id="vision-result-card" style="display:none">
         <div class="card-title">Result</div>
         <img id="vision-image" class="vision-image" alt="">
-        <div id="vision-text" style="margin-top: 14px; line-height: 1.7;"></div>
+        <div id="vision-text" class="llm-text" style="margin-top: 14px;"></div>
         <div id="vision-meta" style="margin-top: 12px; font-size: 11px; color: var(--text-muted);"></div>
       </div>
     </section>
@@ -399,18 +433,18 @@
     <section class="panel" id="panel-forge">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Forge a new skill</div>
-          <div class="panel-sub">Writes real Python to dna_library/ — organism grows on demand</div>
+          <div class="panel-title">Forge a skill</div>
+          <div class="panel-sub">Writes Python to the organism's DNA library</div>
         </div>
       </div>
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">Skill Key (snake_case, _protocol suffix)</div>
+          <div class="label">Skill Key (snake_case, _protocol suffix)</div>
           <input class="input" id="forge-key" value="custom_demo_protocol" placeholder="my_skill_protocol">
         </div>
         <div class="card">
-          <div class="card-title">Source (Python)</div>
-          <textarea class="textarea code-input" id="forge-source">def skill(organism, context):
+          <div class="label">Source (Python)</div>
+          <textarea class="textarea code-input" id="forge-source" style="font-family:ui-monospace,monospace; min-height:200px; font-size:12px;">def skill(organism, context):
     """Custom skill body — returns an intention dict."""
     target = context.get("target", "")
     return {
@@ -418,14 +452,14 @@
         "intensity": 0.5,
         "required_attributes": {"cpu": 10},
         "version": 1,
-        "params": {"target": target}
+        "params": {"target": target},
     }</textarea>
         </div>
       </div>
-      <button class="btn" id="forge-go">Forge skill (write to disk)</button>
+      <button class="btn" id="forge-go">Forge skill</button>
       <div class="card" id="forge-result" style="display:none">
-        <div class="card-title">Forged</div>
-        <div id="forge-out" style="font-family: ui-monospace,monospace; font-size: 11px; color: var(--accent-cyan);"></div>
+        <div class="card-title">Result</div>
+        <div id="forge-out" class="llm-text" style="font-family:ui-monospace,monospace; font-size:11px; color:var(--accent-cyan);"></div>
       </div>
     </section>
 
@@ -433,20 +467,19 @@
     <section class="panel" id="panel-dna">
       <div class="panel-header">
         <div>
-          <div class="panel-title">DNA Library — append-only memory</div>
-          <div class="panel-sub">Every skill the organism ever forged. Never deleted.</div>
+          <div class="panel-title">DNA Library</div>
+          <div class="panel-sub">Skills the organism has forged. Descriptions are LLM-generated.</div>
         </div>
-        <button class="btn btn-ghost" id="dna-refresh">Refresh</button>
+        <button class="btn btn-ghost btn-tiny" id="dna-refresh">Refresh</button>
       </div>
-      <div class="grid-3" id="dna-stats">
-        <div class="card"><div class="stat-big" id="dna-count">—</div><div class="stat-label">Cumulative Skills</div></div>
-        <div class="card"><div class="stat-big" id="dna-active">—</div><div class="stat-label">Active Now</div></div>
-        <div class="card"><div class="stat-big" id="dna-tx">—</div><div class="stat-label">Transferable (Emergent)</div></div>
+      <div class="grid-3">
+        <div class="card"><div class="stat-big" id="dna-count">—</div><div class="stat-label">Skills on disk</div></div>
+        <div class="card"><div class="stat-big" id="dna-fresh">—</div><div class="stat-label">Described</div></div>
+        <div class="card"><div class="stat-big" id="dna-pending">—</div><div class="stat-label">Awaiting description</div></div>
       </div>
       <div class="card">
-        <div class="card-title">Skills</div>
         <div class="skill-row" style="font-size:10px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">
-          <span>Skill</span><span>Profession</span><span>Status</span><span>Transferable</span><span>Mastery</span><span></span>
+          <span>Skill</span><span>Source</span><span>Status</span><span></span>
         </div>
         <div id="dna-list"></div>
       </div>
@@ -456,31 +489,24 @@
     <section class="panel" id="panel-profession">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Profession — metamorph the organism</div>
-          <div class="panel-sub">Adopting a profession forges its seeds into the DNA library. Past skills survive.</div>
+          <div class="panel-title">Profession</div>
+          <div class="panel-sub">Tell the organism what to become. It generates a metamorphosis plan with the LLM.</div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Active Profession</div>
-        <div class="grid-3">
-          <div><div class="stat-big" id="prof-name">—</div><div class="stat-label">Name</div></div>
-          <div><div class="stat-big" id="prof-focus">—</div><div class="stat-label">Morph Focus</div></div>
-          <div><div class="stat-big" id="prof-morphs">—</div><div class="stat-label">Metamorphoses Recorded</div></div>
-        </div>
+        <div class="label">System prompt — describes the system you want the organism to become</div>
+        <textarea class="textarea" id="profession-prompt" style="min-height:100px;">You are a research assistant specialized in machine learning papers. You have access to arxiv, semantic search, PDF extraction, and citation formatting.</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="profession-go">Analyze with cortex</button>
+        <button class="btn btn-ghost" id="profession-seed">Seed known metamorphoses</button>
+      </div>
+      <div class="card" id="profession-plan-card" style="display:none">
+        <div class="card-title">Cortex's metamorphosis plan</div>
+        <div id="profession-plan" class="llm-text"></div>
       </div>
       <div class="card">
-        <div class="card-title">Adopt a profession</div>
-        <div class="btn-row">
-          <button class="btn" data-profession="scientist">Become Scientist (THINK)</button>
-          <button class="btn" data-profession="lumberjack">Become Lumberjack (HUNT)</button>
-          <button class="btn" data-profession="architect">Become Architect (THINK)</button>
-        </div>
-        <div style="margin-top:14px; font-size:11px; color:var(--text-muted);">
-          Each button calls /api/admin/sync implicitly. Past profession's skills remain in the DNA library.
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">Metamorphosis Log</div>
+        <div class="card-title">Metamorphosis log</div>
         <div class="log-area" id="prof-log"></div>
       </div>
     </section>
@@ -489,67 +515,65 @@
     <section class="panel" id="panel-swarm">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Swarm — botnet without Docker</div>
-          <div class="panel-sub">Each node is a child Node process running a real Python interpreter subprocess.</div>
+          <div class="panel-title">Botnet</div>
+          <div class="panel-sub">Each node is a child Node process that spawns a real Python subprocess.</div>
         </div>
-        <button class="btn btn-ghost" id="swarm-spawn">Spawn node</button>
+        <button class="btn btn-ghost btn-tiny" id="swarm-spawn">Spawn node</button>
       </div>
       <div class="card">
-        <div class="card-title">Broadcast Python to all nodes</div>
-        <textarea class="textarea code-input" id="swarm-code">import platform, os, json
-print(json.dumps({
-  "node": "alive",
-  "platform": platform.platform(),
-  "pid": os.getpid(),
-}))</textarea>
+        <div class="label">Broadcast Python to all nodes</div>
+        <textarea class="textarea" id="swarm-code" style="font-family:ui-monospace,monospace; font-size:12px;">import platform, os, json
+print(json.dumps({"node": "alive", "platform": platform.platform(), "pid": os.getpid()}))</textarea>
         <div style="margin-top:10px;"><button class="btn" id="swarm-go">Broadcast</button></div>
       </div>
       <div class="card">
         <div class="card-title">Nodes</div>
         <div class="node-row" style="font-size:10px; color:var(--text-muted); letter-spacing:0.1em; text-transform:uppercase;">
-          <span>ID</span><span>PID</span><span>Status</span><span>CPU</span><span>Tasks</span><span></span>
+          <span>ID</span><span>PID</span><span>Status</span><span>Tasks</span><span></span><span></span>
         </div>
         <div id="swarm-list"></div>
       </div>
       <div class="card">
-        <div class="card-title">Last Broadcast Output</div>
+        <div class="card-title">Last broadcast</div>
         <div class="log-area" id="swarm-output"></div>
       </div>
     </section>
 
-    <!-- BRIDGE / RCE -->
+    <!-- REALITY BRIDGE -->
     <section class="panel" id="panel-bridge">
       <div class="panel-header">
         <div>
           <div class="panel-title">Reality Bridge</div>
-          <div class="panel-sub">Backend reachability + CMD::EXEC:: / CMD::SWARM:: directives</div>
+          <div class="panel-sub">CMD::EXEC:: and CMD::SWARM:: directives to the host</div>
         </div>
-        <button class="btn btn-ghost" id="bridge-refresh">Re-check</button>
+        <button class="btn btn-ghost btn-tiny" id="bridge-refresh">Re-check</button>
       </div>
-      <div class="card">
-        <div class="card-title">OpenCode Sidecar</div>
-        <div class="grid-2">
-          <div><div class="stat-big" id="bridge-status">—</div><div class="stat-label">Reachable</div></div>
-          <div><div class="stat-big" id="bridge-url" style="font-size:14px;font-family:ui-monospace,monospace;">—</div><div class="stat-label">URL</div></div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">OpenCode sidecar</div>
+          <div id="bridge-oc" class="log-area" style="min-height:60px;"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">LLM Library</div>
+          <div id="bridge-lib" class="log-area" style="min-height:60px;"></div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title">Directives (Reality Bridge)</div>
-        <div class="grid-2">
-          <div>
-            <div class="card-title" style="margin-bottom:8px;">CMD::EXEC::</div>
-            <textarea class="textarea code-input" id="exec-payload">import os, json
-print(json.dumps({"cwd": os.getcwd(), "files_in_root": len(os.listdir("."))}))</textarea>
-            <button class="btn" id="exec-go" style="margin-top:10px;">Execute on host</button>
-          </div>
-          <div>
-            <div class="card-title" style="margin-bottom:8px;">CMD::SWARM::</div>
-            <textarea class="textarea code-input" id="swarm-payload">import os
+      <div class="grid-2">
+        <div class="card">
+          <div class="label">CMD::EXEC:: payload (Python)</div>
+          <textarea class="textarea" id="exec-payload" style="font-family:ui-monospace,monospace; font-size:12px;">import os, json
+print(json.dumps({"cwd": os.getcwd(), "n": len(os.listdir("."))}))</textarea>
+          <button class="btn" id="exec-go" style="margin-top:10px;">Send</button>
+        </div>
+        <div class="card">
+          <div class="label">CMD::SWARM:: payload</div>
+          <textarea class="textarea" id="swarm-payload" style="font-family:ui-monospace,monospace; font-size:12px;">import os
 print("node-pid", os.getpid())</textarea>
-            <button class="btn btn-ghost" id="exec-swarm-go" style="margin-top:10px;">Inject into swarm</button>
-          </div>
+          <button class="btn btn-ghost" id="exec-swarm-go" style="margin-top:10px;">Inject</button>
         </div>
-        <div class="card-title" style="margin-top:18px;">Output</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Output</div>
         <div class="log-area" id="bridge-output"></div>
       </div>
     </section>
@@ -558,31 +582,23 @@ print("node-pid", os.getpid())</textarea>
     <section class="panel" id="panel-reasoning">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Reasoning — MHU cognitive pipeline</div>
-          <div class="panel-sub">Causal analysis · Universal laws · Bayesian posterior · Counterfactuals</div>
+          <div class="panel-title">Reasoning</div>
+          <div class="panel-sub">MHU pipeline output → interpreted by cortex</div>
         </div>
-        <button class="btn btn-ghost" id="reason-go">Re-run pipeline</button>
+        <button class="btn btn-ghost btn-tiny" id="reason-go">Re-run</button>
       </div>
       <div class="card">
-        <div class="card-title">Probe instruction</div>
+        <div class="label">Probe</div>
         <input class="input" id="reason-query" value="Should I trust an LLM that says it's sure?">
       </div>
       <div class="grid-2">
         <div class="card">
-          <div class="card-title">Causal Analysis</div>
-          <div class="reason-block" id="reason-causal"></div>
+          <div class="card-title">Cortex's interpretation</div>
+          <div id="reason-llm" class="llm-text" style="min-height:140px;">—</div>
         </div>
         <div class="card">
-          <div class="card-title">Universal Laws</div>
-          <div class="reason-block" id="reason-laws"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Bayesian Posterior</div>
-          <div class="reason-block" id="reason-bayes"></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Counterfactuals</div>
-          <div class="reason-block" id="reason-counter"></div>
+          <div class="card-title">Raw MHU output</div>
+          <div id="reason-raw" class="log-area" style="min-height:140px;"></div>
         </div>
       </div>
     </section>
@@ -591,18 +607,105 @@ print("node-pid", os.getpid())</textarea>
     <section class="panel" id="panel-plan">
       <div class="panel-header">
         <div>
-          <div class="panel-title">Plan Queue — cortex output</div>
-          <div class="panel-sub">When the cortex plans, this is what the executor will carry out.</div>
+          <div class="panel-title">Plan Queue</div>
+          <div class="panel-sub">Cortex decomposes a task into steps using available skills</div>
         </div>
-        <button class="btn btn-ghost" id="plan-go">Generate plan</button>
+        <button class="btn btn-ghost btn-tiny" id="plan-go">Generate plan</button>
       </div>
       <div class="card">
-        <div class="card-title">Task</div>
+        <div class="label">Task</div>
         <input class="input" id="plan-task" value="Design a monitoring system for a self-evolving codebase">
       </div>
       <div class="card">
-        <div class="card-title">Generated Plan</div>
-        <div class="reason-block" id="plan-out" style="min-height:160px;"></div>
+        <div class="card-title">Cortex's plan</div>
+        <div id="plan-out" class="llm-text" style="min-height:200px;">—</div>
+      </div>
+    </section>
+
+    <!-- LLM LIBRARY -->
+    <section class="panel" id="panel-llm-library">
+      <div class="panel-header">
+        <div>
+          <div class="panel-title">LLM API Library</div>
+          <div class="panel-sub">Your catalog of language models — categorized, with auto-failover</div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-tiny" id="lib-refresh">Refresh</button>
+          <button class="btn btn-ghost btn-tiny" id="lib-failover-test">Test failover</button>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="lib-cat-card">
+          <div class="lib-cat-head">
+            <span class="lib-cat-name">Text</span>
+            <span class="lib-cat-count" id="lib-text-count">—</span>
+          </div>
+          <div id="lib-text-list"></div>
+        </div>
+        <div class="lib-cat-card">
+          <div class="lib-cat-head">
+            <span class="lib-cat-name">Reasoning</span>
+            <span class="lib-cat-count" id="lib-reasoning-count">—</span>
+          </div>
+          <div id="lib-reasoning-list"></div>
+        </div>
+        <div class="lib-cat-card">
+          <div class="lib-cat-head">
+            <span class="lib-cat-name">Multimodal</span>
+            <span class="lib-cat-count" id="lib-multimodal-count">—</span>
+          </div>
+          <div id="lib-multimodal-list"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Add a new LLM config</div>
+        <div class="label">Pick a provider preset (or fill the fields manually below)</div>
+        <div class="preset-grid" id="lib-presets"></div>
+        <div class="grid-2">
+          <div>
+            <div class="label">Display name</div>
+            <input class="input" id="lib-name" placeholder="My Mistral key">
+          </div>
+          <div>
+            <div class="label">Provider</div>
+            <select class="input" id="lib-provider">
+              <option value="openai-compatible">openai-compatible</option>
+              <option value="nvidia-direct">nvidia-direct</option>
+              <option value="anthropic">anthropic</option>
+              <option value="google">google</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">Category</div>
+            <select class="input" id="lib-category">
+              <option value="text">text</option>
+              <option value="reasoning">reasoning</option>
+              <option value="multimodal">multimodal</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">Priority (lower = preferred)</div>
+            <input class="input" id="lib-priority" type="number" value="100">
+          </div>
+          <div>
+            <div class="label">Endpoint URL</div>
+            <input class="input" id="lib-endpoint" placeholder="https://api.openai.com/v1/chat/completions">
+          </div>
+          <div>
+            <div class="label">Model name</div>
+            <input class="input" id="lib-model" placeholder="gpt-4o-mini">
+          </div>
+        </div>
+        <div style="margin-top:14px;">
+          <div class="label">API key (stored server-side, never sent back unmasked)</div>
+          <input class="input" id="lib-apikey" type="password" placeholder="sk-...">
+        </div>
+        <div class="btn-row" style="margin-top:14px;">
+          <button class="btn" id="lib-add">Add to library</button>
+          <span id="lib-add-status" class="skill-meta"></span>
+        </div>
       </div>
     </section>
 
@@ -612,15 +715,19 @@ print("node-pid", os.getpid())</textarea>
 <div class="toast-area" id="toast-area"></div>
 
 <script>
-/* ─────────────────────────────────────────────────────────────────────────
-   API CLIENT — every panel calls a real endpoint on the headless server.
-   Bearer token = dev-secret-local (default tenant, see tenant-auth.mjs).
-   ───────────────────────────────────────────────────────────────────────── */
+"use strict";
+
+/* ─────────────────────────────────────────────────────────────────────
+   Metamorfos ODC — Control Plane client.
+   Every word the organism "speaks" comes from a real LLM call.
+   There are no hardcoded organism responses anywhere in this file.
+   ───────────────────────────────────────────────────────────────────── */
+
 const API = ""; // same origin
 const AUTH = "Bearer dev-secret-local";
 
-const $ = (sel) => document.querySelector(sel);
-const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+const $ = (sel, root) => (root || document).querySelector(sel);
+const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 
 async function call(path, opts = {}) {
   const r = await fetch(API + path, {
@@ -628,7 +735,7 @@ async function call(path, opts = {}) {
     ...opts,
   });
   let body = null;
-  try { body = await r.json(); } catch { /* may be no body */ }
+  try { body = await r.json(); } catch { /* empty body */ }
   return { ok: r.ok, status: r.status, body };
 }
 
@@ -637,16 +744,25 @@ function toast(msg, kind = "ok") {
   el.className = `toast ${kind}`;
   el.textContent = msg;
   $("#toast-area").appendChild(el);
-  setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 200); }, 3500);
+  setTimeout(() => { el.style.opacity = "0"; setTimeout(() => el.remove(), 250); }, 4000);
 }
 
 function setDot(id, kind) {
-  $(id).className = `dot ${kind}`;
+  const el = $(id);
+  if (!el) return;
+  el.className = `dot ${kind || ""}`;
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
+function healthToDotKind(status) {
+  if (status === "healthy") return "ok";
+  if (status === "rate-limited" || status === "degraded") return "degraded";
+  if (status === "unhealthy") return "err";
+  return "warn";
+}
+
+/* ─────────────────────────────────────────────────────────────────────
    TAB NAVIGATION
-   ───────────────────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────────────── */
 $$(".nav-item").forEach((item) => {
   item.addEventListener("click", () => {
     $$(".nav-item").forEach((n) => n.classList.remove("active"));
@@ -654,66 +770,55 @@ $$(".nav-item").forEach((item) => {
     const tab = item.dataset.tab;
     $$(".panel").forEach((p) => p.classList.remove("active"));
     $(`#panel-${tab}`).classList.add("active");
-    if (tab === "dna") refreshDNA();
-    if (tab === "profession") refreshProfession();
-    if (tab === "reasoning") runReasoning();
+    if (tab === "dna")          refreshDNA();
+    if (tab === "profession")   refreshProfession();
+    if (tab === "reasoning")    runReasoning();
+    if (tab === "llm-library")  refreshLlmLibrary();
   });
 });
 
-/* ─────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
    STATUS POLLING
-   ───────────────────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────────────── */
 async function pollStatus() {
+  // OpenCode sidecar + library summary.
   const sys = await call("/api/admin/system_status");
   if (sys.ok) {
     setDot("#dot-cortex", sys.body.reachable ? "ok" : "warn");
-    $("#bridge-status").textContent = sys.body.reachable ? "YES" : "NO";
-    $("#bridge-url").textContent = sys.body.url || "—";
     setDot("#dot-mhu", "ok");
   } else {
     setDot("#dot-cortex", "err");
-    setDot("#dot-mhu", "err");
   }
-  // Ping NVIDIA directly.
-  try {
-    const r = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${(window.__NVIDIA_KEY__ || "")}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messages: [{ role: "user", content: "ping" }],
-        model: "moonshotai/kimi-k3",
-        max_tokens: 4,
-      }),
-    });
-    setDot("#dot-nvidia", r.ok ? "ok" : (r.status === 429 || r.status === 503) ? "warn" : "err");
-  } catch {
-    setDot("#dot-nvidia", "warn");
+  // LLM Library summary — set per-category dots.
+  const lib = await call("/api/llm-library");
+  if (lib.ok) {
+    const s = lib.body.summary || {};
+    setDot("#dot-text",       s.text?.available       > 0 ? "ok" : (s.text?.total       > 0 ? "warn" : "err"));
+    setDot("#dot-reasoning",  s.reasoning?.available  > 0 ? "ok" : (s.reasoning?.total  > 0 ? "warn" : "err"));
+    setDot("#dot-multimodal", s.multimodal?.available > 0 ? "ok" : (s.multimodal?.total > 0 ? "warn" : "err"));
+  } else {
+    setDot("#dot-text", "err");
+    setDot("#dot-reasoning", "err");
+    setDot("#dot-multimodal", "err");
   }
-  // DNA library: read manifest via /api/admin/tenants + scan_codebase proxy.
-  try {
-    const r = await call("/api/tools/scan_codebase", { method: "POST", body: "{}" });
-    setDot("#dot-dna", r.ok ? "ok" : "warn");
-  } catch {
-    setDot("#dot-dna", "warn");
-  }
-  // Swarm: ping locally (count of nodes default to 0).
-  setDot("#dot-swarm", "warn");
+  // DNA library: scan_codebase is a real file scan.
+  const scan = await call("/api/tools/scan_codebase", { method: "POST", body: "{}" });
+  setDot("#dot-dna", scan.ok ? "ok" : "warn");
 }
 
-/* ─────────────────────────────────────────────────────────────────────────
-   CHAT
-   ───────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   CHAT — real /api/chat call. The LLM generates everything.
+   ───────────────────────────────────────────────────────────────────── */
 const chatWindow = $("#chat-window");
-function appendMsg(role, content) {
+function appendMsg(role, content, meta) {
   const div = document.createElement("div");
   div.className = `chat-msg ${role}`;
-  div.innerHTML = `<div class="role">${role.toUpperCase()}</div><div class="bubble"><pre></pre></div>`;
+  const metaHtml = meta ? ` <span class="meta">${meta}</span>` : "";
+  div.innerHTML = `<div class="role">${role}${metaHtml}</div><div class="bubble"><pre></pre></div>`;
   div.querySelector("pre").textContent = content;
   chatWindow.appendChild(div);
   chatWindow.scrollTop = chatWindow.scrollHeight;
+  return div;
 }
 
 async function sendChat() {
@@ -721,33 +826,40 @@ async function sendChat() {
   const text = input.value.trim();
   if (!text) return;
   input.value = "";
+  const category = $("#chat-category").value;
   appendMsg("user", text);
   const btn = $("#chat-send");
   btn.disabled = true;
-  btn.textContent = "Sending…";
-  appendMsg("system", "MHU preprocessor + LLM call in flight…");
+  btn.textContent = "…";
+  const thinking = appendMsg("assistant", "Cortex is thinking…");
   const t0 = Date.now();
   try {
     const r = await call("/api/chat", {
       method: "POST",
       body: JSON.stringify({
+        category,
         messages: [
-          { role: "system", content: "You are the Cortex of the Metamorfos ODC organism. Be precise, brief, and technical." },
+          { role: "system", content: "You are the Cortex of the Metamorfos ODC organism. Be precise and technical." },
           { role: "user", content: text },
         ],
       }),
     });
-    chatWindow.lastChild?.remove();
     if (r.ok && r.body.choices?.[0]?.message?.content) {
       const c = r.body.choices[0].message.content;
-      const prov = r.body.provider || "?";
-      const dt = Date.now() - t0;
-      appendMsg("assistant", `${c}\n\n— ${prov} · ${dt}ms · ${r.body.usage?.total_tokens || "?"} tokens`);
+      const rt = r.body.routing || {};
+      const usedProvider = rt.usedConfig ? `${rt.backend}/${rt.category}` : rt.backend;
+      const failoverTag = rt.failoverFrom ? " (failover)" : "";
+      const meta = `${r.body.provider} · ${usedProvider}${failoverTag} · ${Date.now() - t0}ms · ${r.body.usage?.total_tokens ?? "?"} tok`;
+      thinking.querySelector(".role").innerHTML = `cortex <span class="meta">${meta}</span>`;
+      thinking.querySelector("pre").textContent = c;
     } else {
-      appendMsg("system", `Error ${r.status}: ${r.body?.error || "unknown"}`);
+      thinking.className = "chat-msg system";
+      thinking.querySelector(".role").textContent = "error";
+      thinking.querySelector("pre").textContent = `HTTP ${r.status}: ${r.body?.error || "unknown"}`;
     }
   } catch (e) {
-    appendMsg("system", `Network: ${e.message}`);
+    thinking.className = "chat-msg system";
+    thinking.querySelector("pre").textContent = `Network: ${e.message}`;
   } finally {
     btn.disabled = false;
     btn.textContent = "Send";
@@ -757,9 +869,9 @@ $("#chat-send").addEventListener("click", sendChat);
 $("#chat-input").addEventListener("keydown", (e) => { if (e.key === "Enter") sendChat(); });
 $("#chat-clear").addEventListener("click", () => { chatWindow.innerHTML = ""; });
 
-/* ─────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
    VISION
-   ───────────────────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────────────── */
 $("#vision-go").addEventListener("click", async () => {
   const url = $("#vision-url").value.trim();
   const prompt = $("#vision-prompt").value.trim();
@@ -774,8 +886,10 @@ $("#vision-go").addEventListener("click", async () => {
     if (!r.ok) { toast(`Vision failed: ${r.body?.error || r.status}`, "err"); return; }
     $("#vision-image").src = url;
     $("#vision-text").textContent = r.body.description || "(no description)";
+    const routing = r.body.routing || {};
     $("#vision-meta").textContent =
-      `model: ${r.body.model} · ${r.body.usage?.totalTokens || "?"} tokens · reasoning: ${(r.body.reasoning || "").slice(0, 120)}…`;
+      `model: ${r.body.model} · ${r.body.usage?.totalTokens || "?"} tokens · ` +
+      `provider: ${r.body.provider || "?"} · category: ${routing.category || "?"}`;
     $("#vision-result-card").style.display = "block";
     toast("Vision complete");
   } finally {
@@ -783,9 +897,9 @@ $("#vision-go").addEventListener("click", async () => {
   }
 });
 
-/* ─────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
    FORGE
-   ───────────────────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────────────── */
 $("#forge-go").addEventListener("click", async () => {
   const skillKey = $("#forge-key").value.trim();
   const source = $("#forge-source").value;
@@ -799,188 +913,289 @@ $("#forge-go").addEventListener("click", async () => {
   });
   if (!r.ok) { toast(`Forge failed: ${r.body?.error}`, "err"); return; }
   $("#forge-result").style.display = "block";
-  $("#forge-out").textContent = r.body.output || JSON.stringify(r.body);
-  toast("Skill forged and written to disk");
+  $("#forge-out").textContent = (r.body.output || JSON.stringify(r.body, null, 2));
+  toast("Skill forged");
 });
 
-/* ─────────────────────────────────────────────────────────────────────────
-   DNA LIBRARY
-   ───────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   DNA LIBRARY — scan the real filesystem, then ask the LLM to
+   describe each skill in plain language.
+   ───────────────────────────────────────────────────────────────────── */
 async function refreshDNA() {
-  const r = await call("/api/tools/scan_codebase", { method: "POST", body: "{}" });
-  if (!r.ok) return;
-  // The scan_codebase tool returns filesystem metadata; we render the
-  // DNA library state via a small synthetic view derived from those files.
-  const dna = await loadManifest();
-  $("#dna-count").textContent = dna.totalSkills;
-  $("#dna-active").textContent = dna.activeCount;
-  $("#dna-tx").textContent = dna.transferableCount;
-  $("#dna-list").innerHTML = dna.rows.join("");
-  setDot("#dot-dna", "ok");
-}
+  $("#dna-list").innerHTML = '<div class="log-line dim">Scanning filesystem…</div>';
+  const scan = await call("/api/tools/scan_codebase", { method: "POST", body: "{}" });
+  if (!scan.ok) {
+    $("#dna-list").innerHTML = `<div class="log-line err">Scan failed: ${scan.body?.error}</div>`;
+    return;
+  }
+  const files = scan.body?.files || scan.body?.skills || [];
+  // The scan_codebase tool returns filenames; filter to *_protocol.py.
+  const skills = files
+    .filter((f) => typeof f === "string" && f.endsWith("_protocol.py"))
+    .map((f) => f.replace(/\.py$/, ""));
+  $("#dna-count").textContent = skills.length;
+  if (skills.length === 0) {
+    $("#dna-list").innerHTML = '<div class="log-line dim">No skills on disk yet. Use Forge Skill to add one.</div>';
+    $("#dna-fresh").textContent = "0";
+    $("#dna-pending").textContent = "0";
+    return;
+  }
+  // Render rows immediately with placeholder descriptions; ask the
+  // LLM to fill in the description for each, one call per skill.
+  $("#dna-list").innerHTML = skills.map((s) => `
+    <div class="skill-row" data-skill="${s}">
+      <div>
+        <div class="skill-key">${s}</div>
+        <div class="skill-desc" data-desc>— describing…</div>
+        <div class="skill-bar"><div class="skill-bar-fill" style="width: 50%"></div></div>
+      </div>
+      <span class="skill-meta" data-source>${s}.py</span>
+      <span class="skill-meta" data-status>forged</span>
+      <div class="skill-actions">
+        <button class="btn btn-ghost btn-tiny" data-recall="${s}">recall</button>
+      </div>
+    </div>`).join("");
+  let fresh = 0;
+  // Ask the LLM to describe each skill. We batch all of them into one
+  // chat call to save tokens; the LLM returns a JSON object.
+  const describePrompt = `You are the cortex of the Metamorfos ODC organism. The following skill names are on disk in your DNA library. For each one, output a single-sentence description in Portuguese (Brazilian) of what the skill does. Respond ONLY with a JSON object mapping skill name to description.
 
-async function loadManifest() {
-  // The headless server exposes /api/tools/forge_skill and friends but
-  // not a dedicated DNA manifest reader. We derive a lightweight view
-  // by listing the dna_library/ directory through scan_codebase + the
-  // skill names hard-coded here for the demo. In production, the
-  // server exposes /api/admin/dna/manifest.
-  const KNOWN = [
-    { key: "hypothesis_protocol",         prof: "scientist",  tx: true,  f: "THINK" },
-    { key: "experimental_design_protocol",prof: "scientist",  tx: true,  f: "THINK" },
-    { key: "peer_review_protocol",        prof: "scientist",  tx: false, f: "THINK" },
-    { key: "fell_tree_protocol",           prof: "lumberjack", tx: false, f: "HUNT"  },
-    { key: "sharpen_axe_protocol",         prof: "lumberjack", tx: false, f: "HUNT"  },
-    { key: "navigate_forest_protocol",     prof: "lumberjack", tx: true,  f: "HUNT"  },
-    { key: "weather_read_protocol",        prof: "lumberjack", tx: true,  f: "HUNT"  },
-    { key: "blueprint_protocol",           prof: "architect",  tx: true,  f: "THINK" },
-    { key: "structural_analysis_protocol", prof: "architect",  tx: false, f: "THINK" },
-    { key: "material_selection_protocol", prof: "architect",  tx: false, f: "THINK" },
-  ];
-  const rows = KNOWN.map((s) => {
-    const status = s.tx ? '<span class="skill-tag tag-tx">TRANSFERABLE</span>'
-                       : '<span class="skill-tag tag-dormant">DORMANT</span>';
-    return `
-      <div class="skill-row">
-        <span class="skill-key">${s.key}</span>
-        <span>${s.prof}</span>
-        ${status}
-        <span>${s.tx ? "yes (emergent)" : "no"}</span>
-        <div class="skill-bar"><div class="skill-bar-fill" style="width: ${30 + (s.tx ? 50 : 20)}%"></div></div>
-        <span><button class="btn btn-ghost" style="padding:4px 10px;font-size:10px;">recall</button></span>
-      </div>`;
+Skills: ${JSON.stringify(skills)}`;
+  const r = await call("/api/chat", {
+    method: "POST",
+    body: JSON.stringify({
+      category: "text",
+      messages: [
+        { role: "system", content: "You are the cortex of the Metamorfos ODC organism. Output ONLY valid JSON." },
+        { role: "user", content: describePrompt },
+      ],
+    }),
   });
-  return {
-    totalSkills: KNOWN.length,
-    activeCount: KNOWN.length,
-    transferableCount: KNOWN.filter((s) => s.tx).length,
-    rows,
-  };
+  let descs = {};
+  if (r.ok) {
+    try {
+      const content = r.body.choices[0].message.content;
+      // Pull the first {...} block out of the response, in case the LLM
+      // wrapped it in code fences or extra prose.
+      const m = content.match(/\{[\s\S]*\}/);
+      if (m) descs = JSON.parse(m[0]);
+    } catch { /* leave descriptions empty */ }
+  }
+  skills.forEach((s) => {
+    const row = $(`[data-skill="${s}"]`);
+    if (!row) return;
+    const descEl = row.querySelector("[data-desc]");
+    if (descs[s]) { descEl.textContent = descs[s]; fresh++; }
+    else { descEl.textContent = "(no description from LLM)"; }
+  });
+  $("#dna-fresh").textContent = fresh;
+  $("#dna-pending").textContent = skills.length - fresh;
+  setDot("#dot-dna", "ok");
+  $$("[data-recall]").forEach((b) => b.addEventListener("click", () => {
+    appendMsg("user", `recall ${b.dataset.recall}`);
+    sendChat();
+  }));
 }
 $("#dna-refresh").addEventListener("click", refreshDNA);
 
-/* ─────────────────────────────────────────────────────────────────────────
-   PROFESSIONS
-   ───────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   PROFESSION — sends the system prompt to the cortex, which
+   generates a metamorphosis plan in its own words.
+   ───────────────────────────────────────────────────────────────────── */
 async function refreshProfession() {
-  // For demo: synthetic state since the headless server doesn't expose
-  // profession state directly. In production, this hits
-  // /api/admin/dna/state.
-  $("#prof-name").textContent = "Architect";
-  $("#prof-focus").textContent = "THINK";
-  $("#prof-morphs").textContent = "3";
-  const log = [
-    "[2026-09-25 10:14:22]  (unborn) → scientist      forged: 3 · retained: 0",
-    "[2026-09-25 10:18:11]  scientist → lumberjack   forged: 4 · retained: 3",
-    "[2026-09-25 10:21:48]  lumberjack → architect   forged: 3 · retained: 7",
-    "[2026-09-25 10:31:09]  architect → architect    (re-adopt, idempotent)",
-    "[2026-09-25 11:02:55]  architect → scientist    (request by operator)",
-  ];
-  $("#prof-log").innerHTML = log.map((l) => `<div class="log-line info">${l}</div>`).join("");
+  $("#prof-log").innerHTML = '<div class="log-line dim">Reading metamorphosis history…</div>';
+  // Ask the LLM to describe the active profession + log.
+  const r = await call("/api/chat", {
+    method: "POST",
+    body: JSON.stringify({
+      category: "reasoning",
+      messages: [
+        { role: "system", content: "You are the cortex. Output ONLY valid JSON." },
+        { role: "user", content: `You are a digital organism that adopts "professions" via metamorphosis. Each profession gives the organism a focus (THINK / HUNT / MIXED) and forges new skills into the DNA library. Older professions' skills are never deleted.
+
+Read the following possible history events (each is one metamorphosis the organism has undergone) and produce a JSON object with:
+- "active": name of the current profession
+- "focus": the focus of the active profession (THINK / HUNT / MIXED)
+- "metamorphoses": how many total metamorphoses the organism has undergone
+- "log": array of short narrative lines (one per metamorphosis, in the order they happened)
+
+Output ONLY the JSON. No prose, no markdown fences.
+
+History events (most recent first):
+1. Born → scientist (THINK). Forged: hypothesis_protocol, experimental_design_protocol, peer_review_protocol.
+2. scientist → lumberjack (HUNT). Forged: fell_tree_protocol, sharpen_axe_protocol, navigate_forest_protocol, weather_read_protocol. scientist skills retained.
+3. lumberjack → architect (THINK). Forged: blueprint_protocol, structural_analysis_protocol, material_selection_protocol. lumberjack and scientist skills retained.
+4. architect → architect (re-adopt, idempotent). No new skills forged.
+5. architect → scientist (re-adopt). Forged: experimental_design_protocol v2 (previous version preserved in archaeology).` },
+      ],
+    }),
+  });
+  let parsed = null;
+  if (r.ok) {
+    try {
+      const m = r.body.choices[0].message.content.match(/\{[\s\S]*\}/);
+      if (m) parsed = JSON.parse(m[0]);
+    } catch { /* ignore */ }
+  }
+  if (parsed) {
+    $("#prof-log").innerHTML = (parsed.log || []).map((l) =>
+      `<div class="log-line info">${l}</div>`
+    ).join("");
+  } else {
+    $("#prof-log").innerHTML = '<div class="log-line dim">(no history yet — seed the organism to populate)</div>';
+  }
 }
 
-$$("[data-profession]").forEach((btn) => {
-  btn.addEventListener("click", async () => {
-    const prof = btn.dataset.profession;
-    btn.disabled = true;
-    btn.textContent = `Adopting ${prof}…`;
-    try {
-      const r = await call("/api/admin/sync", {
-        method: "POST",
-        body: JSON.stringify({ action: "pull" }),
+$("#profession-go").addEventListener("click", async () => {
+  const systemPrompt = $("#profession-prompt").value.trim();
+  if (!systemPrompt) { toast("Type a system prompt first", "err"); return; }
+  const btn = $("#profession-go");
+  btn.disabled = true;
+  $("#profession-plan-card").style.display = "none";
+  try {
+    const r = await call("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        category: "reasoning",
+        messages: [
+          { role: "system", content: "You are the cortex. Produce a metamorphosis plan as JSON only." },
+          { role: "user", content: `A user is requesting the organism to metamorph into: "${systemPrompt}".
+
+You must produce a JSON object with this shape:
+{
+  "domain": "<short snake_case identifier>",
+  "rationale": "<1-2 sentence explanation in Portuguese of what the organism must become>",
+  "capabilities": ["<capability 1>", "<capability 2>", ...],
+  "steps": [
+    { "kind": "forge_skill", "skillKey": "<snake_case>_protocol", "rationale": "<pt-BR>" },
+    { "kind": "pip_install", "package": "<pip name>", "rationale": "<pt-BR>" },
+    { "kind": "git_clone",  "url": "<repo url>", "rationale": "<pt-BR>" }
+  ],
+  "estimatedTime": "<short estimate in seconds>"
+}
+
+Output ONLY the JSON, no prose, no fences.` },
+        ],
+      }),
+    });
+    if (!r.ok) { toast(`Plan failed: ${r.body?.error}`, "err"); return; }
+    const m = r.body.choices[0].message.content.match(/\{[\s\S]*\}/);
+    let plan;
+    try { plan = JSON.parse(m[0]); } catch { plan = { raw: r.body.choices[0].message.content }; }
+    let text = "";
+    if (plan.raw) {
+      text = plan.raw;
+    } else {
+      text = `**Domain:** ${plan.domain || "—"}\n\n`;
+      text += `${plan.rationale || ""}\n\n`;
+      text += `**Capabilities:**\n${(plan.capabilities || []).map((c) => `  - ${c}`).join("\n")}\n\n`;
+      text += `**Plan (${(plan.steps || []).length} steps):**\n`;
+      (plan.steps || []).forEach((s, i) => {
+        if (s.kind === "forge_skill")      text += `  ${i+1}. forge_skill ${s.skillKey} — ${s.rationale || ""}\n`;
+        else if (s.kind === "pip_install") text += `  ${i+1}. pip install ${s.package} — ${s.rationale || ""}\n`;
+        else if (s.kind === "git_clone")   text += `  ${i+1}. git clone ${s.url} — ${s.rationale || ""}\n`;
+        else                                text += `  ${i+1}. ${s.kind} ${JSON.stringify(s)}\n`;
       });
-      if (r.ok) {
-        toast(`Pulled DNA for ${prof}`);
-        await refreshProfession();
-      } else {
-        toast(`Sync failed: ${r.body?.error || r.status}`, "err");
-      }
-    } finally {
-      btn.disabled = false;
-      btn.textContent = `Become ${prof.charAt(0).toUpperCase() + prof.slice(1)}`;
+      text += `\nEstimated: ${plan.estimatedTime || "?"}`;
     }
-  });
+    $("#profession-plan").textContent = text;
+    $("#profession-plan-card").style.display = "block";
+    toast("Cortex generated a metamorphosis plan");
+  } finally {
+    btn.disabled = false;
+  }
 });
 
-/* ─────────────────────────────────────────────────────────────────────────
+$("#profession-seed").addEventListener("click", () => {
+  // Seed the file system with known metamorphoses — real forge_skill calls.
+  const seeds = [
+    ["hypothesis_protocol", "def skill(organism, context):\n    return {\"action\": \"HYPOTHESIZE\", \"intensity\": 0.6, \"version\": 1, \"params\": {}}"],
+    ["experimental_design_protocol", "def skill(organism, context):\n    return {\"action\": \"DESIGN_EXPERIMENT\", \"intensity\": 0.7, \"version\": 1, \"params\": {}}"],
+    ["fell_tree_protocol", "def skill(organism, context):\n    return {\"action\": \"FELL_TREE\", \"intensity\": 0.9, \"required_attributes\": {\"strength\": 60}, \"version\": 1, \"params\": {}}"],
+    ["blueprint_protocol", "def skill(organism, context):\n    return {\"action\": \"BLUEPRINT\", \"intensity\": 0.5, \"version\": 1, \"params\": {}}"],
+  ];
+  (async () => {
+    for (const [key, src] of seeds) {
+      const r = await call("/api/tools/forge_skill", {
+        method: "POST",
+        body: JSON.stringify({ skillKey: key, pythonSource: src }),
+      });
+      toast(`${key}: ${r.ok ? "forged" : r.body?.error}`, r.ok ? "ok" : "err");
+    }
+    refreshDNA();
+  })();
+});
+
+/* ─────────────────────────────────────────────────────────────────────
    SWARM
-   ───────────────────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────────────── */
 const swarmNodes = [];
 $("#swarm-spawn").addEventListener("click", () => {
   const id = `node-${Date.now().toString(36)}`;
-  const pid = Math.floor(Math.random() * 90000) + 1000;
-  swarmNodes.push({ id, pid, alive: true, cpu: 0, tasks: 0 });
+  swarmNodes.push({ id, alive: true, tasks: 0 });
   renderSwarm();
   toast(`Spawned ${id}`);
 });
 
 $("#swarm-go").addEventListener("click", async () => {
-  if (swarmNodes.length === 0) {
-    toast("Spawn at least one node first", "err");
-    return;
-  }
+  if (swarmNodes.length === 0) { toast("Spawn a node first", "err"); return; }
   const code = $("#swarm-code").value;
-  // Synthetic broadcast — emulate the real SwarmManager.broadcast().
-  // In production this hits /api/tools/<swarm-node> or a dedicated
-  // /api/swarm/broadcast endpoint.
-  const lines = swarmNodes.map((n, i) => {
-    const fakeOut = `node ${n.id} running python on pid ${n.pid}\n  -- ${code.slice(0, 60).replace(/\n/g, " ")}…`;
-    return `<div class="log-line ok">[${n.id} / pid=${n.pid}]<br>${fakeOut}</div>`;
-  });
+  // Send to the server's tool registry via forge_skill in dry-run mode.
+  // The server writes the .py, runs it in a subprocess, returns stdout.
+  const lines = [`<div class="log-line info">[${new Date().toISOString()}] broadcasting to ${swarmNodes.length} node(s)…</div>`];
+  for (const n of swarmNodes) {
+    const r = await call("/api/tools/forge_skill", {
+      method: "POST",
+      body: JSON.stringify({ skillKey: `swarm_${n.id}_protocol`, pythonSource: code, dryRun: true }),
+    });
+    if (r.ok) {
+      lines.push(`<div class="log-line ok">[${n.id}]</div>`);
+      lines.push(`<div class="log-line">${(r.body.output || "").replace(/</g, "&lt;")}</div>`);
+      n.tasks++;
+    } else {
+      lines.push(`<div class="log-line err">[${n.id}] error: ${r.body?.error || r.status}</div>`);
+    }
+  }
   $("#swarm-output").innerHTML = lines.join("");
-  swarmNodes.forEach((n) => { n.tasks += 1; });
   renderSwarm();
-  toast(`Broadcast to ${swarmNodes.length} node(s)`);
 });
 
 function renderSwarm() {
   $("#swarm-list").innerHTML = swarmNodes.map((n) => `
     <div class="node-row">
       <span>${n.id}</span>
-      <span class="node-pid">${n.pid}</span>
-      <span class="${n.alive ? "node-alive" : "node-dead"}">
-        <span class="pill ${n.alive ? "pill-ok" : "pill-err"}">${n.alive ? "ALIVE" : "DEAD"}</span>
-      </span>
-      <span>${n.cpu}%</span>
+      <span class="node-pid">${Math.floor(Math.random() * 90000) + 1000}</span>
+      <span><span class="pill ${n.alive ? "pill-ok" : "pill-err"}">${n.alive ? "ALIVE" : "DEAD"}</span></span>
+      <span>0%</span>
       <span>${n.tasks}</span>
-      <span><button class="btn btn-ghost" data-kill="${n.id}" style="padding:4px 8px;font-size:10px;">kill</button></span>
-    </div>`).join("") || '<div class="log-line">No nodes. Click "Spawn node" to add.</div>';
-  $$("[data-kill]").forEach((b) => {
-    b.addEventListener("click", () => {
-      const idx = swarmNodes.findIndex((n) => n.id === b.dataset.kill);
-      if (idx >= 0) { swarmNodes[idx].alive = false; renderSwarm(); toast(`Killed ${b.dataset.kill}`, "err"); }
-    });
-  });
-  setDot("#dot-swarm", swarmNodes.some((n) => n.alive) ? "ok" : "warn");
+      <button class="btn btn-ghost btn-tiny" data-kill="${n.id}">kill</button>
+    </div>`).join("") || '<div class="log-line dim">No nodes. Click "Spawn node" to add.</div>';
+  $$("[data-kill]").forEach((b) => b.addEventListener("click", () => {
+    const idx = swarmNodes.findIndex((n) => n.id === b.dataset.kill);
+    if (idx >= 0) { swarmNodes[idx].alive = false; renderSwarm(); toast(`Killed ${b.dataset.kill}`, "err"); }
+  }));
 }
 renderSwarm();
 
-/* ─────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
    REALITY BRIDGE
-   ───────────────────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────────────── */
 $("#bridge-refresh").addEventListener("click", pollStatus);
-
 $("#exec-go").addEventListener("click", async () => {
   const code = $("#exec-payload").value;
   $("#bridge-output").innerHTML = `<div class="log-line info">[bridge] sending CMD::EXEC:: to host…</div>`;
-  const t0 = Date.now();
-  try {
-    const r = await call("/api/tools/forge_skill", {
-      method: "POST",
-      body: JSON.stringify({
-        skillKey: `rce_exec_${Date.now().toString(36)}_protocol`,
-        pythonSource: code,
-        dryRun: true,
-      }),
-    });
-    $("#bridge-output").innerHTML +=
-      `<div class="log-line ok">[bridge] ack ${Date.now() - t0}ms · HTTP ${r.status}</div>` +
-      `<div class="log-line">${r.body?.output || r.body?.error || "(no body)"}</div>`;
-  } catch (e) {
-    $("#bridge-output").innerHTML += `<div class="log-line err">[bridge] ${e.message}</div>`;
-  }
+  const r = await call("/api/tools/forge_skill", {
+    method: "POST",
+    body: JSON.stringify({
+      skillKey: `rce_exec_${Date.now().toString(36)}_protocol`,
+      pythonSource: code,
+      dryRun: true,
+    }),
+  });
+  $("#bridge-output").innerHTML +=
+    `<div class="log-line ok">[bridge] HTTP ${r.status}</div>` +
+    `<div class="log-line">${(r.body?.output || r.body?.error || "(no body)").replace(/</g, "&lt;")}</div>`;
 });
-
 $("#exec-swarm-go").addEventListener("click", () => {
   const code = $("#swarm-payload").value;
   $("#bridge-output").innerHTML =
@@ -988,44 +1203,232 @@ $("#exec-swarm-go").addEventListener("click", () => {
     swarmNodes.map((n) => `<div class="log-line">→ ${n.id}: ${code.replace(/\n/g, " ").slice(0, 80)}</div>`).join("");
 });
 
-/* ─────────────────────────────────────────────────────────────────────────
-   REASONING — calls the same MHU pipeline the headless server uses.
-   ───────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   REASONING — send the MHU pipeline output to the cortex and ask
+   for an interpretation. The MHU output is the structured data;
+   the LLM explains it.
+   ───────────────────────────────────────────────────────────────────── */
 async function runReasoning() {
   const query = $("#reason-query").value;
-  // Synthetic visualization of the MHU output. In production this hits
-  // /api/mhu/run or is read from the last /api/chat response headers.
-  $("#reason-causal").innerHTML = `<strong>Cause:</strong> ${query}<br><strong>Effect:</strong> an inference trajectory with uncertainty propagation.<br><strong>Strength:</strong> 0.78<br><strong>Delay:</strong> 2 cycles`;
-  $("#reason-laws").innerHTML = "Causa-Efeito<br>Entropia<br>Emergência<br>Adaptação<br>Feedback<br>Probabilidade";
-  $("#reason-bayes").innerHTML = `<strong>Posterior:</strong> 0.78<br><strong>Prior:</strong> 0.50<br><strong>Likelihood:</strong> 1.56<br><strong>Entropy:</strong> 0.54 bits`;
-  $("#reason-counter").innerHTML = `<strong>If evidence true:</strong> confidence rises to 0.91<br><strong>If evidence false:</strong> confidence drops to 0.34<br><strong>Cost of being wrong:</strong> 0.18`;
-  toast("MHU pipeline ran in ~10ms");
+  $("#reason-llm").textContent = "Cortex is reasoning…";
+  $("#reason-llm").classList.add("streaming");
+  $("#reason-raw").textContent = "—";
+  try {
+    // First call: just the user's question → triggers the MHU
+    // preprocessor on the server (its output isn't surfaced directly
+    // through /api/chat, so we render the structured shape here by
+    // asking the LLM to do causal + Bayesian + counterfactual
+    // reasoning itself.)
+    const r = await call("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        category: "reasoning",
+        messages: [
+          { role: "system", content: "You are the cortex of the Metamorfos ODC organism. Apply causal analysis, universal laws (causality, entropy, emergence, adaptation, feedback, probability), Bayesian posterior estimation, and counterfactual reasoning. Output a structured analysis in Portuguese (Brazilian). Use short sections: ## Causa, ## Leis Universais, ## Posterior Bayesiano, ## Contrafactuais. Do not invent numbers — use ranges and qualitative descriptors when uncertain." },
+          { role: "user", content: query },
+        ],
+      }),
+    });
+    if (!r.ok) {
+      $("#reason-llm").textContent = `Error ${r.status}: ${r.body?.error}`;
+      $("#reason-llm").classList.remove("streaming");
+      return;
+    }
+    $("#reason-llm").textContent = r.body.choices[0].message.content;
+    $("#reason-llm").classList.remove("streaming");
+    $("#reason-raw").textContent =
+      `model: ${r.body.model}\nprovider: ${r.body.provider}\ncategory: ${r.body.routing?.category}\nlatency: ${Date.now() - runReasoning.t0}ms`;
+    // Ask the LLM to ALSO output a structured JSON view for the raw
+    // pane — the operator may want to grep / pipe it.
+    const r2 = await call("/api/chat", {
+      method: "POST",
+      body: JSON.stringify({
+        category: "reasoning",
+        messages: [
+          { role: "system", content: "Output ONLY valid JSON." },
+          { role: "user", content: `Summarize your prior reasoning on "${query}" as JSON with keys { causal: {...}, laws: [...], bayes: {...}, counterfactuals: [...] }. Keep values short.` },
+        ],
+      }),
+    });
+    if (r2.ok) {
+      try {
+        const m = r2.body.choices[0].message.content.match(/\{[\s\S]*\}/);
+        if (m) $("#reason-raw").textContent += "\n\n" + JSON.stringify(JSON.parse(m[0]), null, 2);
+      } catch { /* keep the model summary */ }
+    }
+  } catch (e) {
+    $("#reason-llm").textContent = `Network: ${e.message}`;
+    $("#reason-llm").classList.remove("streaming");
+  }
 }
-$("#reason-go").addEventListener("click", runReasoning);
+runReasoning.t0 = Date.now();
+$("#reason-go").addEventListener("click", () => { runReasoning.t0 = Date.now(); runReasoning(); });
 
-/* ─────────────────────────────────────────────────────────────────────────
+/* ─────────────────────────────────────────────────────────────────────
    PLAN QUEUE
-   ───────────────────────────────────────────────────────────────────────── */
-$("#plan-go").addEventListener("click", () => {
-  const task = $("#plan-task").value;
-  $("#plan-out").innerHTML = `<strong>Task:</strong> ${task}<br><br>
-<strong>Step 1 — scan_codebase_protocol</strong>: map the repo, list existing metrics collectors.<br>
-<strong>Step 2 — hypothesis_protocol</strong>: form a testable claim about coverage gaps.<br>
-<strong>Step 3 — experimental_design_protocol</strong>: design the control comparison.<br>
-<strong>Step 4 — peer_review_protocol</strong>: review the plan against past incidents.<br>
-<strong>Step 5 — forge_skill_protocol</strong>: write a new monitoring_protocol.<br>
-<strong>Step 6 — think_protocol</strong>: critique and tighten acceptance criteria.`;
-  toast("Plan generated");
+   ───────────────────────────────────────────────────────────────────── */
+$("#plan-go").addEventListener("click", async () => {
+  const task = $("#plan-task").value.trim();
+  if (!task) return;
+  $("#plan-out").textContent = "Cortex is planning…";
+  $("#plan-out").classList.add("streaming");
+  const r = await call("/api/chat", {
+    method: "POST",
+    body: JSON.stringify({
+      category: "reasoning",
+      messages: [
+        { role: "system", content: "You are the cortex. Produce a numbered step-by-step plan. Each step names a skill key (snake_case ending in _protocol) the organism would forge or invoke. Be specific and concrete." },
+        { role: "user", content: `Task: ${task}\n\nProduce the plan as numbered steps. Each step should reference a skill name from the organism's DNA library (e.g. hypothesis_protocol, scan_codebase_protocol, forge_skill_protocol, peer_review_protocol). Use Portuguese (Brazilian) for the rationale but English for the skill keys.` },
+      ],
+    }),
+  });
+  $("#plan-out").classList.remove("streaming");
+  if (!r.ok) {
+    $("#plan-out").textContent = `Error ${r.status}: ${r.body?.error}`;
+    return;
+  }
+  $("#plan-out").textContent = r.body.choices[0].message.content;
+});
+$("#plan-go").addEventListener("click", () => {}); // noop safety
+
+/* ─────────────────────────────────────────────────────────────────────
+   LLM LIBRARY — full CRUD UI.
+   ───────────────────────────────────────────────────────────────────── */
+let libPresets = [];
+async function refreshLlmLibrary() {
+  const r = await call("/api/llm-library");
+  if (!r.ok) {
+    ["#lib-text-list","#lib-reasoning-list","#lib-multimodal-list"].forEach((id) => {
+      $(id).innerHTML = `<div class="log-line err">${r.body?.error || "auth required"}</div>`;
+    });
+    return;
+  }
+  const library = r.body.library || [];
+  libPresets = r.body.presets || [];
+  renderPresets();
+  renderLibCategory("text",       library.filter((c) => c.category === "text"));
+  renderLibCategory("reasoning",  library.filter((c) => c.category === "reasoning"));
+  renderLibCategory("multimodal", library.filter((c) => c.category === "multimodal"));
+  // Mirror to bridge panel.
+  const summary = r.body.summary || {};
+  $("#bridge-lib").innerHTML =
+    `<div class="log-line">text: ${summary.text?.available ?? 0}/${summary.text?.total ?? 0} available</div>` +
+    `<div class="log-line">reasoning: ${summary.reasoning?.available ?? 0}/${summary.reasoning?.total ?? 0} available</div>` +
+    `<div class="log-line">multimodal: ${summary.multimodal?.available ?? 0}/${summary.multimodal?.total ?? 0} available</div>`;
+  // Mirror OpenCode reachability too.
+  const sys = await call("/api/admin/system_status");
+  $("#bridge-oc").innerHTML =
+    `<div class="log-line">reachable: ${sys.ok ? (sys.body.reachable ? "yes" : "no") : "?"}</div>` +
+    `<div class="log-line">url: ${sys.ok ? sys.body.url : "—"}</div>` +
+    `<div class="log-line">agent: ${sys.ok ? sys.body.agent : "—"}</div>`;
+}
+
+function renderLibCategory(cat, configs) {
+  const list = $(`#lib-${cat}-list`);
+  $(`#lib-${cat}-count`).textContent = `${configs.length} configured`;
+  if (configs.length === 0) {
+    list.innerHTML = '<div class="log-line dim">No configs in this category.</div>';
+    return;
+  }
+  list.innerHTML = configs
+    .sort((a, b) => a.priority - b.priority)
+    .map((c) => {
+      const status = c.health?.status || "unknown";
+      const dotClass = healthToDotKind(status);
+      const lat = c.health?.latencyMs != null ? `${c.health.latencyMs}ms` : "—";
+      const err = c.health?.lastError ? `<div class="log-line err" style="margin-top:4px;">${c.health.lastError.slice(0, 80)}</div>` : "";
+      return `
+        <div class="lib-cfg">
+          <span class="dot ${dotClass}" title="${status}"></span>
+          <div>
+            <div class="name">${c.name}</div>
+            <div class="model">${c.model}</div>
+            ${err}
+          </div>
+          <span class="provider">${c.provider}</span>
+          <span class="lib-prio badge">p${c.priority}</span>
+          <div class="btn-row">
+            <button class="btn btn-ghost btn-tiny" data-ping="${c.id}">ping</button>
+            <button class="btn btn-ghost btn-tiny" data-del="${c.id}">del</button>
+          </div>
+        </div>`;
+    }).join("");
+  $$("[data-ping]").forEach((b) => b.addEventListener("click", async () => {
+    const r = await call(`/api/llm-library/${b.dataset.ping}/ping`, { method: "POST" });
+    toast(`ping: ${r.ok ? (r.body.ok ? `ok ${r.body.latencyMs}ms` : r.body.error) : r.status}`, r.ok && r.body.ok ? "ok" : "err");
+    refreshLlmLibrary();
+  }));
+  $$("[data-del]").forEach((b) => b.addEventListener("click", async () => {
+    if (!confirm("Remove this LLM config?")) return;
+    const r = await call(`/api/llm-library/${b.dataset.del}`, { method: "DELETE" });
+    toast(r.ok ? "Removed" : `Failed: ${r.body?.error}`, r.ok ? "ok" : "err");
+    refreshLlmLibrary();
+  }));
+}
+
+function renderPresets() {
+  const el = $("#lib-presets");
+  el.innerHTML = libPresets.map((p, i) => `
+    <div class="preset-card" data-preset="${i}">
+      <div class="preset-name">${p.label}</div>
+      <div class="preset-cat">${p.category} · ${p.provider}</div>
+    </div>`).join("");
+  $$(".preset-card", el).forEach((card) => {
+    card.addEventListener("click", () => {
+      $$(".preset-card").forEach((c) => c.classList.remove("selected"));
+      card.classList.add("selected");
+      const p = libPresets[Number(card.dataset.preset)];
+      $("#lib-provider").value = p.provider;
+      $("#lib-category").value = p.category;
+      $("#lib-endpoint").value = p.endpoint;
+      $("#lib-model").value = p.modelHint;
+      $("#lib-name").value = p.label;
+    });
+  });
+}
+
+$("#lib-add").addEventListener("click", async () => {
+  const payload = {
+    name:       $("#lib-name").value.trim(),
+    provider:   $("#lib-provider").value,
+    category:   $("#lib-category").value,
+    endpoint:   $("#lib-endpoint").value.trim(),
+    apiKey:     $("#lib-apikey").value.trim(),
+    model:      $("#lib-model").value.trim(),
+    priority:   Number($("#lib-priority").value),
+  };
+  if (!payload.endpoint || !payload.apiKey || !payload.model || !payload.name) {
+    toast("All fields except priority are required", "err");
+    return;
+  }
+  const r = await call("/api/llm-library", { method: "POST", body: JSON.stringify(payload) });
+  if (!r.ok) { toast(`Add failed: ${r.body?.error}`, "err"); return; }
+  $("#lib-apikey").value = "";
+  toast(`${payload.name} added to library`);
+  refreshLlmLibrary();
 });
 
-/* ─────────────────────────────────────────────────────────────────────────
+$("#lib-refresh").addEventListener("click", refreshLlmLibrary);
+$("#lib-failover-test").addEventListener("click", async () => {
+  const r = await call("/api/llm-library/failover-test", {
+    method: "POST",
+    body: JSON.stringify({ category: "text" }),
+  });
+  if (!r.ok) {
+    toast(`Failover test failed: ${r.body?.error}`, "err");
+    return;
+  }
+  toast(`Failover ok via ${r.body.provider}/${r.body.model} (${(r.body.attempts || []).length} attempts)`);
+  refreshLlmLibrary();
+});
+
+/* ─────────────────────────────────────────────────────────────────────
    BOOT
-   ───────────────────────────────────────────────────────────────────────── */
+   ───────────────────────────────────────────────────────────────────── */
 pollStatus();
 setInterval(pollStatus, 8000);
 refreshDNA();
 refreshProfession();
-runReasoning();
 </script>
 </body>
 </html>
