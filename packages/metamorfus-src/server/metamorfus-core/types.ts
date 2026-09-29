@@ -2,36 +2,27 @@
  * Metamorfus core — the meta-organism layer that tracks professions,
  * morph_focus, and the persistent DNA library.
  *
- * Conceptual model (refined against the operator's brief):
+ * Open skill schema (round 3):
+ *   Skills are NOT just Python source. A skill is any executable
+ *   artifact that carries memory. The DNA library stores skills with
+ *   a typed `runtime` and an opaque `payload` shaped by that runtime.
  *
- *   Profession   — a bundle of related skills + an active morph_focus.
- *                  Tags skills with the profession they originated from.
+ *   runtime = "python" | "javascript" | "wasm" | "shell" | "spec"
  *
- *   Morph_Focus  — what the organism is OPTIMIZED for THIS moment. It
- *                  does NOT delete other skills from view; it gates
- *                  which skills the Executor sees as ACTIVE. Dormant
- *                  skills wake when context matches a reactivation
- *                  trigger — like a scientist who is a lumberjack but
- *                  remembers hypotheses when a tree falls unexpectedly.
+ *   "spec" is a non-executable skill (data, schema, reference) — for
+ *   cases where the organism just needs to remember a concept without
+ *   being able to run it (e.g., a reference protocol, a glossary, a
+ *   configuration template).
  *
- *   DNA Library  — append-only, NEVER ERASES. Forgetting is physically
- *                  impossible. Every forged skill lands here FOREVER,
- *                  including older versions of re-forged skills (which
- *                  become "archaeology" the cortex can introspect).
+ *   payload shape:
+ *     python      { source: string }
+ *     javascript  { source: string }
+ *     wasm        { bytes_ref: string, exports: string[] }
+ *     shell       { command: string }
+ *     spec        { content: unknown, format: string }
  *
- *   Transferable skill — a skill that has been proven useful in more
- *                  than one profession. Transferability is EMERGENT,
- *                  not stamped at forge time. The first time another
- *                  profession uses a dormant skill via reactivation,
- *                  the usage_history grows. After N >= 2 distinct
- *                  professions in usage_history, the skill is promoted
- *                  to transferable=true by `recordUse`.
- *
- *   Mastery     — numeric (0.0-1.0). Decays with time, rises with use.
- *                  The organism is not equally fluent in all skills.
- *
- *   A metamorphosis is the act of changing profession. The organism's
- *   total knowledge DOES NOT shrink. It only re-weights.
+ *   Other runtimes can be added without changing the schema — only
+ *   the swarm dispatch table needs to know.
  */
 
 export type MorphFocus =
@@ -44,6 +35,8 @@ export type MorphFocus =
 
 export type AttributeName = "cpu" | "strength" | "agility";
 
+export type SkillRuntime = "python" | "javascript" | "wasm" | "shell" | "spec";
+
 export interface Intention {
   action: string;
   intensity: number;
@@ -53,7 +46,9 @@ export interface Intention {
 }
 
 /**
- * One historical entry in the DNA library.
+ * A skill is any executable artifact that carries memory. The
+ * `runtime` field tells the swarm how to invoke it; the `payload`
+ * shape depends on the runtime.
  *
  * IMPORTANT: the same skill key may appear multiple times in `skills[]`
  * because re-forging produces version-bumped copies. Older versions are
@@ -67,8 +62,17 @@ export interface SkillManifest {
   profession: string;
   /** Skill version. Monotonically increases when re-forged. */
   version: number;
-  /** Origin source code (Python). */
-  source: string;
+  /** Runtime that knows how to execute this skill. */
+  runtime: SkillRuntime;
+  /**
+   * Runtime-specific payload.
+   *   python      → { source: string }
+   *   javascript  → { source: string }
+   *   wasm        → { bytes_ref: string, exports: string[] }
+   *   shell       → { command: string }
+   *   spec        → { content: unknown, format: string }
+   */
+  payload: SkillPayload;
   /** ISO timestamp when forged. */
   forged_at: string;
   /** who/what forged this. */
@@ -104,14 +108,60 @@ export interface SkillManifest {
    * Context patterns that wake this skill while dormant. When the
    * Executor asks "what should I do for context X", any dormant skill
    * whose trigger patterns match X is reactivated on the fly.
-   * For example, a hypothesis_protocol forged as a scientist might
-   * declare the trigger `"surprise"`, so when the architect encounters
-   * an unexpected structural finding, the dormant hypothesis skill
-   * wakes up.
    */
   reactivation_triggers: string[];
   /** Computed by the engine — not editable. */
   status: SkillStatus;
+  /**
+   * Free-form metadata. Use this for domain-specific extras without
+   * changing the schema: tags, source attribution, weight, etc.
+   */
+  metadata?: Record<string, unknown>;
+}
+
+/**
+ * Discriminated union for skill payloads. The swarm dispatch picks one
+ * based on `runtime`; new runtimes can be added by extending this union.
+ */
+export type SkillPayload =
+  | { source: string }
+  | { source: string }
+  | { bytes_ref: string; exports: string[] }
+  | { command: string }
+  | { content: unknown; format: string };
+
+/**
+ * Type guards per runtime. Callers should narrow `payload` with these
+ * before using its fields.
+ */
+export function isPythonPayload(p: SkillPayload): p is { source: string } {
+  return typeof (p as { source?: unknown }).source === "string";
+}
+export function isJavascriptPayload(p: SkillPayload): p is { source: string } {
+  return typeof (p as { source?: unknown }).source === "string";
+}
+export function isWasmPayload(p: SkillPayload): p is { bytes_ref: string; exports: string[] } {
+  const w = p as { bytes_ref?: unknown; exports?: unknown };
+  return typeof w.bytes_ref === "string" && Array.isArray(w.exports);
+}
+export function isShellPayload(p: SkillPayload): p is { command: string } {
+  return typeof (p as { command?: unknown }).command === "string";
+}
+export function isSpecPayload(p: SkillPayload): p is { content: unknown; format: string } {
+  const s = p as { content?: unknown; format?: unknown };
+  return s.content !== undefined && typeof s.format === "string";
+}
+
+/**
+ * Extracts the source string from any payload that has one
+ * (python / javascript / shell). Used by legacy code paths that still
+ * treat `source` as the canonical field.
+ */
+export function payloadSource(p: SkillPayload): string | undefined {
+  if (isPythonPayload(p) || isJavascriptPayload(p) || isShellPayload(p)) {
+    return p.source ?? (p as { command?: string }).command;
+  }
+  return undefined;
 }
 
 export type SkillStatus =
@@ -125,12 +175,10 @@ export type SkillStatus =
   | "archaeology";
 
 /**
- * Tracks the active profession and morph_focus at any moment.
- */
-/**
  * A bundle of skills + focus that the cortex adopts when entering a
  * profession. The seeds are the skills the cortex forges upon
- * adoption. Real-world skills land as Python files in the DNA library.
+ * adoption. Real-world forged skills land as executable artifacts in
+ * the DNA library.
  */
 export interface Profession {
   /** Stable identifier (snake_case). */
@@ -145,7 +193,8 @@ export interface Profession {
     profession: string;
     version: number;
     morph_focus: MorphFocus;
-    source: string;
+    runtime: SkillRuntime;
+    payload: SkillPayload;
     reactivation_triggers: string[];
     foraged_by?: string;
   }>;
@@ -162,6 +211,11 @@ export interface MetamorphState {
   retained_from_past_professions: string[];
   /** Currently-decayed skills (computed at choice-time). */
   decayed_skills: string[];
+  /**
+   * History of every profession adopted, in chronological order.
+   * Enables A→B→C→A reversibility: any past profession is reachable.
+   */
+  profession_chain: string[];
 }
 
 /** A context object passed by the Executor when asking which skills apply. */

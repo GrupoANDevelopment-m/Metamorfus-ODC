@@ -1,33 +1,43 @@
 /**
- * Python source bodies for each profession's seed skills. Kept separate
- * from `professions.ts` so the bodies stay readable.
+ * Skill bodies for each profession's seed skills. Kept separate from
+ * `professions.ts` so the bodies stay readable.
  *
  * Convention:
- *   • def skill(organism, context) signature (matches forge_skill validator)
- *   • returns an intention dict
- *   • docstring at the top
+ *   • python skills expose `def skill(organism, context)`
+ *   • javascript skills expose `function skill(organism, context)`
+ *   • shell skills are single-line bash pipelines
+ *   • spec skills are reference data with no executable body
+ *   • each seed carries `reactivation_triggers` so dormant skills can
+ *     wake on context match and earn transferable=true
  *
  * Each seed now carries `reactivation_triggers` — context tokens that
  * wake the skill while it's dormant (i.e., during a metamorphosis into
  * a profession whose current focus doesn't match this skill's focus).
- * For example, a hypothesis_protocol forged by a scientist has the
- * trigger "surprise", so when an architect encounters an unexpected
- * structural finding, the dormant hypothesis skill wakes up — and the
- * organism logs the cross-profession use, which eventually promotes
- * the skill to transferable=true.
  */
 
+import type { SkillRuntime, SkillPayload } from "./types.js";
+
 export interface SeedSpec {
-  source: string;
+  /** Default runtime — overridable at the profession level. */
+  runtime: SkillRuntime;
+  /** Runtime-specific payload. */
+  payload: SkillPayload;
   /** Default reactivation_triggers; can be overridden at the skill level. */
   reactivation_triggers: string[];
 }
 
+const PY = (source: string): SkillPayload => ({ source } as SkillPayload);
+const JS = (source: string): SkillPayload => ({ source } as SkillPayload);
+const SH = (command: string): SkillPayload => ({ command } as SkillPayload);
+const SP = (content: unknown, format: string): SkillPayload =>
+  ({ content, format } as SkillPayload);
+
 export const SEED_SOURCES: Record<string, SeedSpec> = {
   // ─── SCIENTIST ────────────────────────────────────────────────────────
   hypothesis_protocol: {
+    runtime: "python",
     reactivation_triggers: ["surprise", "anomaly", "why", "unexpected"],
-    source: `
+    payload: PY(`
 def skill(organism, context):
     """Form a falsifiable hypothesis from an observation.
 
@@ -42,12 +52,13 @@ def skill(organism, context):
         "version": 1,
         "params": {"observation": observation, "falsifiable": True}
     }
-`.trim(),
+`.trim()),
   },
 
   experimental_design_protocol: {
+    runtime: "python",
     reactivation_triggers: ["comparison", "controlled", "control", "baseline"],
-    source: `
+    payload: PY(`
 def skill(organism, context):
     """Design an experiment to test a hypothesis.
 
@@ -62,12 +73,13 @@ def skill(organism, context):
         "version": 1,
         "params": {"hypothesis": hypothesis, "controls": True}
     }
-`.trim(),
+`.trim()),
   },
 
   peer_review_protocol: {
+    runtime: "python",
     reactivation_triggers: ["critique", "review", "feedback", "objection"],
-    source: `
+    payload: PY(`
 def skill(organism, context):
     """Review a colleague's claim for rigor.
 
@@ -84,13 +96,14 @@ def skill(organism, context):
         "version": 1,
         "params": {"claim": claim}
     }
-`.trim(),
+`.trim()),
   },
 
   // ─── LUMBERJACK ───────────────────────────────────────────────────────
   fell_tree_protocol: {
+    runtime: "python",
     reactivation_triggers: ["fall", "fell", "storm", "emergency"],
-    source: `
+    payload: PY(`
 def skill(organism, context):
     """Chop down a tree. Pure physical action.
 
@@ -105,69 +118,58 @@ def skill(organism, context):
         "version": 1,
         "params": {"tree_id": tree_id}
     }
-`.trim(),
+`.trim()),
   },
 
   sharpen_axe_protocol: {
+    runtime: "shell",
     reactivation_triggers: ["edge", "sharpen", "maintenance", "repair"],
-    source: `
-def skill(organism, context):
-    """Maintain the edge. Tool care.
-
-    Originally forged by: lumberjack.adopt
-    Reactivation triggers: edge, sharpen, maintenance, repair
-    """
-    return {
-        "action": "SHARPEN_AXE",
-        "intensity": 0.4,
-        "required_attributes": {"strength": 10},
-        "version": 1
-    }
-`.trim(),
+    // Real sharpen-axe would be a bash that runs a sharpening routine.
+    // We use `true` so the executor can verify the discipline is honoured.
+    payload: SH(`echo "sharpen_axe: edge restored" && exit 0`),
   },
 
   navigate_forest_protocol: {
+    runtime: "javascript",
     reactivation_triggers: ["lost", "trail", "bearing", "outdoor", "forest"],
-    source: `
-def skill(organism, context):
-    """Read trails, find bearings, return home.
-
-    Originally forged by: lumberjack.adopt
-    Reactivation triggers: lost, trail, bearing, outdoor, forest
-    """
-    destination = context.get("destination", "")
-    return {
-        "action": "NAVIGATE_FOREST",
-        "intensity": 0.5,
-        "required_attributes": {"agility": 30},
-        "version": 1,
-        "params": {"destination": destination}
-    }
-`.trim(),
+    payload: JS(`
+function skill(organism, context) {
+  // Pure navigation solver: emit a bearing recommendation.
+  return {
+    action: "NAVIGATE_FOREST",
+    intensity: 0.5,
+    required_attributes: { agility: 30 },
+    version: 1,
+    params: { destination: context.destination || "", bearing_deg: 0 }
+  };
+}
+`.trim()),
   },
 
   weather_read_protocol: {
+    runtime: "spec",
     reactivation_triggers: ["weather", "sky", "wind", "storm", "forecast"],
-    source: `
-def skill(organism, context):
-    """Read sky, wind, pressure to predict weather.
-
-    Originally forged by: lumberjack.adopt
-    Reactivation triggers: weather, sky, wind, storm, forecast
-    """
-    return {
-        "action": "READ_WEATHER",
-        "intensity": 0.3,
-        "required_attributes": {"cpu": 10},
-        "version": 1
-    }
-`.trim(),
+    // Reference protocol: not executable, just remembered. The cortex
+    // can read this as guidance; executors don't invoke it.
+    payload: SP(
+      {
+        title: "weather_read_protocol",
+        type: "reference",
+        rules: [
+          "If cumulus build vertically fast → convective risk",
+          "If wind shifts counter-clockwise → incoming front",
+          "If pressure drops > 3 hPa/hour → storm within 6 hours",
+        ],
+      },
+      "json",
+    ),
   },
 
   // ─── ARCHITECT ────────────────────────────────────────────────────────
   blueprint_protocol: {
+    runtime: "python",
     reactivation_triggers: ["design", "draft", "blueprint", "plan"],
-    source: `
+    payload: PY(`
 def skill(organism, context):
     """Draft a blueprint from a brief.
 
@@ -182,12 +184,13 @@ def skill(organism, context):
         "version": 1,
         "params": {"brief": brief}
     }
-`.trim(),
+`.trim()),
   },
 
   structural_analysis_protocol: {
+    runtime: "python",
     reactivation_triggers: ["load", "stress", "span", "collapse"],
-    source: `
+    payload: PY(`
 def skill(organism, context):
     """Compute load-bearing requirements.
 
@@ -202,26 +205,21 @@ def skill(organism, context):
         "version": 1,
         "params": {"span_meters": span}
     }
-`.trim(),
+`.trim()),
   },
 
   material_selection_protocol: {
+    runtime: "spec",
     reactivation_triggers: ["material", "specs", "substrate", "selection"],
-    source: `
-def skill(organism, context):
-    """Pick materials from a constraint set.
-
-    Originally forged by: architect.adopt
-    Reactivation triggers: material, specs, substrate, selection
-    """
-    constraints = context.get("constraints", {})
-    return {
-        "action": "SELECT_MATERIALS",
-        "intensity": 0.6,
-        "required_attributes": {"cpu": 40},
-        "version": 1,
-        "params": {"constraints": constraints}
-    }
-`.trim(),
+    // Reference data — organism just remembers the rubric.
+    payload: SP(
+      {
+        title: "material_selection_protocol",
+        type: "rubric",
+        axes: ["load_kg_m2", "exposure", "cost_per_m2", "lifecycle_years"],
+        defaults: { load_kg_m2: 200, exposure: "interior", cost_per_m2: 50, lifecycle_years: 30 },
+      },
+      "json",
+    ),
   },
 };

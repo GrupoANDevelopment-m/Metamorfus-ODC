@@ -51,7 +51,10 @@ export interface ForgeSkillFn {
   (
     args: {
       skillKey: string;
-      pythonSource: string;
+      /** Source string (legacy: python). Prefer `payload` for new code. */
+      pythonSource?: string;
+      /** Runtime-specific payload. Takes precedence over pythonSource. */
+      payload?: import("./types.js").SkillPayload;
       dryRun?: boolean;
       dnaDir?: string;
     },
@@ -289,7 +292,11 @@ export async function adopt(
     try {
       const result = await ctx.forgeSkill({
         skillKey: seed.key,
-        pythonSource: seed.source,
+        payload: seed.payload,
+        pythonSource:
+          seed.runtime === "python" && "source" in seed.payload
+            ? (seed.payload as { source: string }).source
+            : undefined,
         dryRun: false,
         dnaDir: ctx.dnaDir ?? DEFAULT_DNA_DIR,
       });
@@ -298,7 +305,8 @@ export async function adopt(
         key: seed.key,
         profession: professionName,
         version: seed.version,
-        source: seed.source,
+        runtime: seed.runtime,
+        payload: seed.payload,
         foraged_by: seed.foraged_by,
         morph_focus: seed.morph_focus,
         mastery: FORGE_MASTERY,
@@ -524,4 +532,107 @@ export function summary(manifest: ManifestMeta): string {
     );
   }
   return lines.join("\n");
+}
+
+/**
+ * Restore (round 3) — switch back to a profession previously in the
+ * chain without losing skills gained along the way.
+ *
+ * Behaviour:
+ *   - Validates the target profession is in the historical chain.
+ *   - Reuses `adopt()` semantics for forging + reactivation + decay.
+ *   - Records the restore event in metamorphosis_log so the audit
+ *     trail reflects that the organism walked back.
+ *   - The profession chain keeps every profession the organism has
+ *     inhabited, so repeated A→B→C→A loops remain valid.
+ *
+ * Composability:
+ *   - `restore()` can be called any number of times — each call is
+ *     independent.
+ *   - `adopt()` and `restore()` can interleave freely.
+ *
+ * Idempotency:
+ *   - Restoring the current profession is a no-op for state (still
+ *     triggers decay bookkeeping so time-based mastery stays fresh).
+ */
+export async function restore(
+  professionName: string,
+  ctx: MetamorphContext,
+  context: SkillSelectorContext = { text: "" },
+): Promise<{
+  state: MetamorphState;
+  report: ManifestMeta;
+  steps: Array<{ skillKey: string; status: "FORGED" | "SKIPPED" | "FAILED"; detail?: string }>;
+  reactivatedSkills: string[];
+  fromProfession: string;
+}> {
+  const manifest = await loadManifest(ctx);
+  if (!manifest.profession_chain.includes(professionName)) {
+    throw new Error(
+      `restore: profession "${professionName}" is not in the historical chain (have: ${manifest.profession_chain.join(", ")})`,
+    );
+  }
+  const fromProfession = manifest.state.profession;
+  const result = await adopt(professionName, ctx, context);
+  // Tag the log entry so the audit reflects a restore, not a fresh adopt.
+  if (manifest.metamorphosis_log.length > 0) {
+    const last = manifest.metamorphosis_log[manifest.metamorphosis_log.length - 1];
+    if (last.from === fromProfession && last.to === professionName) {
+      (last as { kind?: string }).kind = "restore";
+    }
+  }
+  await persistManifest(ctx, manifest);
+  return {
+    state: result.state,
+    report: result.report,
+    steps: result.steps,
+    reactivatedSkills: result.reactivatedSkills,
+    fromProfession,
+  };
+}
+
+/**
+ * Returns the chronological history of professions the organism has
+ * inhabited. Useful for UIs that want a "walk back" menu.
+ */
+export async function professionHistory(
+  ctx: MetamorphContext,
+): Promise<string[]> {
+  const manifest = await loadManifest(ctx);
+  return [...manifest.profession_chain];
+}
+
+/**
+ * Branch-off (round 3) — for experiments. Performs an in-memory fork
+ * of the current manifest, applies `adopt()` to the fork, and returns
+ * it. The persistent DNA library is NOT modified. Use this to preview
+ * "what would happen if I switched to profession X?" without
+ * touching the real state.
+ */
+export async function branchPreview(
+  professionName: string,
+  ctx: MetamorphContext,
+  context: SkillSelectorContext = { text: "" },
+): Promise<{
+  state: MetamorphState;
+  steps: Array<{ skillKey: string; status: "FORGED" | "SKIPPED" | "FAILED"; detail?: string }>;
+  reactivatedSkills: string[];
+}> {
+  const snapshot = await loadManifest(ctx);
+  // Monkey-patch ctx so persistManifest writes to a sibling file.
+  const previewCtx: MetamorphContext = {
+    ...ctx,
+    dnaDir: `${ctx.dnaDir ?? DEFAULT_DNA_DIR}__preview_${Date.now()}`,
+  };
+  // Restore before patching — adopt() will read from snapshot via loadManifest,
+  // which now goes through previewCtx.dnaDir. Write the snapshot there first.
+  const dnaDir = await ensureDnaDir(previewCtx);
+  const manifestPath = path.join(dnaDir, "manifest.json");
+  await writeFile(manifestPath, JSON.stringify(snapshot, null, 2), "utf8");
+  const result = await adopt(professionName, previewCtx, context);
+  return {
+    state: result.state,
+    steps: result.steps,
+    reactivatedSkills: result.reactivatedSkills,
+  };
 }

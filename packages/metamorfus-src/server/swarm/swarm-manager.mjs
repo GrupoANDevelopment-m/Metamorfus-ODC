@@ -183,16 +183,39 @@ export class SwarmManager extends EventEmitter {
    * @returns {Promise<ExecResult>}
    */
   async execOnNode(nodeId, pythonCode, timeoutMs) {
+    return this.execOnNodeRuntime(nodeId, "python", { code: pythonCode }, timeoutMs);
+  }
+
+  /**
+   * Run a polyglot payload on one specific node.
+   *
+   * @param {string} nodeId
+   * @param {"python"|"javascript"|"shell"|"wasm"|"spec"} runtime
+   * @param {Record<string, unknown>} payload  Runtime-specific keys
+   *   python      → { code: string }
+   *   javascript  → { code: string }
+   *   shell       → { command: string }
+   *   wasm        → { bytes_ref: string, exports: string[] }
+   *   spec        → { content: unknown, format: string }
+   * @param {number} [timeoutMs]
+   * @returns {Promise<ExecResult>}
+   */
+  async execOnNodeRuntime(nodeId, runtime, payload, timeoutMs) {
     const node = this.nodes.find((n) => n.id === nodeId);
     if (!node) throw new Error(`unknown node ${nodeId}`);
     const t0 = Date.now();
-    const r = await this.requestOnNode(node, { op: "EXEC", code: pythonCode }, timeoutMs);
+    const r = await this.requestOnNode(
+      node,
+      { op: "EXEC", runtime, ...payload },
+      timeoutMs,
+    );
     return {
       nodeId,
       ok: !!r.ok,
       stdout: r.stdout ?? "",
       stderr: r.stderr ?? "",
       exitCode: r.exitCode ?? null,
+      runtime: r.runtime ?? runtime,
       durationMs: Date.now() - t0,
     };
   }
@@ -204,9 +227,22 @@ export class SwarmManager extends EventEmitter {
    * @returns {Promise<ExecResult[]>}
    */
   async broadcast(pythonCode, timeoutMs) {
+    return this.broadcastRuntime("python", { code: pythonCode }, timeoutMs);
+  }
+
+  /**
+   * Broadcast a polyglot payload to ALL live nodes. Each node's runtime
+   * must accept the payload; a node that rejects just returns ok=false.
+   *
+   * @param {"python"|"javascript"|"shell"|"wasm"|"spec"} runtime
+   * @param {Record<string, unknown>} payload
+   * @param {number} [timeoutMs]
+   * @returns {Promise<ExecResult[]>}
+   */
+  async broadcastRuntime(runtime, payload, timeoutMs) {
     const promises = this.nodes.map(async (n) => {
       try {
-        return await this.execOnNode(n.id, pythonCode, timeoutMs);
+        return await this.execOnNodeRuntime(n.id, runtime, payload, timeoutMs);
       } catch (e) {
         return {
           nodeId: n.id,
@@ -214,6 +250,7 @@ export class SwarmManager extends EventEmitter {
           stdout: "",
           stderr: (e && e.message) || "broadcast error",
           exitCode: null,
+          runtime,
           durationMs: 0,
         };
       }

@@ -4,8 +4,8 @@
  *   • a default morph_focus
  *   • a description (the cortex reads it before forging the seeds)
  *   • seed skills — what the cortex should grow when the profession is
- *     adopted. Real-world forged skills land as Python files in
- *     `packages/metamorfus-src/dna_library/<key>.py`.
+ *     adopted. Each seed declares its `runtime` (python | javascript |
+ *     shell | wasm | spec) and a runtime-specific `payload`.
  *
  * Seeds carry `version` and `reactivation_triggers`. The latter is
  * honoured by `chooseCandidateSkills` — when the organism is in a
@@ -16,13 +16,15 @@
  * transferable=true automatically (see decay.ts).
  */
 
-import type { Profession, MorphFocus, AttributeName } from "./types.js";
+import type { Profession, MorphFocus, AttributeName, SkillRuntime, SkillPayload } from "./types.js";
 import { SEED_SOURCES } from "./seed-sources.js";
 
 interface SeedInput {
   key: string;
   version?: number;
   morph_focus?: MorphFocus;
+  /** Optional runtime override; otherwise pulled from SEED_SOURCES. */
+  runtime?: SkillRuntime;
   /** Optional override; otherwise pulled from SEED_SOURCES. */
   reactivation_triggers?: string[];
   foraged_by?: string;
@@ -90,7 +92,8 @@ export const PROFESSIONS: Profession[] = PROFESSION_DATA.map((p) => ({
       version: seed.version ?? 1,
       morph_focus: seed.morph_focus ?? p.default_morph_focus,
       foraged_by: seed.foraged_by ?? `${p.name}.adopt`,
-      source: spec.source,
+      runtime: seed.runtime ?? spec.runtime,
+      payload: spec.payload as SkillPayload,
       reactivation_triggers:
         seed.reactivation_triggers ?? spec.reactivation_triggers,
     };
