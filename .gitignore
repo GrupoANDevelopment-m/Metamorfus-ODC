@@ -44,3 +44,5 @@ packages/opencode-src/
 packages/metamorfus-src/dna_library/manifest.json
 packages/metamorfus-src/dna_library/*.py
 
+data/
+packages/metamorfus-src/packages/

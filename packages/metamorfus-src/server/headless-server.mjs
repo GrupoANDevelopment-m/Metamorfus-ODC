@@ -72,6 +72,43 @@ export async function startHeadlessServer(opts = {}) {
   // Auth + sync modules (pure JS).
   const { tenantAuth, reloadTenants, listTenants, getTenant } = await import("./auth/tenant-auth.mjs");
   const { pushDna, pullDna } = await import("./sync/dna-git-sync.mjs");
+  // Botnet library + swarm manager (specialized botnet models + lifecycle).
+  const { SwarmManager } = await import("./swarm/swarm-manager.mjs");
+  const { BotnetLibrary } = await import("./botnet/library.mjs");
+  const botnetLibrary = opts.botnetLibrary ?? new BotnetLibrary(
+    path.resolve(opts.workspaceRoot ?? process.cwd(), "data/botnets"),
+  );
+  await botnetLibrary.load();
+  const swarmManager = opts.swarmManager ?? new SwarmManager({
+    count: 0,
+    nodeScript: path.resolve(__dirname, "swarm/swarm-node.mjs"),
+    defaultTimeoutMs: 30_000,
+  });
+  // Metamorphose orchestrator + planner (system prompt → plan → execute).
+  const { MetamorphoseOrchestrator } = await import("./metamorfose/orchestrator.mjs");
+  const { PromptPlanner } = await import("./metamorfose/prompt-planner.mjs");
+  const orchestrator = new MetamorphoseOrchestrator({
+    forgeSkill: async ({ skillKey, pythonSource }) =>
+      executeBridgeTool("forge_skill", { skillKey, pythonSource }),
+    dnaDir: path.resolve(opts.workspaceRoot ?? process.cwd(), "packages/metamorfus-src/dna_library"),
+    pythonBin: process.env.PYTHON_BIN ?? "python3",
+    onLog: (line) => console.log(line),
+  });
+  const planner = new PromptPlanner(llmRouter, "reasoning");
+  // NL intent parser + action router — turns chat messages into real actions.
+  const { IntentParser } = await import("./nl/intent.mjs");
+  const { ActionRouter } = await import("./nl/router.mjs");
+  const intentParser = new IntentParser(llmRouter, "reasoning");
+  const actionRouter = new ActionRouter({
+    llmRouter,
+    botnetLibrary,
+    swarmManager,
+    orchestrator,
+    planner,
+    forgeSkill: async ({ skillKey, pythonSource }) =>
+      executeBridgeTool("forge_skill", { skillKey, pythonSource }),
+    dnaDir: path.resolve(opts.workspaceRoot ?? process.cwd(), "packages/metamorfus-src/dna_library"),
+  });
 
   const app = express();
   app.use(cors());
@@ -425,9 +462,180 @@ export async function startHeadlessServer(opts = {}) {
     }
   });
 
+  // ─── /api/metamorphose — execute a metamorphosis plan ─────────────
+  // Takes a free-form system prompt, asks the cortex to plan, and
+  // then EXECUTES the plan (forge_skill, pip_install, git_clone,
+  // record_metamorphose). Each step's result is in the response.
+  app.post("/api/metamorphose", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const systemPrompt = typeof req.body?.systemPrompt === "string" ? req.body.systemPrompt : "";
+    if (systemPrompt.length === 0) {
+      return res.status(400).json({ error: "systemPrompt is required" });
+    }
+    try {
+      const planResult = await planner.plan(systemPrompt);
+      const innerPlan = planResult.plan?.plan ?? planResult.plan;
+      const report = await orchestrator.run({
+        id: planResult.id,
+        systemPrompt,
+        plan: innerPlan,
+      });
+      res.json({ plan: planResult, report });
+    } catch (e) {
+      res.status(500).json({ error: e?.message ?? "metamorphose failed" });
+    }
+  });
+
+  // ─── /api/metamorphose/plan — plan only, don't execute ───────────
+  // The dashboard's "Profession" panel calls this to preview what
+  // the cortex would do before committing.
+  app.post("/api/metamorphose/plan", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const systemPrompt = typeof req.body?.systemPrompt === "string" ? req.body.systemPrompt : "";
+    if (systemPrompt.length === 0) return res.status(400).json({ error: "systemPrompt is required" });
+    try {
+      const plan = await planner.plan(systemPrompt);
+      res.json(plan);
+    } catch (e) {
+      res.status(500).json({ error: e?.message ?? "plan failed" });
+    }
+  });
+
+  // ─── /api/metamorphose/history — read the log of past morphoses ──
+  app.get("/api/metamorphose/history", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const { readMetamorphosisLog } = await import("./metamorfose/orchestrator.mjs");
+    const dnaDir = path.resolve(opts.workspaceRoot ?? process.cwd(), "packages/metamorfus-src/dna_library");
+    const log = await readMetamorphosisLog(dnaDir);
+    res.json({ history: log });
+  });
+
+  // ─── /api/botnet/* — specialized botnet catalog + lifecycle ──────
+  app.get("/api/botnet/models", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const kind = typeof req.query.kind === "string" ? req.query.kind : undefined;
+    res.json({ models: botnetLibrary.list(...(kind ? [{ kind }] : [])) });
+  });
+
+  app.post("/api/botnet/models", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const model = await botnetLibrary.create(req.body ?? {});
+      res.json({ model });
+    } catch (e) {
+      res.status(400).json({ error: e?.message ?? "invalid model" });
+    }
+  });
+
+  app.get("/api/botnet/models/:id", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const m = botnetLibrary.get(req.params.id);
+    if (!m) return res.status(404).json({ error: "not found" });
+    res.json({ model: m });
+  });
+
+  app.patch("/api/botnet/models/:id", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const child = await botnetLibrary.mutate(req.params.id, req.body ?? {});
+      res.json({ model: child });
+    } catch (e) {
+      res.status(400).json({ error: e?.message ?? "mutate failed" });
+    }
+  });
+
+  app.delete("/api/botnet/models/:id", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      await botnetLibrary.remove(req.params.id);
+      res.json({ removed: req.params.id });
+    } catch (e) {
+      res.status(400).json({ error: e?.message ?? "delete failed" });
+    }
+  });
+
+  app.get("/api/botnet/lineage", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    res.json({ lineage: botnetLibrary.lineage() });
+  });
+
+  // ─── /api/botnet/runs — live botnet instances ────────────────────
+  app.get("/api/botnet/runs", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    res.json({ runs: actionRouter.listRuns() });
+  });
+
+  app.post("/api/botnet/runs", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const result = await actionRouter.dispatch("spawn_botnet", req.body ?? {});
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e?.message ?? "spawn failed" });
+    }
+  });
+
+  app.delete("/api/botnet/runs/:runId", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const r = await actionRouter.dispatch("kill_botnet", { runId: req.params.runId });
+      res.json(r);
+    } catch (e) {
+      res.status(400).json({ error: e?.message ?? "kill failed" });
+    }
+  });
+
+  // ─── /api/swarm/* — direct swarm access (used by botnet runs) ────
+  app.get("/api/swarm/status", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    res.json({
+      live: swarmManager.list().map((n) => ({
+        id: n.id, pid: n.info?.pid, alive: n.info?.alive, startedAt: n.info?.startedAt,
+      })),
+      totalSpawned: swarmManager.totalSpawned?.() ?? swarmManager.nodes?.length ?? 0,
+    });
+  });
+
+  // ─── /api/nl/parse — direct intent parsing (used by tests + UI) ──
+  app.post("/api/nl/parse", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const message = typeof req.body?.message === "string" ? req.body.message : "";
+    const history = Array.isArray(req.body?.history) ? req.body.history : [];
+    try {
+      const r = await intentParser.parse(message, history);
+      res.json(r);
+    } catch (e) {
+      res.status(500).json({ error: e?.message ?? "parse failed" });
+    }
+  });
+
+  // ─── /api/nl/dispatch — parse AND execute (the full chat loop) ──
+  app.post("/api/nl/dispatch", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const message = typeof req.body?.message === "string" ? req.body.message : "";
+    const history = Array.isArray(req.body?.history) ? req.body.history : [];
+    if (!message) return res.status(400).json({ error: "message is required" });
+    try {
+      const intent = await intentParser.parse(message, history);
+      let action = null;
+      let actionError = null;
+      if (intent.intent !== "chat") {
+        try {
+          action = await actionRouter.dispatch(intent.intent, intent.args);
+        } catch (e) {
+          actionError = e?.message ?? String(e);
+        }
+      }
+      res.json({ intent, action, actionError });
+    } catch (e) {
+      res.status(500).json({ error: e?.message ?? "dispatch failed" });
+    }
+  });
+
   // Close the health-sweep timer on shutdown.
   const origClose = async () => {
     clearInterval(healthSweepTimer);
+    try { await swarmManager.shutdown?.(); } catch { /* */ }
     await new Promise((resolve) => server.close(() => resolve()));
   };
 
@@ -444,6 +652,12 @@ export async function startHeadlessServer(opts = {}) {
     server,
     llmStore,
     llmRouter,
+    botnetLibrary,
+    swarmManager,
+    actionRouter,
+    orchestrator,
+    planner,
+    intentParser,
     close: origClose,
   };
 }
