@@ -21,6 +21,7 @@
 
 import express from "express";
 import cors from "cors";
+import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -98,7 +99,14 @@ export async function startHeadlessServer(opts = {}) {
   // NL intent parser + action router — turns chat messages into real actions.
   const { IntentParser } = await import("./nl/intent.mjs");
   const { ActionRouter } = await import("./nl/router.mjs");
+  const { invokeSkill } = await import("./skills/invoker.mjs");
+  const { probeEnvironment } = await import("./skills/probe.mjs");
   const intentParser = new IntentParser(llmRouter, "reasoning");
+  // Resolve the DNA library directory. The default lives at
+  // packages/metamorfus-src/dna_library relative to the workspace
+  // root (one level up from this file). Operators can override
+  // via opts.dnaDir.
+  const DNA_DIR = opts.dnaDir ?? path.resolve(__dirname, "../dna_library");
   const actionRouter = new ActionRouter({
     llmRouter,
     botnetLibrary,
@@ -107,7 +115,7 @@ export async function startHeadlessServer(opts = {}) {
     planner,
     forgeSkill: async ({ skillKey, pythonSource }) =>
       executeBridgeTool("forge_skill", { skillKey, pythonSource }),
-    dnaDir: path.resolve(opts.workspaceRoot ?? process.cwd(), "packages/metamorfus-src/dna_library"),
+    dnaDir: DNA_DIR,
   });
 
   const app = express();
@@ -632,7 +640,41 @@ export async function startHeadlessServer(opts = {}) {
     }
   });
 
-  // Close the health-sweep timer on shutdown.
+  // ─── /api/skills/* — list and invoke real skills in the DNA library ─
+  app.get("/api/skills", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    fs.readdir(DNA_DIR).then((files) => {
+      const skills = files.filter((f) => f.endsWith("_protocol.py")).map((f) => f.replace(/\.py$/, ""));
+      res.json({ skills });
+    }).catch((e) => res.status(500).json({ error: e.message }));
+  });
+
+  app.post("/api/skills/:name/invoke", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const context = req.body?.context ?? req.body ?? {};
+    try {
+      const r = await invokeSkill({
+        skillKey: req.params.name,
+        context,
+        dnaDir: DNA_DIR,
+        pythonBin: process.env.PYTHON_BIN ?? "python3",
+      });
+      res.json(r);
+    } catch (e) {
+      res.status(500).json({ ok: false, error: e.message });
+    }
+  });
+
+  // ─── /api/environment/probe — what tools does the organism have? ─
+  // Self-expansion: the organism queries its own environment to find
+  // out which Python packages and CLI tools are available. The
+  // planner uses this to decide what to install during morph.
+  app.get("/api/environment/probe", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const env = await probeEnvironment();
+    res.json({ environment: env });
+  });
+
   const origClose = async () => {
     clearInterval(healthSweepTimer);
     try { await swarmManager.shutdown?.(); } catch { /* */ }

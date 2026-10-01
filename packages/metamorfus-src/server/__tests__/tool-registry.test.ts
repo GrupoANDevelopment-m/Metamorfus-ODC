@@ -143,31 +143,43 @@ test("forge_skill: rejects empty pythonSource", async () => {
   );
 });
 
-test("forge_skill: rejects source that does not define skill(organism, context)", async () => {
-  const tool = getTool("forge_skill")!;
-  await assert.rejects(
-    () =>
-      tool.execute(
-        { skillKey: "ok_protocol", pythonSource: "def wrong():\n    pass" },
-        ctx(),
-      ),
-    /def skill\(organism, context\)/,
-  );
-});
-
-test("forge_skill: rejects source missing action in returned dict", async () => {
+test("forge_skill: accepts real Python without the legacy intention-dict stub", async () => {
+  // The metamorph organism grows by forging executable Python — not
+  // by stuffing code into a "action/intensity" stub. Any valid Python
+  // that defines skill(organism, context) is accepted, even if it
+  // returns a plain dict or any other value.
   const tool = getTool("forge_skill")!;
   const source = `
 def skill(organism, context):
-    return {"intensity": 0.5}
+    """Real skill that returns plain data — no intention dict."""
+    return {"x": 1, "y": 2}
 `.trim();
+  const r = await tool.execute({ skillKey: "plain_real_skill_protocol", pythonSource: source }, ctx());
+  assert.ok(r.data.bytes > 0, "should report bytes written");
+});
+
+test("forge_skill: rejects Python with syntax errors", async () => {
+  const tool = getTool("forge_skill")!;
   await assert.rejects(
-    () =>
-      tool.execute(
-        { skillKey: "no_action_protocol", pythonSource: source },
-        ctx(),
-      ),
-    /action/,
+    () => tool.execute(
+      { skillKey: "broken_syntax_protocol", pythonSource: "def skill(o, c) BROKEN" },
+      ctx(),
+    ),
+    /not valid Python syntax/,
+  );
+});
+
+test("forge_skill: rejects Python with no runnable function", async () => {
+  // The organism should still require something callable. Pure
+  // constants are not skills. (We don't enforce a specific name;
+  // we require the source to actually define something.)
+  const tool = getTool("forge_skill")!;
+  await assert.rejects(
+    () => tool.execute(
+      { skillKey: "no_function_protocol", pythonSource: "x = 1\ny = 2" },
+      ctx(),
+    ),
+    /runnable function|not valid Python/i,
   );
 });
 

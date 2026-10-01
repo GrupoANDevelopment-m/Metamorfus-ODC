@@ -1,48 +1,105 @@
-// Prompt Planner — converts a free-form system prompt into a structured
-// metamorphosis plan. The cortex LLM does the heavy lifting; this module
-// wraps the LLM call with the right system prompt and JSON extraction.
+// Metamorphose Planner — the organism's brain.
 //
-// The output is the same shape the dashboard's "Profession" panel
-// already renders, but it's the version the orchestrator can EXECUTE.
+// Given a free-form system prompt, the planner:
+//
+//   1. RESEARCHES the domain (asks the LLM "what capabilities and
+//      materials does a real <system> need?")
+//   2. PRODUCES a structured plan with REAL concrete steps
+//   3. WRITES real, executable Python for each skill — not stubs
+//   4. NAMES real GitHub repos to clone when applicable
+//   5. LISTS real pip packages to install
+//
+// The planner does NOT execute anything. The orchestrator runs
+// each step. The planner is pure analysis + code generation.
+//
+// The system prompt here is critical: it instructs the LLM to
+// write WORKING code that uses the packages from pip_install
+// steps, not abstract placeholders.
 
 import crypto from "node:crypto";
 
+// ─── System prompt for the planner ──────────────────────────────────
+// The planner receives the user's desired system AND the current
+// environment probe (which packages are already installed), so the
+// plan only installs what's actually missing.
 const PLAN_SYSTEM = `//MARKER:METAMORPH_PLANNER//
-You are the cortex of the Metamorfos ODC organism. A user wants to metamorph the organism into a new system. Produce a JSON-only plan describing the steps to make it real.
+You are the cortex of the Metamorfos ODC organism. Your job is to plan a metamorphosis — the process by which the organism becomes a different kind of system.
 
-Output ONLY valid JSON of this shape:
+You will receive:
+  • A user-provided "system prompt" describing what the organism should become
+  • An "environment probe" showing which Python packages + CLI tools are already installed
+  • The current date and any other context
+
+Your output is a JSON object ONLY (no prose, no markdown fences). It has this shape:
+
 {
   "id": "<morphosis-uuid>",
   "domain": "<snake_case identifier>",
-  "rationale": "<1-2 sentences in Portuguese (BR) explaining what the organism must become>",
-  "capabilities": ["<capability 1>", "<capability 2>", "..."],
+  "research": "<2-4 sentences in Portuguese (BR) explaining what the system prompt requires and what real-world capabilities it implies>",
+  "rationale": "<one-sentence Portuguese (BR) explanation of the metamorphosis strategy>",
+  "capabilities": ["<real capability 1>", "<real capability 2>", "..."],
+  "external_materials": {
+    "github_repos": [{"url": "https://github.com/...", "purpose": "why this repo helps"}],
+    "pypi_packages": [{"name": "<package>", "purpose": "what it provides"}],
+    "cli_tools": [{"name": "<tool>", "install_via": "apt|brew|pip"}]
+  },
   "plan": {
     "steps": [
       {
         "stepId": "step-<n>",
-        "kind": "forge_skill" | "pip_install" | "git_clone" | "record_metamorphose",
+        "kind": "forge_skill" | "pip_install" | "git_clone" | "run_shell" | "record_metamorphose",
         "skillKey": "<snake_case>_protocol",
-        "pythonSource": "<python source string>",
+        "pythonSource": "<full, executable Python source — see rules below>",
         "package": "<pip package name>",
         "url": "<git url>",
-        "rationale": "<one-line explanation in pt-BR>"
+        "command": ["<argv array>"],
+        "rationale": "<one-line Portuguese (BR) explanation>"
       }
     ]
   },
   "estimatedTime": "<short estimate>"
 }
 
-Constraints:
-- Use kind "forge_skill" for any skill the organism needs to write (it goes into DNA library).
-- Each forge_skill step MUST include a valid pythonSource for the skill(organism, context) function.
-- Use kind "pip_install" for Python packages the new skills need.
-- End with a "record_metamorphose" step that records this transformation in the organism's history.
-- Do NOT include any prose, markdown fences, or explanation. Output only JSON.`;
+CRITICAL RULES — follow exactly:
+
+1. RESEARCH FIRST: the "research" field must explain what the system prompt REALLY requires. Don't just rephrase the user — name the concrete subsystems, data sources, and tools a production version of this system would need.
+
+2. EXTERNAL MATERIALS: list REAL GitHub repos that exist (use your training knowledge) and REAL PyPI packages. Don't invent URLs. If you don't know a real one, leave the field empty.
+
+3. SKILLS MUST BE EXECUTABLE: every forge_skill step's pythonSource must be a complete, runnable Python module that:
+   • Defines a function with signature \`def skill(organism, context)\`
+   • Imports its dependencies INSIDE the function (so missing imports produce a clear error)
+   • Does REAL work — opens sockets, queries APIs, parses responses, writes files — whatever the skill is supposed to do
+   • Returns a dict (or any value) with the actual result, not a stub like {"action": "X"}
+   • Has no fake/placeholder code — every line must contribute to the skill's actual function
+   • Does NOT mock, stub, or fake external services. If a real API is needed, call it for real.
+
+4. DEPENDENCIES MUST MATCH: if a forge_skill imports \`scapy\`, there MUST be a pip_install step for \`scapy\` BEFORE it. Order steps so deps install first.
+
+5. STEP ORDER: install deps → clone repos → forge skills → record metamorphose. The final step should be \`record_metamorphose\`.
+
+6. NO STUBS, NO MOCKS, NO PLACEHOLDERS. If you don't know how to write real code for something, leave it OUT of the plan rather than writing fake code.
+
+Output ONLY valid JSON. No prose, no markdown, no fences.`;
+
+/**
+ * Probe the environment first so the plan only installs missing
+ * packages. Falls back to a synthetic empty probe if the import
+ * fails (e.g. when the planner is used standalone).
+ */
+async function defaultProbe() {
+  try {
+    const { probeEnvironment } = await import("../skills/probe.mjs");
+    return await probeEnvironment();
+  } catch {
+    return { python: { ok: true }, pip: { ok: true }, git: { ok: true } };
+  }
+}
 
 export class PromptPlanner {
   /**
-   * @param {import("../llm-library/router.mjs").LlmRouter} router  LLM router
-   * @param {"text"|"reasoning"} [category]  which category to use
+   * @param {import("../llm-library/router.mjs").LlmRouter} router
+   * @param {"text"|"reasoning"} [category]
    */
   constructor(router, category = "reasoning") {
     this.router = router;
@@ -50,23 +107,38 @@ export class PromptPlanner {
   }
 
   /**
-   * Plan a metamorphosis from a free-form system prompt.
+   * Plan a metamorphosis. Probes the environment first, then asks
+   * the LLM to produce a real, executable plan.
+   *
    * @param {string} systemPrompt
-   * @returns {Promise<{id: string, systemPrompt: string, plan: any, raw: string, attempts: any[]}>}
+   * @param {{probe?: object}} [opts]
+   * @returns {Promise<{id: string, systemPrompt: string, plan: any, raw: string, model: string, probe: object}>}
    */
-  async plan(systemPrompt) {
+  async plan(systemPrompt, opts = {}) {
     if (typeof systemPrompt !== "string" || systemPrompt.trim().length === 0) {
       throw new Error("systemPrompt is required");
     }
+    const probe = opts.probe ?? (await defaultProbe());
+    const userMsg = [
+      `System prompt (what the organism should become):\n---\n${systemPrompt.trim()}\n---`,
+      "",
+      "Environment probe (what's already installed):",
+      "```",
+      JSON.stringify(probe, null, 2),
+      "```",
+      "",
+      "Produce the metamorphosis plan as JSON. Remember: real code, real packages, real repos. No stubs.",
+    ].join("\n");
+
     const result = await this.router.complete(this.category, {
       messages: [
         { role: "system", content: PLAN_SYSTEM },
-        { role: "user", content: systemPrompt.trim() },
+        { role: "user", content: userMsg },
       ],
       temperature: 0.4,
-      maxTokens: 4096,
+      maxTokens: 8000,
     });
-    // Extract the JSON block from the LLM response.
+
     const m = (result.content || "").match(/\{[\s\S]*\}/);
     if (!m) throw new Error("cortex did not return a JSON plan");
     let parsed;
@@ -75,11 +147,25 @@ export class PromptPlanner {
     } catch (e) {
       throw new Error(`cortex returned invalid JSON: ${e.message}`);
     }
-    // Normalize: ensure id + step ids exist.
+
+    // Normalize: ensure id + step ids + step kinds are valid.
     if (!parsed.id) parsed.id = `morph-${crypto.randomUUID()}`;
-    (parsed.plan?.steps ?? []).forEach((s, i) => {
+    const validKinds = new Set(["forge_skill", "pip_install", "git_clone", "run_shell", "record_metamorphose"]);
+    const steps = parsed.plan?.steps ?? [];
+    steps.forEach((s, i) => {
       if (!s.stepId) s.stepId = `step-${i + 1}`;
+      if (!validKinds.has(s.kind)) s.kind = "forge_skill";
+      if (s.kind === "forge_skill") {
+        if (!s.skillKey) s.skillKey = `morph_skill_${i + 1}_protocol`;
+        if (!s.pythonSource) s.pythonSource = "";
+      }
     });
+
+    // Auto-order: install deps → clone → forge → record. The LLM
+    // sometimes gets the order wrong; we re-sort deterministically.
+    const order = { pip_install: 0, git_clone: 1, run_shell: 2, forge_skill: 3, record_metamorphose: 4 };
+    steps.sort((a, b) => (order[a.kind] ?? 99) - (order[b.kind] ?? 99));
+
     return {
       id: parsed.id,
       systemPrompt,
@@ -87,91 +173,8 @@ export class PromptPlanner {
       raw: result.content,
       model: result.model,
       provider: result.provider,
+      probe,
       attempts: result.attempts ?? [],
     };
   }
 }
-
-/**
- * Default skill templates the planner can use when it doesn't know
- * what code to write. Each template is a Python function body.
- */
-export const SKILL_TEMPLATES = {
-  arxiv_search_protocol:
-`def skill(organism, context):
-    """Search arxiv for papers matching the query."""
-    import urllib.request, urllib.parse, json
-    q = context.get("query", "")
-    url = f"http://export.arxiv.org/api/query?search_query={urllib.parse.quote(q)}&max_results=5"
-    try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            data = resp.read().decode("utf-8", errors="ignore")
-        return {"action": "ARXIV_SEARCH", "intensity": 0.6, "version": 1, "params": {"query": q, "fetched_bytes": len(data)}}
-    except Exception as e:
-        return {"action": "ARXIV_SEARCH_FAILED", "intensity": 0.0, "version": 1, "params": {"error": str(e)}}
-`,
-  pdf_extract_protocol:
-`def skill(organism, context):
-    """Extract text from a PDF."""
-    pdf_path = context.get("path", "")
-    try:
-        import PyPDF2
-        with open(pdf_path, "rb") as f:
-            reader = PyPDF2.PdfReader(f)
-            text = "".join(p.extract_text() or "" for p in reader.pages)
-        return {"action": "PDF_EXTRACT", "intensity": 0.5, "version": 1, "params": {"path": pdf_path, "pages": len(reader.pages), "chars": len(text)}}
-    except Exception as e:
-        return {"action": "PDF_EXTRACT_FAILED", "intensity": 0.0, "version": 1, "params": {"error": str(e)}}
-`,
-  market_data_protocol:
-`def skill(organism, context):
-    """Fetch market data for a symbol."""
-    symbol = context.get("symbol", "BTC/USDT")
-    try:
-        import ccxt
-        ex = ccxt.binance()
-        ticker = ex.fetch_ticker(symbol)
-        return {"action": "MARKET_DATA", "intensity": 0.5, "version": 1, "params": {"symbol": symbol, "price": ticker.get("last")}}
-    except Exception as e:
-        return {"action": "MARKET_DATA_FAILED", "intensity": 0.0, "version": 1, "params": {"error": str(e)}}
-`,
-  http_fetch_protocol:
-`def skill(organism, context):
-    """Fetch a URL."""
-    import urllib.request, json
-    url = context.get("url", "")
-    try:
-        with urllib.request.urlopen(url, timeout=10) as resp:
-            body = resp.read().decode("utf-8", errors="ignore")
-        return {"action": "HTTP_FETCH", "intensity": 0.4, "version": 1, "params": {"url": url, "bytes": len(body)}}
-    except Exception as e:
-        return {"action": "HTTP_FETCH_FAILED", "intensity": 0.0, "version": 1, "params": {"error": str(e)}}
-`,
-  port_scan_protocol:
-`def skill(organism, context):
-    """Scan a host for open ports."""
-    host = context.get("host", "127.0.0.1")
-    ports = context.get("ports", [22, 80, 443])
-    import socket
-    open_ports = []
-    for p in ports:
-        try:
-            with socket.create_connection((host, p), timeout=1):
-                open_ports.append(p)
-        except Exception:
-            pass
-    return {"action": "PORT_SCAN", "intensity": 0.6, "version": 1, "params": {"host": host, "open": open_ports}}
-`,
-  generic_skill_protocol:
-`def skill(organism, context):
-    """Generic skill body — emits a CUSTOM_ACTION with the provided params."""
-    target = context.get("target", "")
-    return {
-        "action": "CUSTOM_ACTION",
-        "intensity": 0.5,
-        "required_attributes": {"cpu": 10},
-        "version": 1,
-        "params": {"target": target},
-    }
-`,
-};

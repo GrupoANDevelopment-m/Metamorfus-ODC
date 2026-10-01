@@ -23,6 +23,10 @@
  */
 
 import { describeImage } from "../vision-tool.js";
+import { spawn } from "node:child_process";
+import { createRequire } from "node:module";
+
+const _require = createRequire(import.meta.url);
 
 // ---------------------------------------------------------------------------
 // Tool definitions
@@ -302,11 +306,54 @@ const forgeSkill: ToolDefinition = {
     if (source.length < 10) {
       throw new Error("forge_skill: pythonSource looks empty");
     }
-    if (!/def\s+skill\s*\(\s*organism\s*,\s*context\s*\)/.test(source)) {
-      throw new Error("forge_skill: source must define `def skill(organism, context)`");
+    // Real metamorphosis writes real, executable Python. The organism
+    // grows into arbitrary systems (cybersecurity, research, trading).
+    // We no longer force the "intention dict" stub shape — that was a
+    // design mistake. Instead we validate that the source is valid
+    // Python syntax and contains something runnable.
+    //
+    // If `python3` is not available (e.g. minimal CI image), skip the
+    // syntax check — the file will fail when invoked, which is also a
+    // clear error. Better than refusing every morph on a missing
+    // interpreter.
+    const syntaxOk = await new Promise<{ok: boolean, reason?: string}>((resolve) => {
+      try {
+        const py = process.env.PYTHON_BIN ?? "python3";
+        const proc = spawn(py, ["-c", "import sys; compile(sys.stdin.read(), '<forge>', 'exec'); print('ok')"], { stdio: ["pipe", "pipe", "pipe"] });
+        let out = "";
+        let err = "";
+        proc.stdout.on("data", (c: Buffer) => { out += c.toString(); });
+        proc.stderr.on("data", (c: Buffer) => { err += c.toString(); });
+        const timer = setTimeout(() => {
+          try { proc.kill("SIGKILL"); } catch { /* */ }
+          resolve({ ok: false, reason: "syntax-check timed out" });
+        }, 10_000);
+        proc.on("close", (code) => {
+          clearTimeout(timer);
+          if (code === 0 && out.includes("ok")) resolve({ ok: true });
+          else resolve({ ok: false, reason: (err || out).trim().slice(0, 300) || `exit ${code}` });
+        });
+        proc.on("error", (e) => {
+          clearTimeout(timer);
+          // python3 missing entirely — don't block morphs on this.
+          if (e && /ENOENT/.test(String(e.message))) resolve({ ok: true, reason: "python3 unavailable — skipping syntax check" });
+          else resolve({ ok: false, reason: e.message });
+        });
+        proc.stdin.write(source);
+        proc.stdin.end();
+      } catch (e: any) {
+        resolve({ ok: false, reason: e?.message ?? "spawn failed" });
+      }
+    });
+    if (!syntaxOk.ok && !/python3 unavailable/.test(syntaxOk.reason ?? "")) {
+      throw new Error(`forge_skill: source is not valid Python syntax: ${syntaxOk.reason}`);
     }
-    if (!/"action"\s*:/.test(source) || (!/intensity/.test(source) && !/"action"\s*:\s*['"]/.test(source))) {
-      throw new Error("forge_skill: source must return an intention dict with `action`");
+    // The source must define something runnable. The organism grows
+    // by acquiring callable skills, not by writing constants.
+    const hasRunnable = /\bdef\s+(skill|run|main|handler|invoke)\b/.test(source)
+      || /if\s+__name__\s*==\s*['"]__main__['"]/.test(source);
+    if (!hasRunnable) {
+      throw new Error("forge_skill: source must define a runnable function (def skill/run/main/handler/invoke) or an __main__ block");
     }
 
     const path = await import("node:path");

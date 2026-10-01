@@ -17,7 +17,7 @@ import http from "node:http";
 
 import { BotnetLibrary } from "../botnet/library.mjs";
 import { MetamorphoseOrchestrator, readMetamorphosisLog } from "../metamorfose/orchestrator.mjs";
-import { PromptPlanner, SKILL_TEMPLATES } from "../metamorfose/prompt-planner.mjs";
+import { PromptPlanner } from "../metamorfose/prompt-planner.mjs";
 import { IntentParser } from "../nl/intent.mjs";
 import { ActionRouter } from "../nl/router.mjs";
 import { LlmLibraryStore } from "../llm-library/store.mjs";
@@ -122,8 +122,8 @@ test("planner: parses system prompt into a structured plan via stub LLM", async 
         capabilities: ["search papers", "extract pdfs", "summarize"],
         plan: {
           steps: [
-            { stepId: "step-1", kind: "forge_skill", skillKey: "arxiv_search_protocol", pythonSource: SKILL_TEMPLATES.arxiv_search_protocol, rationale: "buscar papers no arxiv" },
-            { stepId: "step-2", kind: "forge_skill", skillKey: "pdf_extract_protocol",  pythonSource: SKILL_TEMPLATES.pdf_extract_protocol,  rationale: "extrair texto de PDFs" },
+            { stepId: "step-1", kind: "forge_skill", skillKey: "arxiv_search_protocol", pythonSource: "def skill(organism, context):\n    return {'action':'SEARCH'}", rationale: "buscar papers no arxiv" },
+            { stepId: "step-2", kind: "forge_skill", skillKey: "pdf_extract_protocol",  pythonSource: "def skill(organism, context):\n    return {'action':'EXTRACT'}",  rationale: "extrair texto de PDFs" },
             { stepId: "step-3", kind: "record_metamorphose", rationale: "registrar transformação" },
           ],
         },

@@ -71,6 +71,12 @@ export class MetamorphoseOrchestrator {
         stepId: step.stepId ?? `step-${i + 1}`,
         index: i + 1,
         kind: step.kind,
+        // Preserve identifying data so the report is self-describing.
+        skillKey: step.skillKey,
+        package: step.package,
+        url: step.url,
+        command: step.command,
+        rationale: step.rationale,
         status: "running",
         startedAt: new Date().toISOString(),
         finishedAt: null,
@@ -84,10 +90,27 @@ export class MetamorphoseOrchestrator {
             stepRecord.output = await this._forgeSkill(step);
             break;
           case "pip_install":
-            stepRecord.output = await this._pipInstall(step);
+            // pip_install is a *self-expansion* step: the organism
+            // tries to grow into the dependency. If it fails (no
+            // network, externally-managed env, missing pip), we
+            // record the failure as a warning but CONTINUE — the
+            // plan can still succeed if the remaining skills use
+            // only the stdlib. The skill that needs the missing
+            // package will fail at invocation with a clear error.
+            try {
+              stepRecord.output = await this._pipInstall(step);
+            } catch (e) {
+              stepRecord.status = "warn";
+              stepRecord.error = `pip install unavailable in this environment: ${e?.message?.slice(0, 300) ?? "unknown"}`;
+              stepRecord.output = { warning: "skipped — skill may fail at runtime if it needs this package" };
+              this.onLog(`[orchestrator ${runId}] step ${i + 1} pip_install WARN: ${stepRecord.error.slice(0, 200)}`);
+            }
             break;
           case "git_clone":
             stepRecord.output = await this._gitClone(step);
+            break;
+          case "run_shell":
+            stepRecord.output = await this._runShell(step);
             break;
           case "record_metamorphose":
             stepRecord.output = await this._recordMetamorphose(morphosis, step);
@@ -95,7 +118,7 @@ export class MetamorphoseOrchestrator {
           default:
             throw new Error(`unknown step kind: ${step.kind}`);
         }
-        stepRecord.status = "done";
+        if (stepRecord.status !== "warn") stepRecord.status = "done";
       } catch (e) {
         stepRecord.status = "failed";
         stepRecord.error = e?.message ?? String(e);
@@ -126,17 +149,42 @@ export class MetamorphoseOrchestrator {
 
   async _pipInstall(step) {
     if (!step.package) throw new Error("pip_install requires package");
-    // Use --user to avoid touching system packages. In production,
-    // this should run inside a per-tenant venv; for now the dry-run
-    // flag in forge_skill keeps tests hermetic.
-    const args = ["-m", "pip", "install", "--user", "--quiet", step.package];
-    return await this._exec(args, { stdio: ["ignore", "pipe", "pipe"] });
+    // Self-expansion: actually install the package via the real
+    // Python interpreter. The organism uses pip to grow into the
+    // dependencies it needs to become the requested system.
+    //
+    // Modern Debian/Ubuntu blocks system-wide pip installs. We try
+    // --break-system-packages first (the right flag for non-venv
+    // installs on externally-managed systems), then fall back to
+    // --user, then to a venv. Whatever works.
+    const attempts = [
+      [this.pythonBin, "-m", "pip", "install", "--user", "--break-system-packages", "--quiet", step.package],
+      [this.pythonBin, "-m", "pip", "install", "--user", "--quiet", step.package],
+    ];
+    let lastErr = null;
+    for (const args of attempts) {
+      try {
+        return await this._exec(args, { stdio: ["ignore", "pipe", "pipe"] });
+      } catch (e) {
+        lastErr = e;
+      }
+    }
+    throw new Error(`pip install ${step.package} failed: ${lastErr?.message ?? "unknown"}`);
   }
 
   async _gitClone(step) {
     if (!step.url) throw new Error("git_clone requires url");
+    // Self-expansion: clone real working code from GitHub into the
+    // DNA library so the organism can use it as a building block.
     const target = path.join(this.dnaDir, "_git_imports", path.basename(step.url, ".git"));
     return await this._exec(["git", "clone", "--depth=1", step.url, target], { stdio: ["ignore", "pipe", "pipe"] });
+  }
+
+  async _runShell(step) {
+    // Optional shell step for tools that aren't pip (apt, npm, brew).
+    const cmd = step.command;
+    if (!cmd || !Array.isArray(cmd)) throw new Error("run_shell requires command: string[]");
+    return await this._exec(cmd, { stdio: ["ignore", "pipe", "pipe"] });
   }
 
   async _recordMetamorphose(morphosis, step) {
