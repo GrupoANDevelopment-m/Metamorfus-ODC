@@ -206,6 +206,13 @@ export const PROVIDER_PRESETS = [
   },
   {
     provider: "openai-compatible",
+    label: "Kimi (Moonshot)",
+    category: "text",
+    endpoint: "https://api.moonshot.cn/v1/chat/completions",
+    modelHint: "moonshot-v1-8k",
+  },
+  {
+    provider: "openai-compatible",
     label: "OpenAI",
     category: "text",
     endpoint: "https://api.openai.com/v1/chat/completions",

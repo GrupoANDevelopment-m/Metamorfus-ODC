@@ -150,6 +150,13 @@ export async function startHeadlessServer(opts = {}) {
   app.use(tenantAuth());
 
   // ─── /api/admin/system_status ────────────────────────────────────
+  // Cost control — track token usage across all chat completions in
+  // this process. Same behavior as the original server.ts: when the
+  // running total exceeds MAX_TOKENS_PER_SESSION, the kill-switch
+  // engages and /api/chat starts returning 403.
+  const MAX_TOKENS_PER_SESSION = Number(process.env.MAX_TOKENS_PER_SESSION ?? 500_000);
+  let totalTokensUsed = 0;
+  let killSwitchEngaged = false;
   app.get("/api/admin/system_status", async (_req, res) => {
     const reachable = await opencodePing();
     res.json({
@@ -157,13 +164,17 @@ export async function startHeadlessServer(opts = {}) {
       reachable,
       url: process.env.OPENCODE_URL ?? "http://localhost:4096",
       agent: process.env.OPENCODE_AGENT ?? "cortex",
-      killSwitchEngaged: false,
+      totalTokensUsed,
+      maxTokens: MAX_TOKENS_PER_SESSION,
+      killSwitchEngaged,
     });
   });
 
   // ─── /api/admin/reset ────────────────────────────────────────────
   app.post("/api/admin/reset", (_req, res) => {
-    res.json({ status: "Reset requested" });
+    totalTokensUsed = 0;
+    killSwitchEngaged = false;
+    res.json({ status: "Reset requested", totalTokensUsed, killSwitchEngaged });
   });
 
   // ─── /api/vision ─────────────────────────────────────────────────
@@ -244,6 +255,13 @@ export async function startHeadlessServer(opts = {}) {
   // ─── /api/chat — with MHU pipeline + real LLM (OpenCode or LLM Library router) ─
   app.post("/api/chat", async (req, res) => {
     try {
+      // Kill-switch check (same behavior as the original server.ts).
+      // If cumulative token usage has exceeded the session budget, the
+      // chat endpoint returns 403 instead of consuming more.
+      if (killSwitchEngaged) {
+        return res.status(403).json({ error: "Kill-Switch Engaged: Token limit exceeded to prevent runaway costs." });
+      }
+
       // Pick a category for routing. Operators can request a
       // reasoning model explicitly; otherwise default to "text".
       const requestedCategory = typeof req.body?.category === "string" ? req.body.category : "text";
@@ -302,12 +320,42 @@ export async function startHeadlessServer(opts = {}) {
         }
       }
       if (!result) {
-        result = await llmRouter.complete(category, {
-          messages,
-          ...(reqModel ? { model: reqModel } : {}),
-          temperature: typeof req.body?.temperature === "number" ? req.body.temperature : 0.7,
-          maxTokens: typeof req.body?.max_tokens === "number" ? req.body.max_tokens : 4096,
-        });
+        try {
+          result = await llmRouter.complete(category, {
+            messages,
+            ...(reqModel ? { model: reqModel } : {}),
+            temperature: typeof req.body?.temperature === "number" ? req.body.temperature : 0.7,
+            maxTokens: typeof req.body?.max_tokens === "number" ? req.body.max_tokens : 4096,
+          });
+        } catch (llmErr) {
+          // The LLM Library router already returns the structured
+          // 401 from the upstream provider. Surface it as the chat
+          // response so the operator sees which provider rejected
+          // the key — same short-circuit as the original server.ts
+          // (don't keep trying providers after an auth error).
+          const attempts = llmErr?.attempts ?? [];
+          const firstAuthFail = attempts.find((a) => a?.httpStatus === 401);
+          if (firstAuthFail) {
+            return res.status(401).json({
+              error: "LLM provider auth failed",
+              provider: firstAuthFail.provider,
+              model: firstAuthFail.model,
+              configId: firstAuthFail.configId,
+            });
+          }
+          throw llmErr;
+        }
+      }
+
+      // Token accounting — same as server.ts original. Engages the
+      // kill-switch if cumulative usage exceeds the session budget.
+      const tok = result?.usage?.totalTokens ?? 0;
+      if (tok > 0) {
+        totalTokensUsed += tok;
+        if (totalTokensUsed > MAX_TOKENS_PER_SESSION) {
+          killSwitchEngaged = true;
+          console.warn(`[cost-control] kill-switch engaged at ${totalTokensUsed} tokens`);
+        }
       }
 
       return res.json({
