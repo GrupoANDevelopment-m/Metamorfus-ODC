@@ -155,7 +155,8 @@ def skill(organism, context):
     return {"x": 1, "y": 2}
 `.trim();
   const r = await tool.execute({ skillKey: "plain_real_skill_protocol", pythonSource: source }, ctx());
-  assert.ok(r.data.bytes > 0, "should report bytes written");
+  const data = r.data as { bytes: number };
+  assert.ok(typeof data.bytes === "number" && data.bytes > 0, "should report bytes written");
 });
 
 test("forge_skill: rejects Python with syntax errors", async () => {
@@ -179,7 +180,7 @@ test("forge_skill: rejects Python with no runnable function", async () => {
       { skillKey: "no_function_protocol", pythonSource: "x = 1\ny = 2" },
       ctx(),
     ),
-    /runnable function|not valid Python/i,
+    /runnable function|not valid Python|callable/i,
   );
 });
 

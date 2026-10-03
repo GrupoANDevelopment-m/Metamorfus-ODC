@@ -23,6 +23,7 @@
  */
 
 import { describeImage } from "../vision-tool.js";
+import { spawn } from "node:child_process";
 
 // ---------------------------------------------------------------------------
 // Tool definitions
@@ -328,11 +329,56 @@ const forgeSkill: ToolDefinition = {
         if (typeof src !== "string" || src.length < 10) {
           throw new Error("forge_skill[python]: pythonSource looks empty");
         }
-        if (!/def\s+skill\s*\(\s*organism\s*,\s*context\s*\)/.test(src)) {
-          throw new Error("forge_skill[python]: source must define `def skill(organism, context)`");
+        // The organism grows into real, executable Python. We require
+        // a callable — a `def skill(organism, context)` form, OR an
+        // `if __name__ == "__main__":` entry, OR any top-level callable.
+        // We do NOT require the legacy "intention dict" stub — that's
+        // a design mistake. A skill may return any value.
+        const hasCallable = /\bdef\s+(skill|run|main|handler|invoke)\b/.test(src)
+          || /if\s+__name__\s*==\s*['"]__main__['"]/.test(src);
+        if (!hasCallable) {
+          throw new Error(
+            "forge_skill[python]: source must define a callable " +
+            "(def skill/run/main/handler/invoke) or an __main__ block",
+          );
         }
-        if (!/"action"\s*:/.test(src)) {
-          throw new Error("forge_skill[python]: source must return an intention dict with `action`");
+        // Best-effort syntax check (python3 may be missing in CI).
+        const syntaxOk = await new Promise<{ ok: boolean; reason?: string }>((resolve) => {
+          try {
+            const py = process.env.PYTHON_BIN ?? "python3";
+            const proc = spawn(py, [
+              "-c",
+              "import sys; compile(sys.stdin.read(), '<forge>', 'exec'); print('ok')",
+            ], { stdio: ["pipe", "pipe", "pipe"] });
+            let out = "";
+            let err = "";
+            proc.stdout.on("data", (c: Buffer) => { out += c.toString(); });
+            proc.stderr.on("data", (c: Buffer) => { err += c.toString(); });
+            const timer = setTimeout(() => {
+              try { proc.kill("SIGKILL"); } catch { /* */ }
+              resolve({ ok: false, reason: "syntax-check timed out" });
+            }, 10_000);
+            proc.on("close", (code) => {
+              clearTimeout(timer);
+              if (code === 0 && out.includes("ok")) resolve({ ok: true });
+              else resolve({ ok: false, reason: (err || out).trim().slice(0, 300) || `exit ${code}` });
+            });
+            proc.on("error", (e) => {
+              clearTimeout(timer);
+              if (e && /ENOENT/.test(String(e.message))) {
+                resolve({ ok: true, reason: "python3 unavailable — skipping syntax check" });
+              } else {
+                resolve({ ok: false, reason: e.message });
+              }
+            });
+            proc.stdin.write(src);
+            proc.stdin.end();
+          } catch (e: any) {
+            resolve({ ok: false, reason: e?.message ?? "spawn failed" });
+          }
+        });
+        if (!syntaxOk.ok && !/python3 unavailable/.test(syntaxOk.reason ?? "")) {
+          throw new Error(`forge_skill[python]: source is not valid Python syntax: ${syntaxOk.reason}`);
         }
         bodyText = src;
         ext = ".py";
