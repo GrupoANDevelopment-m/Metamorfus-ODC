@@ -101,6 +101,7 @@ export async function startHeadlessServer(opts = {}) {
   const { ActionRouter } = await import("./nl/router.mjs");
   const { invokeSkill } = await import("./skills/invoker.mjs");
   const { probeEnvironment } = await import("./skills/probe.mjs");
+  const { BUILTIN_SKILLS, listSkills, getSkill, probeSkill } = await import("./skills/builtin-registry.mjs");
   const intentParser = new IntentParser(llmRouter, "reasoning");
   // Resolve the DNA library directory. The default lives at
   // packages/metamorfus-src/dna_library relative to the workspace
@@ -663,6 +664,33 @@ export async function startHeadlessServer(opts = {}) {
     } catch (e) {
       res.status(500).json({ ok: false, error: e.message });
     }
+  });
+
+  // ─── /api/skills/builtin — registry of pre-installed skill packages ─
+  // Lists every builtin skill with availability probe results. The
+  // skill adapters live in dna_library/builtin_*_protocol.py so they
+  // share the same invoke pipeline as forged skills.
+  app.get("/api/skills/builtin", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const skills = listSkills();
+    res.json({ skills });
+  });
+
+  app.get("/api/skills/builtin/:id", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const skill = getSkill(req.params.id);
+    if (!skill) return res.status(404).json({ error: "unknown builtin skill" });
+    res.json({ skill: { ...skill, available: probeSkill(skill) } });
+  });
+
+  // Convenience: list which builtin skills are wired and which are
+  // awaiting their underlying tool to be installed.
+  app.get("/api/skills/builtin-summary", (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const skills = listSkills();
+    const installed = skills.filter((s) => s.available).map((s) => s.id);
+    const missing = skills.filter((s) => !s.available).map((s) => ({ id: s.id, installHint: s.installHint }));
+    res.json({ total: skills.length, installed, missing });
   });
 
   // ─── /api/environment/probe — what tools does the organism have? ─
