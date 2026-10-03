@@ -155,12 +155,13 @@ export function isSpecPayload(p: SkillPayload): p is { content: unknown; format:
 /**
  * Extracts the source string from any payload that has one
  * (python / javascript / shell). Used by legacy code paths that still
- * treat `source` as the canonical field.
+ * treat `source` as the canonical field. Returns undefined for wasm
+ * and spec payloads (those don't carry source code).
  */
 export function payloadSource(p: SkillPayload): string | undefined {
-  if (isPythonPayload(p) || isJavascriptPayload(p) || isShellPayload(p)) {
-    return p.source ?? (p as { command?: string }).command;
-  }
+  if (isPythonPayload(p)) return p.source;
+  if (isJavascriptPayload(p)) return p.source;
+  if (isShellPayload(p)) return p.command;
   return undefined;
 }
 

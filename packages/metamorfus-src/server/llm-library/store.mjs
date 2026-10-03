@@ -28,6 +28,21 @@ export class LlmLibraryStore {
     this.configs = [];
     this.observers = new Set();
     this._saveTimer = null;
+    /**
+     * Monotonic clock for `updatedAt` / `createdAt`. We use
+     * `performance.now()`-derived ms (with a Date.now() floor) so that
+     * back-to-back calls always produce strictly increasing timestamps
+     * even within the same wall-clock millisecond.
+     */
+    this._now = (() => {
+      const t0 = Date.now();
+      let counter = 0;
+      return () => {
+        // Always advance at least 1 ms per call so `updatedAt > createdAt`.
+        counter = Math.max(counter + 1, Math.floor(performance.now()) - t0 + 1);
+        return new Date(t0 + counter).toISOString();
+      };
+    })();
   }
 
   // ─── load / save ─────────────────────────────────────────────────
@@ -65,30 +80,91 @@ export class LlmLibraryStore {
 
   /**
    * Seed the library from env vars on first run. The operator may
-   * have NVIDIA_API_KEY, OPENAI_API_KEY, ANTHROPIC_API_KEY,
-   * GOOGLE_API_KEY, or GROQ_API_KEY set — we don't auto-add them
-   * silently; we expose them as suggestions through /api/llm-library.
-   * For now, we DO auto-add NVIDIA_API_KEY (single model, single
-   * key) because the rest of the headless server already assumes it.
+   * have any of these set:
+   *
+   *   NVIDIA_API_KEY     → NVIDIA NIM (multimodal)
+   *   OPENAI_API_KEY     → OpenAI (text + reasoning)
+   *   ANTHROPIC_API_KEY  → Anthropic Claude (reasoning)
+   *   GOOGLE_API_KEY     → Google Gemini (multimodal)
+   *   GROQ_API_KEY       → Groq (text, fast)
+   *
+   * Each non-empty key becomes a default entry. Operators can edit
+   * priorities, models, or disable entries via the API.
    */
   defaults() {
     const out = [];
-    if (process.env.NVIDIA_API_KEY && process.env.NVIDIA_API_KEY.length > 0) {
-      out.push({
-        id: crypto.randomUUID(),
+    const ts = () => this._now();
+    const envConfigs = [
+      {
+        envKey: "NVIDIA_API_KEY",
         name: "NVIDIA NIM (env)",
         provider: "nvidia-direct",
         category: "multimodal",
         endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
-        apiKey: process.env.NVIDIA_API_KEY,
-        model: "moonshotai/kimi-k3",
+        model: "moonshotai/kimi-k2-instruct-0905",
         priority: 100,
-        enabled: true,
         metadata: { contextWindow: 128000, source: "env" },
-        health: freshHealth(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      },
+      {
+        envKey: "OPENAI_API_KEY",
+        name: "OpenAI (env)",
+        provider: "openai-compatible",
+        category: "text",
+        endpoint: "https://api.openai.com/v1/chat/completions",
+        model: "gpt-4o-mini",
+        priority: 90,
+        metadata: { contextWindow: 128000, source: "env" },
+      },
+      {
+        envKey: "ANTHROPIC_API_KEY",
+        name: "Anthropic Claude (env)",
+        provider: "anthropic",
+        category: "reasoning",
+        endpoint: "https://api.anthropic.com/v1/messages",
+        model: "claude-3-5-sonnet-latest",
+        priority: 95,
+        metadata: { contextWindow: 200000, source: "env" },
+      },
+      {
+        envKey: "GOOGLE_API_KEY",
+        name: "Google Gemini (env)",
+        provider: "google-generative-ai",
+        category: "multimodal",
+        endpoint: "https://generativelanguage.googleapis.com/v1beta/models",
+        model: "gemini-1.5-flash",
+        priority: 80,
+        metadata: { contextWindow: 1000000, source: "env" },
+      },
+      {
+        envKey: "GROQ_API_KEY",
+        name: "Groq (env)",
+        provider: "openai-compatible",
+        category: "text",
+        endpoint: "https://api.groq.com/openai/v1/chat/completions",
+        model: "llama-3.1-70b-versatile",
+        priority: 85,
+        metadata: { contextWindow: 128000, source: "env", fastInference: true },
+      },
+    ];
+    for (const cfg of envConfigs) {
+      const key = process.env[cfg.envKey];
+      if (typeof key === "string" && key.length > 0) {
+        out.push({
+          id: crypto.randomUUID(),
+          name: cfg.name,
+          provider: cfg.provider,
+          category: cfg.category,
+          endpoint: cfg.endpoint,
+          apiKey: key,
+          model: cfg.model,
+          priority: cfg.priority,
+          enabled: true,
+          metadata: cfg.metadata,
+          health: freshHealth(),
+          createdAt: ts(),
+          updatedAt: ts(),
+        });
+      }
     }
     return out;
   }
@@ -134,8 +210,8 @@ export class LlmLibraryStore {
       enabled: config.enabled !== false,
       metadata: config.metadata ?? {},
       health: freshHealth(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: this._now(),
+      updatedAt: this._now(),
     };
     this.configs.push(entry);
     await this.save();
@@ -151,7 +227,7 @@ export class LlmLibraryStore {
     this.configs[idx] = {
       ...this.configs[idx],
       ...safe,
-      updatedAt: new Date().toISOString(),
+      updatedAt: this._now(),
     };
     await this.save();
     this.notify("update", this.configs[idx]);

@@ -23,10 +23,6 @@
  */
 
 import { describeImage } from "../vision-tool.js";
-import { spawn } from "node:child_process";
-import { createRequire } from "node:module";
-
-const _require = createRequire(import.meta.url);
 
 // ---------------------------------------------------------------------------
 // Tool definitions
@@ -270,10 +266,11 @@ const FORGE_PROTECTED = new Set([
 const forgeSkill: ToolDefinition = {
   name: "forge_skill",
   description:
-    "Write a new skill into the organism's DNA library. The skill source " +
-    "must be a Python function that takes (organism, context) and returns " +
-    "an intention dict. Use this when the Executor reports a missing " +
-    "capability. The skill key MUST end with `_protocol`.",
+    "Write a new skill into the organism's DNA library. Supports multiple " +
+    "runtimes (python, javascript, shell, wasm, spec). For python/javascript " +
+    "the skill body must define a function that returns an intention dict. " +
+    "For shell the body is a bash command. For spec it's reference data. " +
+    "The skill key MUST end with `_protocol`.",
   parameters: {
     type: "object",
     properties: {
@@ -283,18 +280,31 @@ const forgeSkill: ToolDefinition = {
       },
       pythonSource: {
         type: "string",
-        description: "The full Python source of the new skill.",
+        description: "(legacy: python runtime) The full Python source of the new skill.",
+      },
+      runtime: {
+        type: "string",
+        enum: ["python", "javascript", "shell", "wasm", "spec"],
+        description: "Runtime of the skill. Defaults to 'python' when pythonSource is provided.",
+      },
+      payload: {
+        description:
+          "Runtime-specific payload. " +
+          "python/javascript: { source: string } | " +
+          "shell: { command: string } | " +
+          "wasm: { bytes_ref: string, exports: string[] } | " +
+          "spec: { content: unknown, format: string }",
       },
       dryRun: {
         type: "boolean",
         description: "If true, do not write the file — just validate. Default: false.",
       },
     },
-    required: ["skillKey", "pythonSource"],
+    required: ["skillKey"],
   },
   async execute(args, ctx) {
     const skillKey = String(args.skillKey ?? "");
-    const source = String(args.pythonSource ?? "");
+    const runtime = String(args.runtime ?? (args.pythonSource ? "python" : "python"));
     const dryRun = args.dryRun === true;
 
     if (!skillKey.endsWith("_protocol")) {
@@ -303,82 +313,113 @@ const forgeSkill: ToolDefinition = {
     if (FORGE_PROTECTED.has(skillKey)) {
       throw new Error(`forge_skill: ${skillKey} is a protected built-in skill`);
     }
-    if (source.length < 10) {
-      throw new Error("forge_skill: pythonSource looks empty");
-    }
-    // Real metamorphosis writes real, executable Python. The organism
-    // grows into arbitrary systems (cybersecurity, research, trading).
-    // We no longer force the "intention dict" stub shape — that was a
-    // design mistake. Instead we validate that the source is valid
-    // Python syntax and contains something runnable.
-    //
-    // If `python3` is not available (e.g. minimal CI image), skip the
-    // syntax check — the file will fail when invoked, which is also a
-    // clear error. Better than refusing every morph on a missing
-    // interpreter.
-    const syntaxOk = await new Promise<{ok: boolean, reason?: string}>((resolve) => {
-      try {
-        const py = process.env.PYTHON_BIN ?? "python3";
-        const proc = spawn(py, ["-c", "import sys; compile(sys.stdin.read(), '<forge>', 'exec'); print('ok')"], { stdio: ["pipe", "pipe", "pipe"] });
-        let out = "";
-        let err = "";
-        proc.stdout.on("data", (c: Buffer) => { out += c.toString(); });
-        proc.stderr.on("data", (c: Buffer) => { err += c.toString(); });
-        const timer = setTimeout(() => {
-          try { proc.kill("SIGKILL"); } catch { /* */ }
-          resolve({ ok: false, reason: "syntax-check timed out" });
-        }, 10_000);
-        proc.on("close", (code) => {
-          clearTimeout(timer);
-          if (code === 0 && out.includes("ok")) resolve({ ok: true });
-          else resolve({ ok: false, reason: (err || out).trim().slice(0, 300) || `exit ${code}` });
-        });
-        proc.on("error", (e) => {
-          clearTimeout(timer);
-          // python3 missing entirely — don't block morphs on this.
-          if (e && /ENOENT/.test(String(e.message))) resolve({ ok: true, reason: "python3 unavailable — skipping syntax check" });
-          else resolve({ ok: false, reason: e.message });
-        });
-        proc.stdin.write(source);
-        proc.stdin.end();
-      } catch (e: any) {
-        resolve({ ok: false, reason: e?.message ?? "spawn failed" });
+
+    // Resolve payload by runtime.
+    let bodyText = "";
+    let ext = ".py";
+    let executable = false;
+    const payload: any = args.payload ?? null;
+
+    switch (runtime) {
+      case "python": {
+        const src =
+          args.pythonSource ??
+          (payload && typeof payload.source === "string" ? payload.source : "");
+        if (typeof src !== "string" || src.length < 10) {
+          throw new Error("forge_skill[python]: pythonSource looks empty");
+        }
+        if (!/def\s+skill\s*\(\s*organism\s*,\s*context\s*\)/.test(src)) {
+          throw new Error("forge_skill[python]: source must define `def skill(organism, context)`");
+        }
+        if (!/"action"\s*:/.test(src)) {
+          throw new Error("forge_skill[python]: source must return an intention dict with `action`");
+        }
+        bodyText = src;
+        ext = ".py";
+        break;
       }
-    });
-    if (!syntaxOk.ok && !/python3 unavailable/.test(syntaxOk.reason ?? "")) {
-      throw new Error(`forge_skill: source is not valid Python syntax: ${syntaxOk.reason}`);
-    }
-    // The source must define something runnable. The organism grows
-    // by acquiring callable skills, not by writing constants.
-    const hasRunnable = /\bdef\s+(skill|run|main|handler|invoke)\b/.test(source)
-      || /if\s+__name__\s*==\s*['"]__main__['"]/.test(source);
-    if (!hasRunnable) {
-      throw new Error("forge_skill: source must define a runnable function (def skill/run/main/handler/invoke) or an __main__ block");
+      case "javascript": {
+        const src =
+          args.pythonSource ??
+          (payload && typeof payload.source === "string" ? payload.source : "");
+        if (typeof src !== "string" || src.length < 10) {
+          throw new Error("forge_skill[javascript]: source looks empty");
+        }
+        if (!/function\s+skill\s*\(\s*organism\s*,\s*context\s*\)/.test(src) &&
+            !/const\s+skill\s*=\s*\(/.test(src)) {
+          throw new Error("forge_skill[javascript]: must define function skill(organism, context)");
+        }
+        bodyText = src;
+        ext = ".js";
+        break;
+      }
+      case "shell": {
+        const cmd =
+          (payload && typeof payload.command === "string" ? payload.command : "") ||
+          (typeof args.pythonSource === "string" ? args.pythonSource : "");
+        if (typeof cmd !== "string" || cmd.length < 1) {
+          throw new Error("forge_skill[shell]: command required");
+        }
+        bodyText = `#!/usr/bin/env bash\nset -euo pipefail\n${cmd}\n`;
+        ext = ".sh";
+        executable = true;
+        break;
+      }
+      case "wasm": {
+        if (!payload || typeof payload.bytes_ref !== "string") {
+          throw new Error("forge_skill[wasm]: payload.bytes_ref required");
+        }
+        // We do NOT execute wasm; we just record a reference manifest.
+        bodyText = JSON.stringify(
+          { kind: "wasm", bytes_ref: payload.bytes_ref, exports: payload.exports ?? [] },
+          null,
+          2,
+        );
+        ext = ".wasm.json";
+        break;
+      }
+      case "spec": {
+        if (!payload || payload.content === undefined) {
+          throw new Error("forge_skill[spec]: payload.content required");
+        }
+        bodyText = JSON.stringify(payload.content, null, 2);
+        ext = ".spec.json";
+        break;
+      }
+      default:
+        throw new Error(`forge_skill: unknown runtime "${runtime}"`);
     }
 
     const path = await import("node:path");
     const fs = await import("node:fs/promises");
-    // Convention: write to <workspaceRoot>/<ctx.dnaDir|fallback>/<key>.py
+    // Convention: write to <workspaceRoot>/<ctx.dnaDir|fallback>/<key>.<ext>
     // The metamorph engine passes a custom dnaDir; ad-hoc callers fall
     // back to packages/metamorfus-src/dna_library.
     const dnaDir = (ctx as any).dnaDir
       ? path.join(ctx.workspaceRoot, (ctx as any).dnaDir)
       : path.join(ctx.workspaceRoot, "packages", "metamorfus-src", "dna_library");
-    const target = path.join(dnaDir, `${skillKey}.py`);
+    const target = path.join(dnaDir, `${skillKey}${ext}`);
 
     if (dryRun) {
       return {
-        output: `Would write ${target} (${source.length} bytes). Validation passed.`,
-        data: { skillKey, bytes: source.length, dryRun: true },
+        output: `Would write ${target} (${bodyText.length} bytes, runtime=${runtime}). Validation passed.`,
+        data: { skillKey, bytes: bodyText.length, runtime, dryRun: true },
         energyDelta: -0.1,
       };
     }
 
     await fs.mkdir(dnaDir, { recursive: true });
-    await fs.writeFile(target, source, "utf8");
+    await fs.writeFile(target, bodyText, "utf8");
+    if (executable) {
+      try {
+        await fs.chmod(target, 0o755);
+      } catch {
+        // chmod may fail on some FS; not fatal.
+      }
+    }
     return {
-      output: `Wrote ${skillKey} to ${target} (${source.length} bytes).`,
-      data: { skillKey, path: target, bytes: source.length },
+      output: `Wrote ${skillKey} (${runtime}) to ${target} (${bodyText.length} bytes).`,
+      data: { skillKey, path: target, bytes: bodyText.length, runtime },
       energyDelta: -2.0,
     };
   },

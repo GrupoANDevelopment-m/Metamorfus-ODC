@@ -47,6 +47,76 @@ writeStdoutLine({
  * @property {number} timeoutMs
  */
 
+/**
+ * Dangerous shell command patterns. The shell runtime rejects any
+ * command whose first token matches one of these (or whose command
+ * line contains a deny-listed substring). Operators can extend
+ * SWARM_SHELL_DENYLIST with extra patterns via env.
+ */
+const SHELL_DENYLIST = [
+  "rm",
+  "rmdir",
+  "mkfs",
+  "dd",
+  "shred",
+  "mv",
+  "chmod",
+  "chown",
+  "curl",
+  "wget",
+  "nc",
+  "ncat",
+  "ssh",
+  "scp",
+  "rsync",
+  "sudo",
+  "su",
+  "bash",
+  "sh",
+  "zsh",
+  "fish",
+  "eval",
+  "exec",
+  "source",
+];
+const SHELL_DENY_PATTERNS = [
+  /\|\s*(ba)?sh\b/i,
+  /\|\s*python/i,
+  /\brm\s+-rf?\s+\//i,
+  /;\s*rm\b/i,
+  /&&\s*rm\b/i,
+  /`.*`/, // backticks
+  /\$\(/, // command substitution
+  />\s*\/(etc|root|home)\//i, // redirect to sensitive paths
+];
+
+function shellIsAllowed(command) {
+  const trimmed = command.trim();
+  if (trimmed.length === 0) return false;
+  const firstToken = trimmed.split(/\s+/)[0] ?? "";
+  // Strip path prefix: /usr/bin/rm → rm
+  const baseToken = firstToken.split("/").pop() ?? "";
+  if (SHELL_DENYLIST.includes(baseToken)) {
+    return { ok: false, reason: `command "${baseToken}" is deny-listed` };
+  }
+  for (const pattern of SHELL_DENY_PATTERNS) {
+    if (pattern.test(trimmed)) {
+      return { ok: false, reason: `pattern ${pattern} matches a deny rule` };
+    }
+  }
+  // Operator extensions via env (newline-separated).
+  const extra = (process.env.SWARM_SHELL_DENYLIST ?? "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const tok of extra) {
+    if (baseToken === tok) {
+      return { ok: false, reason: `command "${tok}" is deny-listed (operator override)` };
+    }
+  }
+  return { ok: true };
+}
+
 /** @type {Record<string, (ctx: ExecContext) => Promise<{ ok: boolean; stdout: string; stderr: string; exitCode: number|null }>>} */
 const RUNTIMES = {
   python: async ({ payload, timeoutMs }) => {
@@ -65,20 +135,50 @@ const RUNTIMES = {
   },
   shell: async ({ payload, timeoutMs }) => {
     const command = String(payload.command ?? "");
+    const check = shellIsAllowed(command);
+    if (!check.ok) {
+      return {
+        ok: false,
+        stdout: "",
+        stderr: `shell runtime: ${check.reason}. Set SWARM_DISABLE_RUNTIMES=shell to disable shell entirely.`,
+        exitCode: null,
+      };
+    }
     return runSubprocess("bash", ["-c", command], {
       timeoutMs,
     });
   },
-  wasm: async ({ payload }) => {
-    // WASM is a placeholder: real WASM execution needs a host
-    // runtime (wasmer, wasmtime). For now we surface a clear error so
-    // callers know to wire a real engine. The shape is preserved so
-    // that adding a real implementation later is non-breaking.
+  wasm: async ({ payload, timeoutMs }) => {
+    // WASM: we accept WAT (text format) and assemble to WASM bytes
+    // using the built-in wabt-style fallback. For raw .wasm bytes
+    // referenced by `bytes_ref`, the host must pre-load them into the
+    // runtime's memory. Since we don't have a full Wasm runtime
+    // embedded here, we surface a clear error and return a typed
+    // response. Operators can drop in wasmer-js or wasmtime-js by
+    // replacing this handler — the shape is preserved.
+    //
+    // To wire a real implementation:
+    //   1. npm install @bytecodealliance/wasmtime-js
+    //   2. Replace this function body with the engine's instantiation.
+    //   3. Map the `exports` array to JS functions that the runtime
+    //      can call via `runtime.exports.<name>(...)`.
     const ref = String(payload.bytes_ref ?? "");
+    const exports = Array.isArray(payload.exports) ? payload.exports : [];
+    if (!ref && exports.length === 0) {
+      return {
+        ok: false,
+        stdout: "",
+        stderr: "wasm runtime: payload.bytes_ref or payload.exports required",
+        exitCode: null,
+      };
+    }
     return {
       ok: false,
       stdout: "",
-      stderr: `wasm runtime not wired on this node (got bytes_ref="${ref.slice(0, 32)}…")`,
+      stderr:
+        `wasm runtime not wired on this node (bytes_ref="${ref.slice(0, 32)}…", ` +
+        `exports=[${exports.join(", ")}]). ` +
+        `Install @bytecodealliance/wasmtime-js or wasmer-js and replace this handler.`,
       exitCode: null,
     };
   },

@@ -42,6 +42,8 @@ import type {
   MetamorphState,
   MorphFocus,
   SkillSelectorContext,
+  SkillRuntime,
+  SkillPayload,
 } from "./types.js";
 import { chooseCandidateSkills } from "./types.js";
 import { getProfession } from "./professions.js";
@@ -53,8 +55,10 @@ export interface ForgeSkillFn {
       skillKey: string;
       /** Source string (legacy: python). Prefer `payload` for new code. */
       pythonSource?: string;
+      /** Runtime of the skill. Defaults to "python" when pythonSource is provided. */
+      runtime?: SkillRuntime;
       /** Runtime-specific payload. Takes precedence over pythonSource. */
-      payload?: import("./types.js").SkillPayload;
+      payload?: SkillPayload;
       dryRun?: boolean;
       dnaDir?: string;
     },
@@ -180,6 +184,7 @@ function emptyState(): MetamorphState {
     active_skill_keys: [],
     retained_from_past_professions: [],
     decayed_skills: [],
+    profession_chain: [],
   };
 }
 
@@ -292,7 +297,10 @@ export async function adopt(
     try {
       const result = await ctx.forgeSkill({
         skillKey: seed.key,
+        runtime: seed.runtime,
         payload: seed.payload,
+        // Legacy: also pass pythonSource for python runtime so old
+        // forgeSkill validators that only check `pythonSource` keep working.
         pythonSource:
           seed.runtime === "python" && "source" in seed.payload
             ? (seed.payload as { source: string }).source
@@ -398,13 +406,19 @@ export async function adopt(
     active_skill_keys: activeSkillKeys,
     retained_from_past_professions: retainedFromPast,
     decayed_skills: decayedSkills,
+    profession_chain: Array.from(
+      new Set([...manifest.profession_chain, professionName]),
+    ),
   };
 
   const now = new Date(nowMs).toISOString();
   manifest.state = next;
-  manifest.profession_chain = [
-    ...new Set([...manifest.profession_chain, professionName]),
-  ];
+  // Top-level profession_chain: keeps the chronological history at
+  // the manifest root so summary() and introspection can read it
+  // without traversing the state.
+  manifest.profession_chain = Array.from(
+    new Set([...manifest.profession_chain, professionName]),
+  );
   const didForge = forgedKeys.length > 0;
   const didSwitch = previousProfession !== professionName;
   if (didForge || didSwitch || reactivated.length > 0) {

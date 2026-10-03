@@ -251,7 +251,8 @@ test("concepts: a forged skill decays after the half-life", () => {
     key: "test",
     profession: "lab",
     version: 1,
-    source: "def skill(organism, context): return {action:'X', intensity:1, required_attributes:{}, version:1}",
+    runtime: "python",
+    payload: { source: "def skill(organism, context): return {action:'X', intensity:1, required_attributes:{}, version:1}" },
     foraged_by: "lab",
     morph_focus: "THINK",
     mastery: 0.8,
@@ -275,19 +276,20 @@ test("concepts: a forged skill decays after the half-life", () => {
 });
 
 test("concepts: applyDecay returns a copy with recomputed statuses", () => {
-  const skill = {
+  const skill: import("../metamorfus-core/types.js").SkillManifest = {
     key: "x",
     profession: "lab",
     version: 1,
-    source: "def s(o,c): return {action:'x', intensity:1, required_attributes:{}, version:1}",
-    morph_focus: "THINK" as const,
+    runtime: "python",
+    payload: { source: "def s(o,c): return {action:'x', intensity:1, required_attributes:{}, version:1}" },
+    morph_focus: "THINK",
     mastery: 0.5,
     last_used_at: null,
     usage_history: [],
     transferable: false,
     reactivation_triggers: [],
     forged_at: "2020-01-01T00:00:00.000Z",
-    status: "dormant" as const,
+    status: "dormant",
   };
   // Fast-forward 5 years (way past half-life).
   const farFuture = new Date("2025-01-01T00:00:00.000Z").getTime();
