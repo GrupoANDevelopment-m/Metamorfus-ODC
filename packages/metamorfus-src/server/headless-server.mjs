@@ -119,6 +119,20 @@ export async function startHeadlessServer(opts = {}) {
     dnaDir: DNA_DIR,
   });
 
+  // Helper used by the identity/recall/constitution/memory routes to
+  // build a MetamorphContext for the current workspace. The bridge's
+  // forge_skill is wrapped so adopt() and loadManifest() can use it.
+  const reqMetamorphCtx = (workspaceRoot) => ({
+    workspaceRoot,
+    dnaDir: "packages/metamorfus-src/dna_library",
+    forgeSkill: async ({ skillKey, pythonSource }) => {
+      const r = await executeBridgeTool("forge_skill", { skillKey, pythonSource });
+      return { output: r.output, data: r.data };
+    },
+    scanCodebase: async (args = {}) =>
+      executeBridgeTool("scan_codebase", args, { workspaceRoot }),
+  });
+
   const app = express();
   app.use(cors());
   app.use(express.json({ limit: "50mb" }));
@@ -749,6 +763,153 @@ export async function startHeadlessServer(opts = {}) {
     if (!req.tenant) return res.status(401).json({ error: "auth required" });
     const env = await probeEnvironment();
     res.json({ environment: env });
+  });
+
+  // ─── IDENTITY & RECALL (T1, T9) ─────────────────────────────────────
+  // Real Identity Preservation Score. Reads two manifest snapshots
+  // (baseline + current) from disk and computes the 5-component score.
+  // The baseline is stored under dna_library/baselines/<name>.json so
+  // a researcher can rewind the organism to a known point and re-run.
+  app.post("/api/identity/score", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { computeIPS } = await import("./identity/score.mjs");
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const current = await loadManifest(ctx);
+      const baselineName = req.body?.baseline;
+      let baseline = current;
+      if (baselineName) {
+        const path = await import("node:path");
+        const fs = await import("node:fs/promises");
+        const fp = path.join(opts.workspaceRoot, "packages", "metamorfus-src", "dna_library", "baselines", `${baselineName}.json`);
+        const raw = await fs.readFile(fp, "utf-8");
+        baseline = JSON.parse(raw);
+      }
+      const ips = computeIPS(baseline, current);
+      res.json({ ips, currentProfession: current.state?.profession, baselineProfession: baseline.state?.profession });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // Snapshot the current manifest as a baseline (for IPS comparison later)
+  app.post("/api/identity/snapshot", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const path = await import("node:path");
+      const fs = await import("node:fs/promises");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const current = await loadManifest(ctx);
+      const name = req.body?.name ?? `snap-${Date.now()}`;
+      const dir = path.join(opts.workspaceRoot, "packages", "metamorfus-src", "dna_library", "baselines");
+      await fs.mkdir(dir, { recursive: true });
+      const fp = path.join(dir, `${name}.json`);
+      await fs.writeFile(fp, JSON.stringify(current, null, 2));
+      res.json({ ok: true, name, path: fp, profession: current.state?.profession, skills: current.skills?.length });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // Recall the past decisions of a single skill
+  app.get("/api/recall/:skillKey", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { recallSkill, justifyChoice, suggestFromMemory } = await import("./identity/recall.mjs");
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const manifest = await loadManifest(ctx);
+      const r = recallSkill(manifest, req.params.skillKey);
+      if (!r) return res.status(404).json({ error: `skill '${req.params.skillKey}' not in manifest` });
+      const j = justifyChoice(manifest, req.params.skillKey, manifest.state?.profession);
+      res.json({ recall: r, justification: j });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // For a query, list skills the organism's past experience suggests.
+  app.post("/api/recall/suggest", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { suggestFromMemory } = await import("./identity/recall.mjs");
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const manifest = await loadManifest(ctx);
+      const query = String(req.body?.query ?? "");
+      const currentProfession = manifest.state?.profession ?? null;
+      const suggestions = suggestFromMemory(manifest, query, currentProfession);
+      res.json({ query, currentProfession, suggestions });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // ─── CONSTITUTION (T7) ─────────────────────────────────────────────
+  app.get("/api/constitution", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { ensureConstitution } = await import("./constitution/enforcer.mjs");
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const manifest = await loadManifest(ctx);
+      const c = ensureConstitution(manifest);
+      res.json({ constitution: c, rulesCount: c.rules.length, protectedModules: c.protected_modules.length });
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/constitution/check", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { checkAction } = await import("./constitution/enforcer.mjs");
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const manifest = await loadManifest(ctx);
+      const result = await checkAction(req.body ?? {}, manifest);
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  // ─── MEMORY AUDIT (T8) ─────────────────────────────────────────────
+  app.get("/api/memory/audit", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { auditMemory, compactHistory } = await import("./identity/memory-audit.mjs");
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const manifest = await loadManifest(ctx);
+      const result = auditMemory(manifest);
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
+  });
+
+  app.post("/api/memory/compact", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { compactHistory } = await import("./identity/memory-audit.mjs");
+      const { loadManifest } = await import("./metamorfus-core/metamorph.js");
+      const fs = await import("node:fs/promises");
+      const path = await import("node:path");
+      const ctx = reqMetamorphCtx(opts.workspaceRoot);
+      const manifest = await loadManifest(ctx);
+      const windowSize = Number(req.body?.windowSize ?? 1000);
+      const result = compactHistory(manifest, windowSize);
+      if (result.compacted) {
+        const fp = path.join(opts.workspaceRoot, "packages", "metamorfus-src", "dna_library", "manifest.json");
+        await fs.writeFile(fp, JSON.stringify(manifest, null, 2));
+      }
+      res.json(result);
+    } catch (e) {
+      res.status(400).json({ error: e.message });
+    }
   });
 
   const origClose = async () => {
