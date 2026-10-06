@@ -912,6 +912,103 @@ export async function startHeadlessServer(opts = {}) {
     }
   });
 
+  // ─── COGNITIVE LAYER 3: FLOWS, REFLECTION, DISCRIMINATION, AUTO-REFORM ───
+  // Real implementations of the morphic-code stack. Every route
+  // operates on persisted state — no in-memory fudging.
+
+  app.post("/api/flows/compose", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { compose } = await import("./cognitive/flow.mjs");
+      const flow = await compose(opts.workspaceRoot, req.body ?? {});
+      res.json({ ok: true, flow });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.get("/api/flows", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { listFlows } = await import("./cognitive/flow.mjs");
+      const flows = await listFlows(opts.workspaceRoot);
+      res.json({ ok: true, count: flows.length, flows });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.post("/api/flows/:id/invoke", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { getFlow, invokeFlow } = await import("./cognitive/flow.mjs");
+      const flow = await getFlow(opts.workspaceRoot, req.params.id);
+      if (!flow) return res.status(404).json({ error: "flow not found" });
+      const result = await invokeFlow(opts.workspaceRoot, flow, req.body?.context ?? {});
+      res.json({ ok: true, flowId: req.params.id, ...result });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.post("/api/flows/match", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { matchFlows } = await import("./cognitive/flow.mjs");
+      const matched = await matchFlows(opts.workspaceRoot, req.body?.query ?? "");
+      res.json({ ok: true, query: req.body?.query, matched });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  // Reflect on the manifest — produce per-skill fitness, chains,
+  // underperformers, high-performers, and suggested flows.
+  app.get("/api/reflect", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { reflect } = await import("./cognitive/reflection.mjs");
+      const result = await reflect(opts.workspaceRoot);
+      res.json(result);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  // Discrimination: pick the right skill/flow from context.
+  app.post("/api/discriminate", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { discriminate } = await import("./cognitive/discrimination.mjs");
+      const result = await discriminate(opts.workspaceRoot, req.body?.query ?? "", req.body ?? {});
+      res.json(result);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  // Auto-reformulation: forge a new version of a failing skill.
+  app.post("/api/auto-reform", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { autoReform } = await import("./cognitive/auto-reform.mjs");
+      const result = await autoReform(opts.workspaceRoot, req.body ?? {});
+      res.json(result);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  // Substitution sweep: walk manifest, replace old with newer versions
+  // when justified.
+  app.post("/api/substitution/sweep", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { runSubstitutionSweep } = await import("./cognitive/substitution.mjs");
+      const result = await runSubstitutionSweep(opts.workspaceRoot);
+      res.json(result);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  // OpenCode multi-agent router: classify intent and dispatch to
+  // cortex / executor / forge. This is the previously-unwired 3-agent
+  // setup advertised in opencode.jsonc.
+  app.post("/api/opencode/orchestrate", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { orchestrate, classifyIntent } = await import("./cognitive/opencode-orchestrator.mjs");
+      const intent = classifyIntent(req);
+      const result = await orchestrate(req);
+      res.json({ ok: true, intent, ...result });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
   const origClose = async () => {
     clearInterval(healthSweepTimer);
     try { await swarmManager.shutdown?.(); } catch { /* */ }
