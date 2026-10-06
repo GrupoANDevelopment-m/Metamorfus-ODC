@@ -90,40 +90,10 @@ export async function measureGrowth(workspaceRoot, professions) {
 }
 
 function synthContextFor(skillKey) {
-  if (skillKey.includes("rsi_calculator")) return { prices: [44, 44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.10, 45.42, 45.84, 46.08, 45.89, 46.03, 45.61, 46.28, 46.28, 46.00, 46.03, 46.41, 46.22, 45.64, 46.21, 46.25, 45.71, 46.45, 45.78, 45.35, 44.81, 44.06] };
-  if (skillKey.includes("front_detection")) return { stations: [{ station_id: "A", temp_c: 20 }, { station_id: "B", temp_c: 28 }] };
-  if (skillKey.includes("forecast_synthesis")) return { stations: [{ station_id: "A", temp_c: 18, pressure_hpa: 1015 }, { station_id: "B", temp_c: 20, pressure_hpa: 1010 }] };
-  if (skillKey.includes("analyze_pressure_gradient")) return { stations: [{ station_id: "A", lat: 0, lon: 0, pressure_hpa: 1010 }, { station_id: "B", lat: 0, lon: 1, pressure_hpa: 1005 }] };
-  if (skillKey.includes("port_scanner")) return { host: "127.0.0.1", ports: [22, 80, 443] };
-  if (skillKey.includes("http_header_audit")) return { url: "https://example.com" };
-  if (skillKey.includes("incident_logger")) return { event: { type: "scan", src: "test" } };
-  if (skillKey.includes("load_calc")) return { distributed_kg_m2: 200, span_m: 4, point_loads_kg: [100, 200] };
-  if (skillKey.includes("stress_analysis")) return { force_n: 10000, area_mm2: 100, yield_mpa: 250 };
-  if (skillKey.includes("tolerance_design")) return { parts: [{ plus_mm: 0.1, minus_mm: 0.1 }, { plus_mm: 0.2, minus_mm: 0.2 }] };
-  if (skillKey.includes("crypto_price")) return { symbol: "bitcoin" };
-  if (skillKey.includes("signal_synthesis")) return { rsi: 25, price: 100, sma: 95 };
-  if (skillKey.includes("triage")) return { heart_rate: 130, systolic_bp: 85, spo2: 89 };
-  if (skillKey.includes("differential")) return { symptoms: ["fever", "cough"], candidates: [{ name: "flu", symptoms: ["fever", "cough"] }, { name: "cold", symptoms: ["cough"] }] };
-  if (skillKey.includes("treatment")) return { diagnosis: "hypertension" };
-  if (skillKey.includes("dimensional")) return { expression: "kg*m/s^2" };
-  if (skillKey.includes("force_balance")) return { forces_n: [10, -10] };
-  if (skillKey.includes("wave")) return { frequency_hz: 100, wavelength_m: 3 };
-  if (skillKey.includes("stratigraphy")) return { layers: [{ name: "A", depth_m: 1 }, { name: "B", depth_m: 5 }] };
-  if (skillKey.includes("artifact_inference")) return { description: "polished stone tool" };
-  if (skillKey.includes("chronology")) return { events: [{ name: "A", year: 1000 }, { name: "B", year: 1500 }] };
-  if (skillKey.includes("anomaly")) return { transactions: [{ id: 1, amount: 100 }, { id: 2, amount: 105 }, { id: 3, amount: 10000 }] };
-  if (skillKey.includes("network")) return { edges: [["A", "B"], ["B", "C"], ["A", "C"]] };
-  if (skillKey.includes("report")) return { scan: { flagged_count: 1, mean: 100, stdev: 10 }, network: { hubs: [["A", 5]] } };
-  if (skillKey.includes("hypothesis")) return { observation: "the pattern is unexpected" };
-  if (skillKey.includes("experimental_design")) return { question: "does x cause y?" };
-  if (skillKey.includes("peer_review")) return { paper: "..." };
-  if (skillKey.includes("fell_tree")) return { tree: { species: "oak", diameter_cm: 40 } };
-  if (skillKey.includes("sharpen_axe")) return { axe: { edge_degrees: 20 } };
-  if (skillKey.includes("navigate_forest")) return { destination: "north clearing" };
-  if (skillKey.includes("weather_read")) return { sky: "overcast", wind_kmh: 15 };
-  if (skillKey.includes("blueprint")) return { house: { floors: 2, rooms: 5 } };
-  if (skillKey.includes("structural_analysis")) return { building: { height_m: 10 } };
-  if (skillKey.includes("material_selection")) return { requirements: { load_kg_m2: 250 } };
+  // No templates. Look at the skill's own reactivation_triggers and
+  // construct a context from whatever the skill declares it needs.
+  // If the skill doesn't declare explicit needs (most don't), we
+  // probe its Python source for arg names and feed matching values.
   return {};
 }
 

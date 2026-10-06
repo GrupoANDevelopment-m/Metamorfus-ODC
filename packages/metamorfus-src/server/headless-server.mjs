@@ -1063,7 +1063,7 @@ export async function startHeadlessServer(opts = {}) {
     if (!req.tenant) return res.status(401).json({ error: "auth required" });
     try {
       const { orchestrate, classifyIntent } = await import("./cognitive/opencode-orchestrator.mjs");
-      const intent = classifyIntent(req);
+      const intent = await classifyIntent(req);
       const result = await orchestrate(req);
       res.json({ ok: true, intent, ...result });
     } catch (e) { res.status(400).json({ error: e.message }); }

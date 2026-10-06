@@ -23,25 +23,77 @@ const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
 
 /**
  * Classify the request intent. Three classes:
- *   • "plan"  — high-level strategy, MHU chain, multi-step planning
- *   • "exec"  — concrete skill invocation, action-taking
- *   • "forge" — meta-programming: create / refactor skills
+ *   • "plan"   — high-level strategy, MHU chain, multi-step planning
+ *   • "exec"   — concrete skill invocation, action-taking
+ *   • "forge"  — meta-programming: create / refactor skills
+ *
+ * No templates. The classification is done by the LLM itself. We
+ * give it the conversation, ask which agent is the right handler,
+ * and parse the structured JSON response. This means the system's
+ * routing adapts to whatever the LLM understands, not to whatever
+ * keywords we hardcoded.
  */
-export function classifyIntent(req) {
+export async function classifyIntent(req) {
   const body = req?.body ?? {};
-  const text = (body.messages ?? []).map((m) => m.content ?? "").join(" ").toLowerCase();
   const explicitAgent = body.agent;
   if (explicitAgent && ["cortex", "executor", "forge"].includes(explicitAgent)) return explicitAgent;
 
-  // Heuristic classification
-  const forgeKeywords = /\b(forge|new\s+skill|create\s+skill|implement\s+skill|build\s+skill|reforge|reformulate)\b/;
-  const execKeywords = /\b(invoke|run|execute|do|perform|action|skill:\w+|call)\b/;
-  const planKeywords = /\b(plan|strategy|how\s+should|what\s+should|design|approach|architect|reason|analyze)\b/;
-
-  if (forgeKeywords.test(text)) return "forge";
-  if (execKeywords.test(text)) return "executor";
-  if (planKeywords.test(text)) return "cortex";
-  return "cortex";
+  // Defer to the LLM — pass the conversation, get a JSON back
+  const { LlmLibraryStore } = await import(path.join(ROOT, "server/llm-library/store.mjs"));
+  const { LlmRouter } = await import(path.join(ROOT, "server/llm-library/router.mjs"));
+  const libPath = "/tmp/metamorfus-classify-library.json";
+  try { fssync.unlinkSync(libPath); } catch {}
+  const store = new LlmLibraryStore(libPath);
+  await store.load();
+  if (process.env.NVIDIA_API_KEY) {
+    const hasR = store.list({ category: "reasoning" }).length > 0;
+    if (!hasR) {
+      store.add({
+        name: "Classify (env)",
+        provider: "nvidia-direct",
+        category: "reasoning",
+        endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
+        apiKey: process.env.NVIDIA_API_KEY,
+        model: "moonshotai/kimi-k3",
+        priority: 5,
+        metadata: { contextWindow: 128000, source: "opencode-classify" },
+      });
+      await store.save();
+    }
+  }
+  const router = new LlmRouter(store);
+  const messages = body.messages ?? [];
+  const userText = messages.map((m) => `${m.role}: ${m.content ?? ""}`).join("\n").slice(0, 4000);
+  let r;
+  try {
+    r = await router.complete("reasoning", {
+      messages: [
+        {
+          role: "system",
+          content: "You are a router for a multi-agent cognitive system. Classify the user's request into ONE of three agents:\n\n" +
+                   "  • cortex   — strategic reasoning, planning, analysis, conversation, advice, answers to questions\n" +
+                   "  • executor — concrete action: invoke a specific skill, run a tool, take a direct action\n" +
+                   "  • forge    — meta-programming: create a new skill, refactor an existing one, improve the system itself\n\n" +
+                   "Return JSON: {\"agent\": \"cortex|executor|forge\", \"confidence\": <0-1>, \"reason\": \"<one sentence>\"}",
+        },
+        { role: "user", content: userText || "(empty request)" },
+      ],
+      temperature: 0.1,
+      maxTokens: 200,
+    });
+  } catch (e) {
+    // No LLM available — safe default is cortex (the conversational
+    // agent handles whatever the user says).
+    return "cortex";
+  }
+  const m = (r.content || "").match(/\{[\s\S]*\}/);
+  if (m) {
+    try {
+      const parsed = JSON.parse(m[0]);
+      if (["cortex", "executor", "forge"].includes(parsed.agent)) return parsed.agent;
+    } catch {}
+  }
+  return "cortex";  // safe default
 }
 
 /**
@@ -50,7 +102,7 @@ export function classifyIntent(req) {
  * that respects the same intent boundaries.
  */
 export async function orchestrate(req) {
-  const intent = classifyIntent(req);
+  const intent = await classifyIntent(req);
   const opencodeUp = await pingOpencode();
   if (opencodeUp) {
     try {

@@ -72,41 +72,21 @@ async function forgeViaPlanner(workspaceRoot, skillKey, profession, sourceCode, 
   // Build a focused, structured prompt. The planner responds with JSON
   // containing a `steps` array — we tell it EXACTLY what shape.
   const errorJson = JSON.stringify(errors, null, 2).slice(0, 2000);
-  const sysPrompt = `The skill '${skillKey}' (profession: ${profession}) has failed in real usage. Its current source is shown below, followed by the actual error records. Forge a NEW version of this skill called 'evolved_${skillKey}' that handles the failure cases.
+  // No template. The planner (LLM) is given raw facts and figures out
+  // the synthesis itself. We pass:
+  //   • the failing skill's name and profession (as data, not directive)
+  //   • its current source (so it can see what's there)
+  //   • the actual error records (so it knows what failed)
+  // We do NOT instruct it on what shape to return or what to name things.
+  const userMessage = JSON.stringify({
+    task: "reformulate_failing_skill",
+    failing_skill: skillKey,
+    profession,
+    current_source: sourceCode,
+    last_errors: errors,
+  }, null, 2);
 
-Current source:
-\`\`\`python
-${sourceCode.slice(0, 4000)}
-\`\`\`
-
-Last ${errors.length} errors:
-\`\`\`json
-${errorJson}
-\`\`\`
-
-Output a single JSON object of the form:
-{
-  "id": "evolved-${skillKey}-<uuid>",
-  "systemPrompt": "auto-reform: handle failure cases for ${skillKey}",
-  "plan": {
-    "steps": [
-      {
-        "stepId": "forge",
-        "kind": "forge_skill",
-        "skillKey": "evolved_${skillKey}",
-        "pythonSource": "def skill(organism, context):\\n    \\\"\\\"\\\"...\\\"\\\"\\\"\\n    ..."
-      }
-    ]
-  }
-}
-
-Constraints:
-- pythonSource must be valid Python with def skill(organism, context)
-- The new skill must handle the failure cases (defensive input checks, etc.)
-- Use only the Python standard library — no external packages
-- The new skill must end with: return { ... "action": "...", "intensity": <0-1>, "version": 1, "result": {...} }`;
-
-  const plan = await planner.plan(sysPrompt, { workspaceRoot });
+  const plan = await planner.plan(userMessage, { workspaceRoot });
   return plan;
 }
 

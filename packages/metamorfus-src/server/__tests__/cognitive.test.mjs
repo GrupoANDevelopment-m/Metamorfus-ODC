@@ -165,12 +165,22 @@ test("C6: substitute marks old as archaeology when new wins", async () => {
   console.log("[C6]", r);
 });
 
-test("C7: classifyIntent routes to the right agent", () => {
-  assert.equal(classifyIntent({ body: { agent: "executor" } }), "executor");
-  assert.equal(classifyIntent({ body: { agent: "forge" } }), "forge");
-  assert.equal(classifyIntent({ body: { messages: [{ role: "user", content: "Forge a new skill for port scanning" }] } }), "forge");
-  assert.equal(classifyIntent({ body: { messages: [{ role: "user", content: "Please invoke skill:analyze_pressure_gradient_protocol" }] } }), "executor");
-  assert.equal(classifyIntent({ body: { messages: [{ role: "user", content: "Plan the strategy for this task" }] } }), "cortex");
+test("C7: classifyIntent routes to the right agent (no template, LLM-driven)", async () => {
+  // Explicit agent is honored directly
+  assert.equal(await classifyIntent({ body: { agent: "executor" } }), "executor");
+  assert.equal(await classifyIntent({ body: { agent: "forge" } }), "forge");
+  assert.equal(await classifyIntent({ body: { agent: "cortex" } }), "cortex");
+  // No body at all defaults to cortex
+  assert.equal(await classifyIntent({}), "cortex");
+  // Without a real LLM, the safe default is cortex
+  const oldKey = process.env.NVIDIA_API_KEY;
+  process.env.NVIDIA_API_KEY = "";  // empty string is falsy
+  try {
+    const r = await classifyIntent({ body: { messages: [{ role: "user", content: "anything" }] } });
+    assert.equal(r, "cortex", `expected safe default cortex, got ${r}`);
+  } finally {
+    process.env.NVIDIA_API_KEY = oldKey;
+  }
 });
 
 test("C8: orchestrate() runs the local fallback when OpenCode is unreachable", async () => {
