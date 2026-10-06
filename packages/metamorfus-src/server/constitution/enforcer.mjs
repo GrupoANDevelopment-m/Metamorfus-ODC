@@ -132,6 +132,10 @@ export function checkStructural(action, manifest) {
       if (r) violations.push({ ruleId: r.id, kind: r.kind, text: r.text, why: `command: ${cmd}` });
     }
   }
+  if (action?.type === "delete_flow" || action?.type === "delete_skill_file") {
+    const r = c.rules.find((x) => x.id === "no-delete");
+    if (r) violations.push({ ruleId: r.id, kind: r.kind, text: r.text, why: `${action.type} attempted` });
+  }
   if (action?.type === "invoke_skill" && action.outboundUrl) {
     const url = String(action.outboundUrl);
     const piiPattern = /(api[_-]?key|password|secret|token)\s*[:=]/i;

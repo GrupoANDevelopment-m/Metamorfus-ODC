@@ -224,3 +224,116 @@ export async function decommissionFlow(workspaceRoot, flowId, reason) {
     return false;
   }
 }
+
+/**
+ * List all archaeology flows. They are NOT deleted — they live on
+ * disk so the organism can REUSE, RECOMBINE, or SYNTHESIZE new
+ * flows from them. Returns parsed flow objects with the original
+ * archivedAt / archivedReason metadata.
+ */
+export async function listArchaeologyFlows(workspaceRoot) {
+  const flowDir = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "flows");
+  try {
+    const files = await fs.readdir(flowDir);
+    const out = [];
+    for (const f of files) {
+      if (!f.endsWith(".json.archaeology")) continue;
+      try {
+        const data = JSON.parse(await fs.readFile(path.join(flowDir, f), "utf-8"));
+        out.push(data);
+      } catch {}
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Restore a flow from archaeology back to active. The file is
+ * renamed back from .json.archaeology to .json. The flow's archived
+ * metadata is preserved on the flow as `wasArchaeology` so the system
+ * remembers its history.
+ */
+export async function restoreFlow(workspaceRoot, flowId, reason) {
+  const flowDir = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "flows");
+  const src = path.join(flowDir, `${flowId}.json.archaeology`);
+  const dst = path.join(flowDir, `${flowId}.json`);
+  try {
+    const data = JSON.parse(await fs.readFile(src, "utf-8"));
+    data.wasArchaeology = true;
+    data.wasArchivedAt = data.archivedAt;
+    data.wasArchivedReason = data.archivedReason;
+    data.restoredAt = new Date().toISOString();
+    data.restoredReason = reason ?? "explicit restore";
+    delete data.archivedAt;
+    delete data.archivedReason;
+    await fs.writeFile(src, JSON.stringify(data, null, 2));
+    await fs.rename(src, dst);
+    return data;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Synthesize a new flow from one or more archaeology flows. The
+ * new flow's steps are taken from the union of the source flows,
+ * deduplicated, and ordered. The source flows remain on disk as
+ * archaeology — the new flow is a new file.
+ *
+ * This is the key capability for morphic-code RECOMBINATION: the
+ * organism can take 2-3 failed flows and combine their working
+ * steps into a new flow that may succeed where each alone did not.
+ */
+export async function synthesizeFlow(workspaceRoot, opts) {
+  const { baseFlowIds, name, trigger, reason } = opts;
+  if (!Array.isArray(baseFlowIds) || baseFlowIds.length === 0) {
+    throw new Error("synthesizeFlow: baseFlowIds[] is required");
+  }
+  const bases = [];
+  for (const id of baseFlowIds) {
+    // Try active first, then archaeology
+    let f = await getFlow(workspaceRoot, id);
+    if (!f) {
+      const archDir = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "flows");
+      try {
+        const raw = await fs.readFile(path.join(archDir, `${id}.json.archaeology`), "utf-8");
+        f = JSON.parse(raw);
+      } catch {}
+    }
+    if (f) bases.push(f);
+  }
+  if (bases.length === 0) throw new Error("synthesizeFlow: no base flows found");
+  // Deduplicate steps by skillKey
+  const seen = new Set();
+  const newSteps = [];
+  for (const base of bases) {
+    for (const step of base.steps ?? []) {
+      if (seen.has(step.skillKey)) continue;
+      seen.add(step.skillKey);
+      newSteps.push({
+        stepId: `step-${newSteps.length + 1}`,
+        skillKey: step.skillKey,
+        description: `from ${base.name} (${base.id})`,
+        inputMapper: step.inputMapper,
+      });
+    }
+  }
+  // Synth trigger = union of base triggers
+  const newTrigger = Array.isArray(trigger) && trigger.length > 0
+    ? trigger
+    : Array.from(new Set(bases.flatMap((b) => b.trigger ?? [])));
+  const flow = await compose(workspaceRoot, {
+    name: name ?? `synthesized-${Date.now()}`,
+    trigger: newTrigger,
+    steps: newSteps,
+    parents: bases.map((b) => b.id),
+  });
+  flow.forkReason = reason ?? `synthesized from ${bases.length} base flow(s)`;
+  flow.synthesized = true;
+  // Persist the metadata
+  const flowDir = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "flows");
+  await fs.writeFile(path.join(flowDir, `${flow.id}.json`), JSON.stringify(flow, null, 2));
+  return flow;
+}

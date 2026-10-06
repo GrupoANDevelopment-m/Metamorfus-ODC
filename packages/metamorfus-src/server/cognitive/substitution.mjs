@@ -102,3 +102,91 @@ export async function runSubstitutionSweep(workspaceRoot) {
   }
   return { ok: true, actions };
 }
+
+/**
+ * List all archaeology skills. They are NOT deleted — they live in
+ * the manifest with status="archaeology" so the organism can REUSE,
+ * RECOMBINE, or SYNTHESIZE new skills from them.
+ */
+export async function listArchaeologySkills(workspaceRoot) {
+  const manifestPath = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "manifest.json");
+  try {
+    const m = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
+    return (m.skills ?? []).filter((s) => s.status === "archaeology");
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Restore a skill from archaeology. Sets status back to "active"
+ * and clears the archived metadata. The skill returns to the
+ * active skill set and is available for candidates() again.
+ */
+export async function restoreSkill(workspaceRoot, skillKey, reason) {
+  const manifestPath = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "manifest.json");
+  try {
+    const m = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
+    const skill = (m.skills ?? []).find((s) => s.key === skillKey);
+    if (!skill) return { ok: false, reason: "skill not found" };
+    if (skill.status !== "archaeology") return { ok: false, reason: "skill is not in archaeology" };
+    skill.wasArchaeology = true;
+    skill.restoredAt = new Date().toISOString();
+    skill.restoredReason = reason ?? "explicit restore";
+    skill.status = "active";
+    delete skill.archived_at;
+    delete skill.archived_reason;
+    await fs.writeFile(manifestPath, JSON.stringify(m, null, 2));
+    return { ok: true, skill };
+  } catch (e) {
+    return { ok: false, reason: e.message };
+  }
+}
+
+/**
+ * Synthesize a new skill from one or more archaeology skills. The
+ * new skill's name = "synth_" + base family, and its version is
+ * bumped. Its reactivation_triggers are the union of the base
+ * triggers. The base skills remain in archaeology — nothing is
+ * deleted.
+ *
+ * Note: this writes the manifest record but does NOT write a new
+ * .py file. The orchestrator (auto-reform) is the right tool to
+ * actually generate the Python body; synthesizeSkill here is the
+ * cognitive step that registers the synthesis as a new identity.
+ */
+export async function synthesizeSkill(workspaceRoot, opts) {
+  const { baseSkillKeys, name, reactivationTriggers } = opts;
+  if (!Array.isArray(baseSkillKeys) || baseSkillKeys.length === 0) {
+    throw new Error("synthesizeSkill: baseSkillKeys[] is required");
+  }
+  const manifestPath = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "manifest.json");
+  const m = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
+  const bases = (m.skills ?? []).filter((s) => baseSkillKeys.includes(s.key));
+  if (bases.length === 0) throw new Error("synthesizeSkill: no base skills found");
+  const family = bases[0].key.replace(/^evolved_/, "").replace(/_v\d+$/, "").replace(/_protocol$/, "");
+  const newKey = name ?? `synth_${family}`;
+  if ((m.skills ?? []).some((s) => s.key === newKey)) {
+    return { ok: false, reason: `skill '${newKey}' already exists` };
+  }
+  const triggers = Array.isArray(reactivationTriggers) && reactivationTriggers.length > 0
+    ? reactivationTriggers
+    : Array.from(new Set(bases.flatMap((b) => b.reactivation_triggers ?? [])));
+  const newSkill = {
+    key: newKey,
+    profession: bases[0].profession,
+    version: 1,
+    morph_focus: bases[0].morph_focus,
+    status: "active",
+    mastery: Math.max(...bases.map((b) => b.mastery ?? 0), 0),
+    transferable: true,
+    reactivation_triggers: triggers,
+    usage_history: [],
+    synthesized: true,
+    parents: bases.map((b) => b.key),
+    createdAt: new Date().toISOString(),
+  };
+  m.skills.push(newSkill);
+  await fs.writeFile(manifestPath, JSON.stringify(m, null, 2));
+  return { ok: true, skill: newSkill, baseCount: bases.length };
+}

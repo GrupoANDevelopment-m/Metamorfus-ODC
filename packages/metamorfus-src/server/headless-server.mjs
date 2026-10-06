@@ -996,6 +996,66 @@ export async function startHeadlessServer(opts = {}) {
     } catch (e) { res.status(400).json({ error: e.message }); }
   });
 
+  // ─── ARCHAEOLOGY — REUSE / SYNTHESIZE / RESTORE (no deletion) ────────
+  // The system NEVER deletes. Discarded flows and skills stay on
+  // disk in archaeology state. These routes let the organism
+  // recover, recombine, and synthesize from them.
+
+  app.get("/api/archaeology/flows", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { listArchaeologyFlows } = await import("./cognitive/flow.mjs");
+      const flows = await listArchaeologyFlows(opts.workspaceRoot);
+      res.json({ ok: true, count: flows.length, flows });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.post("/api/archaeology/flows/:id/restore", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { restoreFlow } = await import("./cognitive/flow.mjs");
+      const restored = await restoreFlow(opts.workspaceRoot, req.params.id, req.body?.reason);
+      if (!restored) return res.status(404).json({ error: "flow not found in archaeology" });
+      res.json({ ok: true, flow: restored });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.post("/api/archaeology/flows/synthesize", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { synthesizeFlow } = await import("./cognitive/flow.mjs");
+      const flow = await synthesizeFlow(opts.workspaceRoot, req.body ?? {});
+      res.json({ ok: true, flow });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.get("/api/archaeology/skills", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { listArchaeologySkills } = await import("./cognitive/substitution.mjs");
+      const skills = await listArchaeologySkills(opts.workspaceRoot);
+      res.json({ ok: true, count: skills.length, skills });
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.post("/api/archaeology/skills/:key/restore", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { restoreSkill } = await import("./cognitive/substitution.mjs");
+      const result = await restoreSkill(opts.workspaceRoot, req.params.key, req.body?.reason);
+      res.json(result);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
+  app.post("/api/archaeology/skills/synthesize", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { synthesizeSkill } = await import("./cognitive/substitution.mjs");
+      const result = await synthesizeSkill(opts.workspaceRoot, req.body ?? {});
+      res.json(result);
+    } catch (e) { res.status(400).json({ error: e.message }); }
+  });
+
   // OpenCode multi-agent router: classify intent and dispatch to
   // cortex / executor / forge. This is the previously-unwired 3-agent
   // setup advertised in opencode.jsonc.
