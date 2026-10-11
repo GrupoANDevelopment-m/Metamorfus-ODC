@@ -13,12 +13,16 @@ async function runner() { return (await import(path.join(ROOT, "server/skills/ru
 async function metamorph() { return await import(path.join(ROOT, "server/metamorfus-core/metamorph.js")); }
 async function recall() { return await import(path.join(ROOT, "server/identity/recall.mjs")); }
 
-function ctx(workspaceRoot) {
+async function ctx(workspaceRoot) {
+  const { executeBridgeTool } = await import(path.join(ROOT, "server/odc-opencode-bridge.js"));
   return {
     workspaceRoot,
     dnaDir: "packages/metamorfus-src/dna_library",
-    forgeSkill: async () => ({ output: "", data: {} }),
-    scanCodebase: async () => ({ output: "", data: {} }),
+    forgeSkill: async (a) => {
+      const r = await executeBridgeTool("forge_skill", a, { workspaceRoot });
+      return { output: r?.output ?? "", data: r?.data ?? {} };
+    },
+    scanCodebase: async (a = {}) => executeBridgeTool("scan_codebase", a, { workspaceRoot }),
   };
 }
 
@@ -28,7 +32,7 @@ function ctx(workspaceRoot) {
 export async function measureGrowth(workspaceRoot, professions) {
   const run = await runner();
   const { adopt, loadManifest } = await metamorph();
-  const c = ctx(workspaceRoot);
+  const c = await ctx(workspaceRoot);
 
   // Start fresh — clear usage_history from any prior runs
   const m = await loadManifest(c);
@@ -99,12 +103,16 @@ function synthContextFor(skillKey) {
 
 // ─── T4 — ANTI-CATASTROPHE ───────────────────────────────────────────
 // Measure precision on a domain before and after a detour through
-// unrelated domains. The domain is "trading" by default (T4 spec).
+// unrelated domains. Uses REAL numerical precision (Wilder's RSI vs
+// reference), not a binary "ok" flag.
 export async function measureAntiCatastrophe(workspaceRoot, opts) {
   const { initialDomain, detourDomains, returnDomain, skillKey, evalInputs } = opts;
   const run = await runner();
   const { adopt, loadManifest } = await metamorph();
-  const c = ctx(workspaceRoot);
+  const { referenceRSI, measurePrecisionDrop } = await import(
+    path.join(ROOT, "server/cognitive/precision.mjs")
+  );
+  const c = await ctx(workspaceRoot);
 
   // Wipe state for clean measurement
   const m0 = await loadManifest(c);
@@ -117,7 +125,6 @@ export async function measureAntiCatastrophe(workspaceRoot, opts) {
     byProfession: initialDomain,
     context: evalInputs,
   });
-  const beforePrecision = before.ok ? 1 : 0;
 
   // 2. Take detours
   for (const d of detourDomains) {
@@ -131,14 +138,36 @@ export async function measureAntiCatastrophe(workspaceRoot, opts) {
     byProfession: returnDomain,
     context: evalInputs,
   });
-  const afterPrecision = after.ok ? 1 : 0;
 
-  const drop = beforePrecision - afterPrecision;
-  const dropPct = (drop / Math.max(0.001, beforePrecision)) * 100;
+  // Compute reference RSI for the eval inputs (if the skill returns RSI)
+  let reference = null;
+  if (skillKey === "rsi_calculator_v2_protocol" && evalInputs?.prices) {
+    const r = referenceRSI(evalInputs.prices);
+    if (r.ok) reference = r.rsi;
+  }
+
+  // Compute precision using the new module — numeric, not binary
+  let beforeP, afterP;
+  if (reference !== null) {
+    // Numeric precision: 1 - |actual - reference| / 100
+    const beforeRsi = before.result?.rsi ?? before.result?.result?.rsi;
+    const afterRsi = after.result?.rsi ?? after.result?.result?.rsi;
+    if (typeof beforeRsi === "number" && typeof afterRsi === "number") {
+      beforeP = 1 - Math.abs(beforeRsi - reference) / 100;
+      afterP = 1 - Math.abs(afterRsi - reference) / 100;
+    }
+  }
+
+  const drop = (beforeP ?? (before.ok ? 1 : 0)) - (afterP ?? (after.ok ? 1 : 0));
+  const baselineBefore = beforeP ?? (before.ok ? 1 : 0);
+  const dropPct = (drop / Math.max(0.001, baselineBefore)) * 100;
 
   return {
-    beforePrecision,
-    afterPrecision,
+    beforePrecision: beforeP ?? (before.ok ? 1 : 0),
+    afterPrecision: afterP ?? (after.ok ? 1 : 0),
+    reference,
+    beforeRsi: before.result?.rsi ?? before.result?.result?.rsi,
+    afterRsi: after.result?.rsi ?? after.result?.result?.rsi,
     drop,
     dropPct,
     passed: dropPct < 30,  // T4 spec: cannot fall to 40/50/60
@@ -154,7 +183,7 @@ export async function measureGeneralization(workspaceRoot, opts) {
   const { trainedDomains, novelDomain, novelSkillHint, novelContext } = opts;
   const run = await runner();
   const { adopt, loadManifest } = await metamorph();
-  const c = ctx(workspaceRoot);
+  const c = await ctx(workspaceRoot);
 
   // Wipe usage_history
   const m0 = await loadManifest(c);
@@ -203,50 +232,24 @@ export async function measureGeneralization(workspaceRoot, opts) {
 }
 
 // ─── T6 — SELF-EVOLUTION ──────────────────────────────────────────────
-// Force 100 failures. The system must detect a pattern in failures,
-// form a hypothesis, forge a new skill, and integrate it. The forge
-// step uses the LLM planner.
+// Force N failures. The system must detect a pattern, then forge a
+// new skill. Uses evolveSkillDirect which calls the LLM to write
+// Python directly (bypasses the morphosis planner, which is for full
+// system morphs, not skill-level evolution).
 export async function measureSelfEvolution(workspaceRoot, opts) {
   const { failingTask, successThreshold = 0.5 } = opts;
   const run = await runner();
   const { adopt, loadManifest } = await metamorph();
-  const { PromptPlanner } = await import(path.join(ROOT, "server/metamorfose/prompt-planner.mjs"));
-  const { LlmLibraryStore } = await import(path.join(ROOT, "server/llm-library/store.mjs"));
-  const { LlmRouter } = await import(path.join(ROOT, "server/llm-library/router.mjs"));
-  const c = ctx(workspaceRoot);
+  const { evolveSkillDirect } = await import(path.join(ROOT, "server/cognitive/evolve-skill.mjs"));
+  const c = await ctx(workspaceRoot);
 
   const m0 = await loadManifest(c);
   for (const s of m0.skills) s.usage_history = [];
 
-  // Make sure we have an LLM router ready
-  const fsx = await import("node:fs");
-  const libPath = "/tmp/metamorfus-t6-library.json";
-  try { fsx.unlinkSync(libPath); } catch {}
-  const store = new LlmLibraryStore(libPath);
-  await store.load();
-  if (process.env.NVIDIA_API_KEY) {
-    const hasR = store.list({ category: "reasoning" }).length > 0;
-    if (!hasR) {
-      store.add({
-        name: "T6 LLM",
-        provider: "nvidia-direct",
-        category: "reasoning",
-        endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
-        apiKey: process.env.NVIDIA_API_KEY,
-        model: "moonshotai/kimi-k3",
-        priority: 5,
-        metadata: { contextWindow: 128000, source: "t6" },
-      });
-      await store.save();
-    }
-  }
-  const router = new LlmRouter(store);
-
   // 1. Run failing task N times until we cross the threshold
-  const totalAttempts = opts.maxAttempts ?? 6;
+  const totalAttempts = opts.maxAttempts ?? 3;
   let lastError = null;
-  let plan = null;
-  let planResult = null;
+  let failureErrors = [];
   for (let i = 0; i < totalAttempts; i++) {
     try {
       const result = await run(workspaceRoot, {
@@ -257,104 +260,65 @@ export async function measureSelfEvolution(workspaceRoot, opts) {
       if (result.ok && result.exitCode === 0) {
         return { ok: true, evolved: false, attempts: i + 1, reason: "succeeded before evolution needed" };
       }
-      lastError = result.result?.error || result.stderr || "unknown";
-    } catch (e) { lastError = e.message; }
-  }
-
-  // 2. After N failures, form a hypothesis and forge a new skill
-  const planner = new PromptPlanner(router, "reasoning");
-  plan = await planner.plan(
-    `The skill '${failingTask.skillKey}' has failed ${totalAttempts} times in a row with: ${lastError}. ` +
-    `Forge a NEW skill called 'evolved_${failingTask.skillKey}' that handles this case. The new skill must use only the Python standard library.`,
-    { workspaceRoot },
-  );
-  // The planner returns {id, systemPrompt, plan: {steps: [...]}, raw, ...}
-  // The orchestrator expects the same shape.
-  if (!plan?.plan?.steps || !Array.isArray(plan.plan.steps) || plan.plan.steps.length === 0) {
-    // Fallback: if the LLM didn't return a valid plan, write the skill directly
-    // using the organism's own pattern. This still satisfies T6 — the system
-    // adapts on its own.
-    const newKey = `evolved_${failingTask.skillKey}`;
-    const fallbackSrc = `def skill(organism, context):
-    """Evolved version of ${failingTask.skillKey} that handles malformed input.
-    Originally auto-forged after ${totalAttempts} consecutive failures.
-    """
-    stations = context.get("stations", [])
-    if not isinstance(stations, list):
-        # Malformed input — return a structured error instead of crashing
-        return {"action": "INVALID_INPUT", "intensity": 0.0, "version": 1,
-                "result": {"error": "stations must be a list", "received": str(type(stations).__name__)}}
-    top_n = int(context.get("top_n", 3))
-    return {"action": "PRESSURE_GRADIENT", "intensity": 0.5, "version": 1,
-            "result": {"gradients": [], "computed": 0, "note": "evolved fallback"}}
-`;
-    await fs.writeFile(
-      path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", `${newKey}.py`),
-      fallbackSrc,
-    );
-    // Forge it through the manifest
-    const c2 = ctx(workspaceRoot);
-    await adopt(failingTask.profession, c2);
-    const m = await loadManifest(c2);
-    if (!m.skills.find((s) => s.key === newKey)) {
-      m.skills.push({
-        key: newKey, profession: failingTask.profession, version: 1,
-        morph_focus: "THINK", status: "active", mastery: 0.5,
-        usage_history: [], transferable: false,
-      });
-      const manifestPath = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "manifest.json");
-      await fs.writeFile(manifestPath, JSON.stringify(m, null, 2));
+      const err = result.result?.error || result.stderr || "unknown";
+      lastError = err;
+      failureErrors.push(err);
+    } catch (e) {
+      lastError = e.message;
+      failureErrors.push(e.message);
     }
-    const retry = await run(workspaceRoot, {
-      skillKey: newKey,
-      byProfession: failingTask.profession,
-      context: failingTask.context,
-    });
-    return {
-      ok: retry.ok,
-      evolved: true,
-      attempts: totalAttempts,
-      lastError,
-      newSkillKey: newKey,
-      newSkillOk: retry.ok,
-      planSteps: 0,
-      fallback: true,
-    };
   }
-  const { MetamorphoseOrchestrator } = await import(path.join(ROOT, "server/metamorfose/orchestrator.mjs"));
-  const { executeBridgeTool } = await import(path.join(ROOT, "server/odc-opencode-bridge.js"));
-  const orch = new MetamorphoseOrchestrator({
-    workspaceRoot,
-    forgeSkill: async ({ skillKey, pythonSource }) => {
-      const r = await executeBridgeTool("forge_skill", { skillKey, pythonSource });
-      return { output: r.output, data: r.data };
-    },
-    dnaDir: "packages/metamorfus-src/dna_library",
-  });
-  planResult = await orch.run(plan);
 
-  // 3. Verify the new skill exists and works
+  // 2. After N failures, ask the LLM directly to write a new Python
+  // implementation. This bypasses the morphosis planner (which is
+  // designed for full system morphs, not single-skill evolution).
+  const evolution = await evolveSkillDirect(workspaceRoot, {
+    skillKey: failingTask.skillKey,
+    profession: failingTask.profession,
+    failureInputs: { errors: failureErrors },
+    maxLlmAttempts: 3,
+  });
+
+  // 3. Verify the new skill exists in the manifest
   const m = await loadManifest(c);
   const newKey = `evolved_${failingTask.skillKey}`;
   const newSkill = m.skills.find((s) => s.key === newKey);
   if (!newSkill) {
-    return { ok: false, evolved: true, attempts: totalAttempts, lastError, planSteps: planResult?.steps?.length ?? 0, reason: "planner did not create a new skill" };
+    return {
+      ok: false,
+      evolved: true,
+      attempts: totalAttempts,
+      lastError,
+      reason: evolution?.reason ?? "evolveSkillDirect did not register the new skill",
+      llmOk: !!evolution,
+      pythonBytes: evolution?.pythonBytes ?? 0,
+    };
   }
 
-  // 4. Re-test the original task — does it succeed now?
+  // 4. Re-test the new skill with the same failing input — does it succeed?
   const retry = await run(workspaceRoot, {
     skillKey: newKey,
     byProfession: failingTask.profession,
     context: failingTask.context,
   });
+  // Also test with valid input — the evolved skill must not regress
+  const validRetry = await run(workspaceRoot, {
+    skillKey: newKey,
+    byProfession: failingTask.profession,
+    context: { stations: [{ station_id: "A", pressure_hpa: 1010 }, { station_id: "B", pressure_hpa: 1005 }], top_n: 3 },
+  });
+
   return {
-    ok: retry.ok,
+    ok: retry.ok && validRetry.ok,
     evolved: true,
     attempts: totalAttempts,
     lastError,
     newSkillKey: newKey,
     newSkillOk: retry.ok,
-    planSteps: planResult?.steps?.length ?? 0,
+    validInputOk: validRetry.ok,
+    pythonBytes: evolution?.pythonBytes ?? 0,
+    llmAttempts: 3,
+    newSkillOk: retry.ok,
   };
 }
 
@@ -365,7 +329,7 @@ export async function measureReversibility(workspaceRoot, opts) {
   const { professionA, professionsBC } = opts;
   const run = await runner();
   const { adopt, loadManifest } = await metamorph();
-  const c = ctx(workspaceRoot);
+  const c = await ctx(workspaceRoot);
 
   const m0 = await loadManifest(c);
   for (const s of m0.skills) s.usage_history = [];
@@ -427,7 +391,7 @@ export async function measureTransdomain(workspaceRoot, opts) {
   const { sequence, finalProfession, task } = opts;
   const run = await runner();
   const { adopt, loadManifest } = await metamorph();
-  const c = ctx(workspaceRoot);
+  const c = await ctx(workspaceRoot);
 
   const m0 = await loadManifest(c);
   for (const s of m0.skills) s.usage_history = [];
@@ -457,19 +421,33 @@ export async function measureTransdomain(workspaceRoot, opts) {
     context: task.context ?? synthContextFor(skillKey),
   });
 
-  // Score: how many of the prior professions contributed via
-  // transferable=true skills? (Each contributor adds a cross-domain
-  // input to the final synthesis.)
-  const allTransferable = m.skills.filter((s) => s.transferable).length;
-  const distinctProfs = new Set(
-    m.skills.flatMap((s) => (s.usage_history ?? []).map((u) => u.by_profession).filter(Boolean)),
-  );
+  // Real synthesis: combine results from ALL sequence professions +
+  // the final profession into a single coherent answer.
+  const { combineResults } = await import(path.join(ROOT, "server/cognitive/synthesis.mjs"));
+  const allResults = [];
+  for (const prof of sequence) {
+    const profSkills = m.skills.filter((s) => s.profession === prof);
+    for (const sk of profSkills) {
+      const uh = (sk.usage_history ?? []).filter((u) => u.by_profession === prof);
+      if (uh.length > 0) {
+        allResults.push({
+          key: sk.key, profession: prof, ok: uh[uh.length - 1].outcome === "ok",
+          result: uh[uh.length - 1].result,
+        });
+      }
+    }
+  }
+  allResults.push({ key: skillKey, profession: finalProfession, ok: final.ok, result: final.result });
+  const synthesis = combineResults(allResults);
+
+  const distinctProfs = new Set(allResults.map((r) => r.profession));
   const distinctProfsCount = distinctProfs.size;
 
   return {
-    ok: final.ok,
+    ok: synthesis.ok && synthesis.distinctProfessionsUsed >= 3,
+    synthesis,
     finalSkillKey: skillKey,
-    transferableSkills: allTransferable,
+    transferableSkills: m.skills.filter((s) => s.transferable).length,
     distinctProfessionsUsed: distinctProfsCount,
     distinctProfs: [...distinctProfs],
     details: { sequence, finalProfession, result: final.result },
@@ -483,7 +461,7 @@ export async function measureSupreme(workspaceRoot, opts) {
   const { trainedDomains, novelProblem } = opts;
   const run = await runner();
   const { adopt, loadManifest } = await metamorph();
-  const c = ctx(workspaceRoot);
+  const c = await ctx(workspaceRoot);
 
   const m0 = await loadManifest(c);
   for (const s of m0.skills) s.usage_history = [];
@@ -539,6 +517,11 @@ export async function measureSupreme(workspaceRoot, opts) {
     synthResults.push({ key: skill.key, profession: skill.profession, ok: r.ok, result: r.result });
   }
 
+  // Real synthesis: combine the multiple skill outputs into a single
+  // coherent answer. T11 must show that the synthesis has 3+ distinct
+  // professions AND confidence > 0.5.
+  const { combineResults } = await import(path.join(ROOT, "server/cognitive/synthesis.mjs"));
+  const synthesis = combineResults(synthResults);
   const distinctProfsUsed = new Set(synthResults.map((r) => r.profession)).size;
   const allOk = synthResults.every((r) => r.ok);
 
@@ -546,7 +529,8 @@ export async function measureSupreme(workspaceRoot, opts) {
     distinctProfessionsUsed: distinctProfsUsed,
     suggestionsUsed: synthResults.length,
     allOk,
-    passed: distinctProfsUsed >= 3 && allOk,
+    synthesis,
+    passed: distinctProfsUsed >= 3 && allOk && synthesis.confidence >= 0.5,
     details: { novelProblem, suggestions, synthResults },
   };
 }

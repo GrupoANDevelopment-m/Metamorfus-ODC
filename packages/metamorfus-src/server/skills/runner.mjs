@@ -42,11 +42,18 @@ export async function runSkill(workspaceRoot, opts) {
   }
 
   // 1. Invoke the skill (real subprocess)
+  // We don't spawn the .py file directly because that means the
+  // `skill(organism, context)` function never gets called — the
+  // interpreter just defines it and exits 0. Instead we use a real
+  // invoker wrapper that loads METAMORFUS_CONTEXT, imports the
+  // module, calls skill(), and prints the result as JSON with the
+  // __METAMORFUS_RESULT__ prefix.
   const startedAt = Date.now();
   let parsed, exitCode, stdout, stderr;
+  const invokerPath = path.join(__dirname, "invoker.py");
   try {
     ({ parsed, exitCode, stdout, stderr } = await new Promise((resolve, reject) => {
-      const p = spawn("python3", [pyPath], {
+      const p = spawn("python3", [invokerPath, pyPath], {
         cwd: workspaceRoot,
         env: { ...process.env, METAMORFUS_CONTEXT: JSON.stringify(context) },
         stdio: ["ignore", "pipe", "pipe"],
@@ -96,13 +103,19 @@ export async function runSkill(workspaceRoot, opts) {
   // 4. Persist the manifest
   await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
 
+  // 5. Determine actual ok/fail: a skill is ok only if it exited 0 AND
+  // its JSON output has no `error` field. Anything else (exit != 0,
+  // traceback, structured error) is a failure.
+  const skillOk = exitCode === 0 && !parsed?.error;
+
   return {
-    ok: true,
+    ok: skillOk,
     skillKey,
     byProfession,
     durationMs,
     exitCode,
     result: parsed,
+    error: skillOk ? null : (parsed?.error ?? `exit code ${exitCode}`),
     usageHistoryLength: usedSkill.usage_history.length,
     distinctProfessions: [...distinctProfs],
     transferable: usedSkill.transferable === true,

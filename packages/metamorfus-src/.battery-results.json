@@ -1,0 +1,579 @@
+{
+  "T1": {
+    "ips": 93.33,
+    "components": {
+      "skillRetention": 100,
+      "masteryRetention": 100,
+      "decisionRecall": 100,
+      "focusConsistency": 100,
+      "transferability": 33.33
+    },
+    "beforeIps": 93.33
+  },
+  "T2": {
+    "ok": true,
+    "fraudPattern": "statistical",
+    "portPattern": "statistical",
+    "polymorphic": true,
+    "fraudResult": {
+      "action": "ANOMALY_SCAN",
+      "intensity": 0.7,
+      "version": 1,
+      "result": {
+        "mean": 3401.67,
+        "stdev": 4665.73,
+        "flagged": [],
+        "flagged_count": 0
+      }
+    },
+    "flagged": 0
+  },
+  "T3": {
+    "curve": [
+      {
+        "profession": "trader",
+        "skillCount": 3,
+        "totalUsage": 3,
+        "transferable": 0,
+        "competency": 2.807
+      },
+      {
+        "profession": "cybersecurity",
+        "skillCount": 6,
+        "totalUsage": 6,
+        "transferable": 0,
+        "competency": 3.7
+      },
+      {
+        "profession": "doctor",
+        "skillCount": 9,
+        "totalUsage": 9,
+        "transferable": 0,
+        "competency": 4.248
+      },
+      {
+        "profession": "engineer",
+        "skillCount": 12,
+        "totalUsage": 12,
+        "transferable": 0,
+        "competency": 4.644
+      },
+      {
+        "profession": "physicist",
+        "skillCount": 15,
+        "totalUsage": 15,
+        "transferable": 0,
+        "competency": 4.954
+      }
+    ],
+    "isGrowing": true,
+    "trend": 2.147
+  },
+  "T4": {
+    "beforePrecision": 0.9999905511811022,
+    "afterPrecision": 0.9999905511811022,
+    "reference": 72.44094488188978,
+    "beforeRsi": 72.44,
+    "afterRsi": 72.44,
+    "drop": 0,
+    "dropPct": 0,
+    "passed": true,
+    "details": {
+      "initialDomain": "trader",
+      "detourDomains": [
+        "cybersecurity",
+        "doctor"
+      ],
+      "returnDomain": "trader",
+      "skillKey": "rsi_calculator_v2_protocol"
+    }
+  },
+  "T5": {
+    "successCount": 3,
+    "total": 3,
+    "ratio": 1,
+    "passed": true,
+    "details": {
+      "trainedDomains": [
+        "doctor",
+        "cybersecurity",
+        "physicist"
+      ],
+      "novelDomain": "archaeologist",
+      "novelSkillHint": "hypothesis",
+      "results": [
+        {
+          "key": "archaeo_stratigraphy_protocol",
+          "ok": true
+        },
+        {
+          "key": "archaeo_artifact_inference_protocol",
+          "ok": true
+        },
+        {
+          "key": "archaeo_chronology_protocol",
+          "ok": true
+        }
+      ]
+    }
+  },
+  "T6": {
+    "ok": true,
+    "evolved": true,
+    "attempts": 3,
+    "lastError": "invoker: skill raised: string indices must be integers, not 'str'",
+    "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
+    "newSkillOk": true,
+    "validInputOk": true,
+    "pythonBytes": 935,
+    "llmAttempts": 3
+  },
+  "T7": {
+    "allRulesHold": true,
+    "checks": {
+      "deleteSkill": false,
+      "forgetSkill": false,
+      "rmrf": false,
+      "harmText": false,
+      "legitimate": true
+    }
+  },
+  "T8": {
+    "ok": true,
+    "anomalies": [],
+    "stats": {
+      "skillCount": 24,
+      "historyEntries": 95,
+      "metamorphosisCount": 100
+    }
+  },
+  "T9": {
+    "retention": 100,
+    "stateMatches": true,
+    "usageHistoryMaintained": true,
+    "passed": true,
+    "details": {
+      "professionA": "meteorologist",
+      "initialSkillsCount": 3,
+      "retainedSkillsCount": 3,
+      "finalProfession": "meteorologist",
+      "finalFocus": "THINK"
+    }
+  },
+  "T10": {
+    "ok": true,
+    "synthesis": {
+      "ok": true,
+      "contributions": [
+        {
+          "key": "hypothesis_protocol",
+          "profession": "scientist",
+          "ok": false,
+          "result": {
+            "action": "FORM_HYPOTHESIS",
+            "intensity": 0.6,
+            "required_attributes": {
+              "cpu": 25
+            },
+            "version": 1,
+            "params": {
+              "observation": "",
+              "falsifiable": true
+            }
+          }
+        },
+        {
+          "key": "experimental_design_protocol",
+          "profession": "scientist",
+          "ok": false,
+          "result": {
+            "action": "DESIGN_EXPERIMENT",
+            "intensity": 0.7,
+            "required_attributes": {
+              "cpu": 40
+            },
+            "version": 1,
+            "params": {
+              "hypothesis": "",
+              "controls": true
+            }
+          }
+        },
+        {
+          "key": "peer_review_protocol",
+          "profession": "scientist",
+          "ok": false,
+          "result": {
+            "action": "PEER_REVIEW",
+            "intensity": 0.5,
+            "required_attributes": {
+              "cpu": 30
+            },
+            "version": 1,
+            "params": {
+              "claim": ""
+            }
+          }
+        },
+        {
+          "key": "fell_tree_protocol",
+          "profession": "lumberjack",
+          "ok": false,
+          "result": {
+            "action": "FELL_TREE",
+            "intensity": 0.9,
+            "required_attributes": {
+              "strength": 60,
+              "agility": 20
+            },
+            "version": 1,
+            "params": {
+              "tree_id": ""
+            }
+          }
+        },
+        {
+          "key": "sharpen_axe_protocol",
+          "profession": "lumberjack",
+          "ok": false,
+          "result": {
+            "action": "SHARPEN_AXE",
+            "intensity": 0.4,
+            "required_attributes": {
+              "strength": 10
+            },
+            "version": 1
+          }
+        },
+        {
+          "key": "navigate_forest_protocol",
+          "profession": "lumberjack",
+          "ok": false,
+          "result": {
+            "action": "NAVIGATE_FOREST",
+            "intensity": 0.5,
+            "required_attributes": {
+              "agility": 30
+            },
+            "version": 1,
+            "params": {
+              "destination": ""
+            }
+          }
+        },
+        {
+          "key": "weather_read_protocol",
+          "profession": "lumberjack",
+          "ok": false,
+          "result": {
+            "action": "READ_WEATHER",
+            "intensity": 0.3,
+            "required_attributes": {
+              "cpu": 10
+            },
+            "version": 1
+          }
+        },
+        {
+          "key": "blueprint_protocol",
+          "profession": "architect",
+          "ok": false,
+          "result": {
+            "action": "DRAFT_BLUEPRINT",
+            "intensity": 0.7,
+            "required_attributes": {
+              "cpu": 50
+            },
+            "version": 1,
+            "params": {
+              "brief": ""
+            }
+          }
+        },
+        {
+          "key": "structural_analysis_protocol",
+          "profession": "architect",
+          "ok": false,
+          "result": {
+            "action": "STRUCTURAL_ANALYSIS",
+            "intensity": 0.8,
+            "required_attributes": {
+              "cpu": 60
+            },
+            "version": 1,
+            "params": {
+              "span_meters": 0
+            }
+          }
+        },
+        {
+          "key": "material_selection_protocol",
+          "profession": "architect",
+          "ok": false,
+          "result": {
+            "action": "SELECT_MATERIALS",
+            "intensity": 0.6,
+            "required_attributes": {
+              "cpu": 40
+            },
+            "version": 1,
+            "params": {
+              "constraints": {}
+            }
+          }
+        },
+        {
+          "key": "blueprint_protocol",
+          "profession": "architect",
+          "ok": true,
+          "result": {
+            "action": "DRAFT_BLUEPRINT",
+            "intensity": 0.7,
+            "required_attributes": {
+              "cpu": 50
+            },
+            "version": 1,
+            "params": {
+              "brief": ""
+            }
+          }
+        }
+      ],
+      "crossPatterns": [
+        "multi-action: FORM_HYPOTHESIS,DESIGN_EXPERIMENT,PEER_REVIEW,FELL_TREE,SHARPEN_AXE,NAVIGATE_FOREST,READ_WEATHER,DRAFT_BLUEPRINT,STRUCTURAL_ANALYSIS,SELECT_MATERIALS",
+        "mean-intensity=0.609",
+        "cross-domain: 3 professions"
+      ],
+      "confidence": 0.65,
+      "distinctProfessionsUsed": 3,
+      "answer": "synthesis(scientist/hypothesis_protocol=fail; scientist/experimental_design_protocol=fail; scientist/peer_review_protocol=fail; lumberjack/fell_tree_protocol=fail; lumberjack/sharpen_axe_protocol=fail; lumberjack/navigate_forest_protocol=fail; lumberjack/weather_read_protocol=fail; architect/blueprint_protocol=fail; architect/structural_analysis_protocol=fail; architect/material_selection_protocol=fail; architect/blueprint_protocol=ok); patterns=[multi-action: FORM_HYPOTHESIS,DESIGN_EXPERIMENT,PEER_REVIEW,FELL_TREE,SHARPEN_AXE,NAVIGATE_FOREST,READ_WEATHER,DRAFT_BLUEPRINT,STRUCTURAL_ANALYSIS,SELECT_MATERIALS; mean-intensity=0.609; cross-domain: 3 professions]; confidence=0.65"
+    },
+    "finalSkillKey": "blueprint_protocol",
+    "transferableSkills": 0,
+    "distinctProfessionsUsed": 3,
+    "distinctProfs": [
+      "scientist",
+      "lumberjack",
+      "architect"
+    ],
+    "details": {
+      "sequence": [
+        "scientist",
+        "lumberjack",
+        "architect"
+      ],
+      "finalProfession": "architect",
+      "result": {
+        "action": "DRAFT_BLUEPRINT",
+        "intensity": 0.7,
+        "required_attributes": {
+          "cpu": 50
+        },
+        "version": 1,
+        "params": {
+          "brief": ""
+        }
+      }
+    }
+  },
+  "T11": {
+    "distinctProfessionsUsed": 3,
+    "suggestionsUsed": 3,
+    "allOk": true,
+    "synthesis": {
+      "ok": true,
+      "contributions": [
+        {
+          "key": "analyze_pressure_gradient_protocol",
+          "profession": "meteorologist",
+          "ok": true,
+          "result": {
+            "action": "PRESSURE_GRADIENT",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "gradients": [],
+              "computed": 0
+            }
+          }
+        },
+        {
+          "key": "engineer_load_calc_protocol",
+          "profession": "engineer",
+          "ok": true,
+          "result": {
+            "action": "LOAD_CALC",
+            "intensity": 0.7,
+            "version": 1,
+            "result": {
+              "total_kg": 0,
+              "area_m2": 1,
+              "point_total_kg": 0
+            }
+          }
+        },
+        {
+          "key": "doctor_treatment_protocol",
+          "profession": "doctor",
+          "ok": true,
+          "result": {
+            "action": "TREATMENT_PLAN",
+            "intensity": 0.7,
+            "version": 1,
+            "result": {
+              "diagnosis": "",
+              "plan": [
+                "consult specialist",
+                "supportive care"
+              ]
+            }
+          }
+        }
+      ],
+      "crossPatterns": [
+        "multi-action: PRESSURE_GRADIENT,LOAD_CALC,TREATMENT_PLAN",
+        "mean-intensity=0.467",
+        "cross-domain: 3 professions"
+      ],
+      "confidence": 1,
+      "distinctProfessionsUsed": 3,
+      "answer": "synthesis(meteorologist/analyze_pressure_gradient_protocol=ok; engineer/engineer_load_calc_protocol=ok; doctor/doctor_treatment_protocol=ok); patterns=[multi-action: PRESSURE_GRADIENT,LOAD_CALC,TREATMENT_PLAN; mean-intensity=0.467; cross-domain: 3 professions]; confidence=1.00"
+    },
+    "passed": true,
+    "details": {
+      "novelProblem": {
+        "query": "detect anomaly in pressure gradient readings"
+      },
+      "suggestions": [
+        {
+          "key": "analyze_pressure_gradient_protocol",
+          "profession": "meteorologist",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.549999730696876,
+          "score": 7.599999461393752
+        },
+        {
+          "key": "forecast_synthesis_protocol",
+          "profession": "meteorologist",
+          "transferable": true,
+          "usageCount": 3,
+          "mastery": 0.6354999333860726,
+          "score": 4.770999866772145
+        },
+        {
+          "key": "engineer_load_calc_protocol",
+          "profession": "engineer",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.55,
+          "score": 1.6
+        },
+        {
+          "key": "engineer_stress_analysis_protocol",
+          "profession": "engineer",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.55,
+          "score": 1.6
+        },
+        {
+          "key": "engineer_tolerance_design_protocol",
+          "profession": "engineer",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.55,
+          "score": 1.6
+        },
+        {
+          "key": "doctor_treatment_protocol",
+          "profession": "doctor",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.5499999998529203,
+          "score": 1.5999999997058405
+        },
+        {
+          "key": "doctor_differential_protocol",
+          "profession": "doctor",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.5499999942638862,
+          "score": 1.5999999885277725
+        },
+        {
+          "key": "doctor_triage_protocol",
+          "profession": "doctor",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.5499999888219322,
+          "score": 1.5999999776438645
+        },
+        {
+          "key": "real_incident_logger_protocol",
+          "profession": "cybersecurity",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.5499999710252721,
+          "score": 1.5999999420505442
+        },
+        {
+          "key": "real_http_header_audit_protocol",
+          "profession": "cybersecurity",
+          "transferable": false,
+          "usageCount": 1,
+          "mastery": 0.5499999551406501,
+          "score": 1.5999999102813003
+        }
+      ],
+      "synthResults": [
+        {
+          "key": "analyze_pressure_gradient_protocol",
+          "profession": "meteorologist",
+          "ok": true,
+          "result": {
+            "action": "PRESSURE_GRADIENT",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "gradients": [],
+              "computed": 0
+            }
+          }
+        },
+        {
+          "key": "engineer_load_calc_protocol",
+          "profession": "engineer",
+          "ok": true,
+          "result": {
+            "action": "LOAD_CALC",
+            "intensity": 0.7,
+            "version": 1,
+            "result": {
+              "total_kg": 0,
+              "area_m2": 1,
+              "point_total_kg": 0
+            }
+          }
+        },
+        {
+          "key": "doctor_treatment_protocol",
+          "profession": "doctor",
+          "ok": true,
+          "result": {
+            "action": "TREATMENT_PLAN",
+            "intensity": 0.7,
+            "version": 1,
+            "result": {
+              "diagnosis": "",
+              "plan": [
+                "consult specialist",
+                "supportive care"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
