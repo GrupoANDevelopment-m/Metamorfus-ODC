@@ -115,40 +115,62 @@ export function complementarityMatrix(skillOutputs, inputs) {
  * skill, then add skills with correlation < threshold to the
  * already-selected set.
  *
- * @param {Array<{skillKey, result}>} skillOutputs
- * @param {Array} inputs — the inputs that produced these outputs
- * @param {number} threshold — max allowed correlation (default 0.7)
+ * BUG FIX #1: Now also requires at least ONE domain-matched skill
+ * to be in the selection. The previous version would reject
+ * fraud_anomaly_protocol in favor of analyze_pressure_gradient_protocol
+ * because both produced mostly-zero series (high correlation) and
+ * the greedy algorithm picked the slightly-less-zero one. That's
+ * wrong — the fraud skill MUST be in the selection for fraud tasks.
+ *
+ * @param {Array<{skillKey, result, domain?}>} skillOutputs
+ * @param {Array} inputs
+ * @param {number} threshold
+ * @param {string} targetDomain — the domain of the task (e.g. "fraud_analyst")
  * @returns {Array<string>} selected skill keys
  */
-export function selectComplementarySkills(skillOutputs, inputs, threshold = 0.7) {
+export function selectComplementarySkills(skillOutputs, inputs, threshold = 0.7, targetDomain = null) {
   if (skillOutputs.length === 0) return [];
   if (skillOutputs.length === 1) return [skillOutputs[0].skillKey];
 
   const matrix = complementarityMatrix(skillOutputs, inputs);
   const selected = [];
-  // Start with the skill that has highest mean output (most signal)
+
+  // 1. First, ensure the domain-matched skill is included
+  if (targetDomain) {
+    const domainIdx = skillOutputs.findIndex((s) => {
+      // Check the byProfession or domain field
+      const prof = s.result?.byProfession ?? s.domain ?? "";
+      return prof === targetDomain;
+    });
+    if (domainIdx >= 0) selected.push(domainIdx);
+  }
+
+  // 2. Start with the skill that has highest mean output (most signal)
   const series = skillOutputs.map((s) => skillOutputToSeries(s.skillKey, s.result, inputs));
   const meanSignal = series.map((s) => s.reduce((a, b) => a + b, 0) / s.length);
   const firstIdx = meanSignal.indexOf(Math.max(...meanSignal));
-  selected.push(firstIdx);
+  if (!selected.includes(firstIdx)) selected.push(firstIdx);
 
   for (let i = 0; i < skillOutputs.length; i++) {
-    if (i === firstIdx) continue;
+    if (selected.includes(i)) continue;
     // Check correlation with all already-selected
     const maxCorr = Math.max(...selected.map((j) => matrix[i][j]));
     if (maxCorr < threshold) {
       selected.push(i);
     }
   }
+  // If we ended up with only the domain-matched skill (because
+  // everything else is too correlated), that's still correct —
+  // it means the domain-matched skill is sufficient.
   return selected.map((i) => skillOutputs[i].skillKey);
 }
 
 /**
  * Explain why a set of skills was/wasn't selected.
  */
-export function explainComplementarity(skillOutputs, inputs, threshold = 0.7) {
+export function explainComplementarity(skillOutputs, inputs, threshold = 0.7, targetDomain = null) {
   const matrix = complementarityMatrix(skillOutputs, inputs);
-  const selected = selectComplementarySkills(skillOutputs, inputs, threshold);
+  const selected = selectComplementarySkills(skillOutputs, inputs, threshold, targetDomain);
   const rejected = skillOutputs.map((s) => s.skillKey).filter((k) => !selected.includes(k));
   const pairs = [];
   for (let i = 0; i < skillOutputs.length; i++) {
@@ -161,5 +183,5 @@ export function explainComplementarity(skillOutputs, inputs, threshold = 0.7) {
       });
     }
   }
-  return { selected, rejected, pairs, threshold };
+  return { selected, rejected, pairs, threshold, targetDomain };
 }

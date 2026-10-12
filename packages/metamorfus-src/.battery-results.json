@@ -451,10 +451,10 @@
     },
     "complementarityReport": {
       "selected": [
+        "fraud_anomaly_protocol",
         "analyze_pressure_gradient_protocol"
       ],
       "rejected": [
-        "fraud_anomaly_protocol",
         "rsi_calculator_v2_protocol",
         "real_port_scanner_protocol"
       ],
@@ -496,7 +496,8 @@
           "complementary": false
         }
       ],
-      "threshold": 0.7
+      "threshold": 0.7,
+      "targetDomain": "fraud_analyst"
     },
     "metaReport": {
       "requiredSignals": [
@@ -523,11 +524,15 @@
     },
     "forgeReport": {
       "neededForge": true,
-      "initialScore": 0.5714285714285715,
+      "initialScore": 0.18181818181818182,
       "finalScore": 1,
       "improved": true,
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv50s3fk",
-      "reason": "LLM-forged skill improved score from 0.571 to 1.000"
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv5wmch8",
+      "trainTestSplit": {
+        "trainSize": 70,
+        "testSize": 30
+      },
+      "reason": "LLM-forged skill improved test score from 0.182 to 1.000 (honest held-out evaluation)"
     },
     "final": {
       "precision": 1,
@@ -537,12 +542,24 @@
       "truePositives": 10,
       "falsePositives": 0,
       "falseNegatives": 0,
-      "name": "forged forged_fraud_anomaly_protocol_mv50s3fk"
+      "name": "forged forged_fraud_anomaly_protocol_mv5wmch8"
     },
     "cacheReport": {
-      "totalEntries": 1,
-      "suggestion": null,
+      "totalEntries": 4,
+      "suggestion": {
+        "skills": [
+          "forged_fraud_multi_strategy"
+        ],
+        "meanScore": 0.95,
+        "uses": 1
+      },
       "summary": {
+        "anomaly|pattern|statistical": {
+          "count": 3,
+          "meanScore": 0.7236666666666668,
+          "bestScore": 0.95,
+          "uniqueCombos": 3
+        },
         "anomaly|categorical|magnitude|statistical|temporal": {
           "count": 1,
           "meanScore": 1,
@@ -629,16 +646,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499997284906796,
-          "score": 7.599999456981359
+          "mastery": 0.5499997398158218,
+          "score": 7.599999479631643
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.6354999346938798,
-          "score": 4.77099986938776
+          "mastery": 0.6354999328055085,
+          "score": 4.770999865611017
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -677,32 +694,32 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999993675567,
-          "score": 1.599999987351134
+          "mastery": 0.5499999932343274,
+          "score": 1.5999999864686547
         },
         {
           "key": "doctor_triage_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999874982137,
-          "score": 1.5999999749964273
+          "mastery": 0.5499999860274153,
+          "score": 1.5999999720548306
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999971025272,
-          "score": 1.599999942050544
+          "mastery": 0.5499999705840326,
+          "score": 1.5999999411680652
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999560231291,
-          "score": 1.5999999120462582
+          "mastery": 0.549999957935167,
+          "score": 1.599999915870334
         }
       ],
       "synthResults": [

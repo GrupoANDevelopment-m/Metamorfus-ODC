@@ -110,17 +110,17 @@ print("ok")`], { stdio: ["ignore", "pipe", "pipe"] });
   });
 }
 
-async function forgeSkillFile(workspaceRoot, skillKey, pythonSource) {
+async function forgeSkillFile(workspaceRoot, skillKey, pythonSource, profession = "fraud_analyst") {
   const pyPath = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", `${skillKey}.py`);
   await fs.writeFile(pyPath, pythonSource);
-  // Add to manifest
+  // Add to manifest with the actual profession (not 'synthetic')
   const manifestPath = path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", "manifest.json");
   const m = JSON.parse(await fs.readFile(manifestPath, "utf-8"));
   m.skills = m.skills ?? [];
   if (!m.skills.some((s) => s.key === skillKey)) {
     m.skills.push({
       key: skillKey,
-      profession: "synthetic",
+      profession,
       version: 1,
       runtime: "python",
       morph_focus: "THINK",
@@ -149,13 +149,25 @@ export async function autoForgeForGap(workspaceRoot, opts) {
     taskDescription,
     trainingData,
     groundTruth,
-    evaluateFn,  // (workspaceRoot, skillKey) => {score, flagged, ...}
+    evaluateFn,  // (workspaceRoot, skillKey, data, truth) => {score, flagged, ...}
     existingSkill,
     threshold = 0.6,
+    profession = "synthetic",
   } = opts;
 
-  // 1. Measure baseline with existing skill
-  const baseline = await evaluateFn(workspaceRoot, existingSkill, trainingData, groundTruth);
+  // BUG FIX #2: Split data into training (for LLM prompt) and
+  // held-out test (for honest evaluation). Without this split,
+  // the LLM sees the EXACT same transactions it'll be evaluated
+  // on, so any improvement is overfit.
+  const n = trainingData.length;
+  const splitIdx = Math.floor(n * 0.7);
+  const trainSample = trainingData.slice(0, splitIdx);
+  const testSample = trainingData.slice(splitIdx);
+  const trainTruth = new Set([...groundTruth].filter((id) => trainSample.some((t) => t.id === id)));
+  const testTruth = new Set([...groundTruth].filter((id) => testSample.some((t) => t.id === id)));
+
+  // 1. Measure baseline on TEST data (honest evaluation)
+  const baseline = await evaluateFn(workspaceRoot, existingSkill, testSample, testTruth);
   if (baseline.score >= threshold) {
     return {
       neededForge: false,
@@ -168,8 +180,10 @@ export async function autoForgeForGap(workspaceRoot, opts) {
 
   // 2. Forge a new skill via LLM
   //    The error analysis shows the LLM what the existing skill missed
-  const errorAnalysis = baseline.missed?.slice(0, 10) ?? [];
-  const code = await callLlmForTaskSkill(taskDescription, trainingData, errorAnalysis);
+  //    on the TRAINING data (not test data — we don't leak the test set).
+  const baselineOnTrain = await evaluateFn(workspaceRoot, existingSkill, trainSample, trainTruth);
+  const errorAnalysis = baselineOnTrain.missed?.slice(0, 10) ?? [];
+  const code = await callLlmForTaskSkill(taskDescription, trainSample, errorAnalysis);
   const v = await validatePython(code);
   if (!v.ok) {
     return {
@@ -183,10 +197,10 @@ export async function autoForgeForGap(workspaceRoot, opts) {
 
   // 3. Write the new skill
   const newKey = `forged_${existingSkill}_${Date.now().toString(36)}`;
-  await forgeSkillFile(workspaceRoot, newKey, v.normalized);
+  await forgeSkillFile(workspaceRoot, newKey, v.normalized, profession);
 
-  // 4. Re-evaluate with the new skill
-  const after = await evaluateFn(workspaceRoot, newKey, trainingData, groundTruth);
+  // 4. Re-evaluate with the new skill on TEST data (honest evaluation)
+  const after = await evaluateFn(workspaceRoot, newKey, testSample, testTruth);
 
   // 5. If improved, keep. Otherwise remove.
   if (after.score > baseline.score) {
@@ -197,7 +211,8 @@ export async function autoForgeForGap(workspaceRoot, opts) {
       improved: true,
       forgedSkillKey: newKey,
       improvement: after.score - baseline.score,
-      reason: `LLM-forged skill improved score from ${baseline.score.toFixed(3)} to ${after.score.toFixed(3)}`,
+      trainTestSplit: { trainSize: splitIdx, testSize: n - splitIdx },
+      reason: `LLM-forged skill improved test score from ${baseline.score.toFixed(3)} to ${after.score.toFixed(3)} (honest held-out evaluation)`,
     };
   } else {
     // Remove the forged skill (no improvement)
@@ -212,7 +227,8 @@ export async function autoForgeForGap(workspaceRoot, opts) {
       initialScore: baseline.score,
       finalScore: after.score,
       improved: false,
-      reason: `LLM-forged skill did not improve (${baseline.score.toFixed(3)} → ${after.score.toFixed(3)}), discarded`,
+      trainTestSplit: { trainSize: splitIdx, testSize: n - splitIdx },
+      reason: `LLM-forged skill did not improve on HELD-OUT test (${baseline.score.toFixed(3)} → ${after.score.toFixed(3)}), discarded`,
     };
   }
 }
