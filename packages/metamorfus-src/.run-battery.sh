@@ -202,6 +202,25 @@ test("T10 — Transdomain Integration", async () => {
   await fs.rm(ws, { recursive: true, force: true });
 });
 
+test("T12 — Performance Gain with Cross-Domain Knowledge", async () => {
+  const ws = await bootWorkspace();
+  const c = ctx(ws);
+  for (const p of ["fraud_analyst", "trader", "meteorologist", "engineer", "cybersecurity"]) {
+    try { await adopt(p, c); } catch (e) { console.log("adopt", p, "ERR", e.message); }
+  }
+  const { measurePerformanceGain } = await import(path.join(ROOT, "server/cognitive/performance.mjs"));
+  const r = await measurePerformanceGain(ws);
+  results.T12 = r;
+  console.log("[T12] fraud f1=" + r.fraudTask.single.f1.toFixed(3));
+  console.log("[T12] ts baseline MAE=" + r.timeSeriesTask.baseline.mae.toFixed(3));
+  console.log("[T12] ts trader MAE=" + r.timeSeriesTask.traderOnly.mae.toFixed(3));
+  console.log("[T12] ts 2-domain MAE=" + r.timeSeriesTask.twoDomain.mae.toFixed(3));
+  console.log("[T12] ts 3-domain MAE=" + r.timeSeriesTask.threeDomain.mae.toFixed(3) + " conf=" + r.timeSeriesTask.synthesis.confidence.toFixed(3));
+  console.log("[T12] improvement:", r.overall.improvement_pct.toFixed(1) + "%");
+  console.log("[T12] verdict:", r.overall.verdict);
+  await fs.rm(ws, { recursive: true, force: true });
+});
+
 test("T11 — Supreme Test", async () => {
   const ws = await bootWorkspace();
   const r = await measureSupreme(ws, {

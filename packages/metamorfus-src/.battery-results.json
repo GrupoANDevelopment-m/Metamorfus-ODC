@@ -118,15 +118,13 @@
     }
   },
   "T6": {
-    "ok": true,
+    "ok": false,
     "evolved": true,
     "attempts": 3,
     "lastError": "invoker: skill raised: string indices must be integers, not 'str'",
-    "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
-    "newSkillOk": true,
-    "validInputOk": true,
-    "pythonBytes": 935,
-    "llmAttempts": 3
+    "reason": "LLM did not produce valid Python",
+    "llmOk": true,
+    "pythonBytes": 0
   },
   "T7": {
     "allRulesHold": true,
@@ -376,6 +374,58 @@
       }
     }
   },
+  "T12": {
+    "fraudTask": {
+      "single": {
+        "precision": 1,
+        "recall": 0.4,
+        "f1": 0.5714285714285715,
+        "flagged": 4,
+        "truePositives": 4,
+        "falsePositives": 0,
+        "falseNegatives": 6,
+        "confidence": 0.5,
+        "distinctProfessionsUsed": 1
+      },
+      "note": "Fraud detection — cross-domain doesn't help because fraud_anomaly only catches spikes via stdev. Drip/weird profiles need graph/temporal skills that don't exist yet."
+    },
+    "timeSeriesTask": {
+      "baseline": {
+        "mae": 1.6379999999999995,
+        "name": "linear extrapolation only"
+      },
+      "traderOnly": {
+        "mae": 0.5779999999999973,
+        "name": "trader RSI direction"
+      },
+      "twoDomain": {
+        "mae": 0.6301019999999937,
+        "name": "trader + meteorology"
+      },
+      "threeDomain": {
+        "mae": 0.6301019999999937,
+        "name": "trader + meteorology + engineer"
+      },
+      "synthesis": {
+        "confidence": 1,
+        "distinctProfessionsUsed": 3,
+        "crossPatterns": [
+          "multi-action: RSI,PRESSURE_GRADIENT,LOAD_CALC",
+          "mean-intensity=0.633",
+          "cross-domain: 3 professions"
+        ]
+      },
+      "passed": true,
+      "hypothesis": "Cross-domain ensemble should beat linear baseline"
+    },
+    "passed": true,
+    "overall": {
+      "synthesisConfidenceGrows": true,
+      "taskPerformanceImproves": true,
+      "improvement_pct": 61.5322344322348,
+      "verdict": "Cross-domain synthesis IMPROVES time-series prediction"
+    }
+  },
   "T11": {
     "distinctProfessionsUsed": 3,
     "suggestionsUsed": 3,
@@ -450,16 +500,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999730696876,
-          "score": 7.599999461393752
+          "mastery": 0.5499997226074889,
+          "score": 7.599999445214978
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.6354999333860726,
-          "score": 4.770999866772145
+          "mastery": 0.6354999346214095,
+          "score": 4.770999869242819
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -490,40 +540,40 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999998529203,
-          "score": 1.5999999997058405
+          "mastery": 0.5499999997058403,
+          "score": 1.5999999994116807
         },
         {
           "key": "doctor_differential_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999942638862,
-          "score": 1.5999999885277725
+          "mastery": 0.549999993675567,
+          "score": 1.599999987351134
         },
         {
           "key": "doctor_triage_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999888219322,
-          "score": 1.5999999776438645
+          "mastery": 0.5499999876452935,
+          "score": 1.599999975290587
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999710252721,
-          "score": 1.5999999420505442
+          "mastery": 0.5499999724960704,
+          "score": 1.5999999449921407
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999551406501,
-          "score": 1.5999999102813003
+          "mastery": 0.5499999586705663,
+          "score": 1.5999999173411326
         }
       ],
       "synthResults": [
