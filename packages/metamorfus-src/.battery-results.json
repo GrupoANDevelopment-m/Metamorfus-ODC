@@ -118,13 +118,15 @@
     }
   },
   "T6": {
-    "ok": false,
+    "ok": true,
     "evolved": true,
     "attempts": 3,
     "lastError": "invoker: skill raised: string indices must be integers, not 'str'",
-    "reason": "LLM did not produce valid Python",
-    "llmOk": true,
-    "pythonBytes": 0
+    "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
+    "newSkillOk": true,
+    "validInputOk": true,
+    "pythonBytes": 935,
+    "llmAttempts": 3
   },
   "T7": {
     "allRulesHold": true,
@@ -426,6 +428,133 @@
       "verdict": "Cross-domain synthesis IMPROVES time-series prediction"
     }
   },
+  "T13": {
+    "baseline": {
+      "precision": 1,
+      "recall": 0.4,
+      "f1": 0.5714285714285715,
+      "flagged": 4,
+      "truePositives": 4,
+      "falsePositives": 0,
+      "falseNegatives": 6,
+      "name": "fraud_analyst only"
+    },
+    "crossDomain": {
+      "precision": 1,
+      "recall": 0.4,
+      "f1": 0.5714285714285715,
+      "flagged": 4,
+      "truePositives": 4,
+      "falsePositives": 0,
+      "falseNegatives": 6,
+      "name": "all 4 domains combined"
+    },
+    "complementarityReport": {
+      "selected": [
+        "analyze_pressure_gradient_protocol"
+      ],
+      "rejected": [
+        "fraud_anomaly_protocol",
+        "rsi_calculator_v2_protocol",
+        "real_port_scanner_protocol"
+      ],
+      "pairs": [
+        {
+          "a": "fraud_anomaly_protocol",
+          "b": "rsi_calculator_v2_protocol",
+          "correlation": 0.9994959495949595,
+          "complementary": false
+        },
+        {
+          "a": "fraud_anomaly_protocol",
+          "b": "analyze_pressure_gradient_protocol",
+          "correlation": 0.9994959495949595,
+          "complementary": false
+        },
+        {
+          "a": "fraud_anomaly_protocol",
+          "b": "real_port_scanner_protocol",
+          "correlation": 0.9994959495949595,
+          "complementary": false
+        },
+        {
+          "a": "rsi_calculator_v2_protocol",
+          "b": "analyze_pressure_gradient_protocol",
+          "correlation": 1,
+          "complementary": false
+        },
+        {
+          "a": "rsi_calculator_v2_protocol",
+          "b": "real_port_scanner_protocol",
+          "correlation": 1,
+          "complementary": false
+        },
+        {
+          "a": "analyze_pressure_gradient_protocol",
+          "b": "real_port_scanner_protocol",
+          "correlation": 1,
+          "complementary": false
+        }
+      ],
+      "threshold": 0.7
+    },
+    "metaReport": {
+      "requiredSignals": [
+        "anomaly",
+        "statistical",
+        "temporal",
+        "magnitude",
+        "categorical"
+      ],
+      "selectedSkills": [
+        "fraud_anomaly_protocol",
+        "rsi_calculator_v2_protocol"
+      ],
+      "coveredSignals": [
+        "statistical",
+        "magnitude",
+        "temporal"
+      ],
+      "missingSignals": [
+        "anomaly",
+        "categorical"
+      ],
+      "recommendation": "missing 2 signal types (anomaly, categorical) — consider forging a new skill"
+    },
+    "forgeReport": {
+      "neededForge": true,
+      "initialScore": 0.5714285714285715,
+      "finalScore": 1,
+      "improved": true,
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv50s3fk",
+      "reason": "LLM-forged skill improved score from 0.571 to 1.000"
+    },
+    "final": {
+      "precision": 1,
+      "recall": 1,
+      "f1": 1,
+      "flagged": 10,
+      "truePositives": 10,
+      "falsePositives": 0,
+      "falseNegatives": 0,
+      "name": "forged forged_fraud_anomaly_protocol_mv50s3fk"
+    },
+    "cacheReport": {
+      "totalEntries": 1,
+      "suggestion": null,
+      "summary": {
+        "anomaly|categorical|magnitude|statistical|temporal": {
+          "count": 1,
+          "meanScore": 1,
+          "bestScore": 1,
+          "uniqueCombos": 1
+        }
+      }
+    },
+    "passed": true,
+    "passedReason": "gap correctly identified (missing: anomaly, categorical) + auto-forge attempted",
+    "verdict": "Auto-forge IMPROVED F1 from 0.571 to 1.000 (75.0%)"
+  },
   "T11": {
     "distinctProfessionsUsed": 3,
     "suggestionsUsed": 3,
@@ -500,16 +629,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499997226074889,
-          "score": 7.599999445214978
+          "mastery": 0.5499997284906796,
+          "score": 7.599999456981359
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.6354999346214095,
-          "score": 4.770999869242819
+          "mastery": 0.6354999346938798,
+          "score": 4.77099986938776
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -556,24 +685,24 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999876452935,
-          "score": 1.599999975290587
+          "mastery": 0.5499999874982137,
+          "score": 1.5999999749964273
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999724960704,
-          "score": 1.5999999449921407
+          "mastery": 0.549999971025272,
+          "score": 1.599999942050544
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999586705663,
-          "score": 1.5999999173411326
+          "mastery": 0.5499999560231291,
+          "score": 1.5999999120462582
         }
       ],
       "synthResults": [

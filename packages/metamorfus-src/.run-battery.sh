@@ -221,6 +221,28 @@ test("T12 — Performance Gain with Cross-Domain Knowledge", async () => {
   await fs.rm(ws, { recursive: true, force: true });
 });
 
+test("T13 — Gap Filler (auto-forge when skills lack signals)", async () => {
+  const ws = await bootWorkspace();
+  const c = ctx(ws);
+  for (const p of ["fraud_analyst", "trader", "meteorologist", "engineer", "cybersecurity"]) {
+    try { await adopt(p, c); } catch (e) {}
+  }
+  const { measureGapFilling } = await import(path.join(ROOT, "server/cognitive/t13-gap-filler.mjs"));
+  const r = await measureGapFilling(ws);
+  results.T13 = r;
+  console.log("[T13] baseline F1=" + r.baseline.f1.toFixed(3));
+  console.log("[T13] crossDomain F1=" + r.crossDomain.f1.toFixed(3));
+  console.log("[T13] required signals: " + r.metaReport.requiredSignals.join(", "));
+  console.log("[T13] missing signals: " + (r.metaReport.missingSignals.join(", ") || "none"));
+  console.log("[T13] complementary selected: " + r.complementarityReport.selected.join(", ") + " (rejected: " + r.complementarityReport.rejected.join(", ") + ")");
+  console.log("[T13] forge: " + r.forgeReport.reason);
+  console.log("[T13] final F1=" + r.final.f1.toFixed(3));
+  console.log("[T13] cache suggestion for similar task: " + (r.cacheReport.suggestion ? r.cacheReport.suggestion.skills.join(",") + " (mean=" + r.cacheReport.suggestion.meanScore.toFixed(3) + ")" : "none"));
+  console.log("[T13] verdict: " + r.verdict);
+  console.log("[T13] passed: " + r.passed + " (" + r.passedReason + ")");
+  await fs.rm(ws, { recursive: true, force: true });
+});
+
 test("T11 — Supreme Test", async () => {
   const ws = await bootWorkspace();
   const r = await measureSupreme(ws, {
