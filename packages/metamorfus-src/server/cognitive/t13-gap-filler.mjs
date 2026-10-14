@@ -39,6 +39,7 @@ export async function measureGapFilling(workspaceRoot) {
   const { combineResults } = await import(path.join(ROOT, "server/cognitive/synthesis.mjs"));
   const { selectComplementarySkills, explainComplementarity } = await import(path.join(ROOT, "server/cognitive/complementarity.mjs"));
   const { classifyTaskSignals, detectSignalTypes, metaOrchestrate, SIGNAL_TYPES } = await import(path.join(ROOT, "server/cognitive/meta-orchestrator.mjs"));
+  const { detectSignalTypesAST, adaptiveThreshold, buildAdaptiveSelection } = await import(path.join(ROOT, "server/cognitive/ast-detect.mjs"));
   const { EnsembleCache } = await import(path.join(ROOT, "server/cognitive/ensemble-cache.mjs"));
   const { autoForgeForGap } = await import(path.join(ROOT, "server/cognitive/auto-forge.mjs"));
   const { executeBridgeTool } = await import(path.join(ROOT, "server/odc-opencode-bridge.js"));
@@ -98,22 +99,41 @@ export async function measureGapFilling(workspaceRoot) {
   // BUG FIX #1: Pass targetDomain so the algorithm keeps the
   // domain-matched skill (fraud_anomaly) even when other skills
   // are slightly less correlated.
-  const compReport = explainComplementarity(skillOutputs, txs, 0.7, "fraud_analyst");
+  // BUG FIX #5: Use ADAPTIVE threshold from the actual correlation
+  // distribution, not a hardcoded 0.7.
+  const { matrix: corrMatrix, threshold: adaptiveT, correlations: allCorr } = await buildAdaptiveSelection(skillOutputs, txs);
+  const compReport = explainComplementarity(skillOutputs, txs, adaptiveT, "fraud_analyst");
+  compReport.adaptiveThreshold = adaptiveT;
+  compReport.correlationStats = {
+    mean: allCorr.reduce((a, b) => a + b, 0) / Math.max(1, allCorr.length),
+    median: [...allCorr].sort((a, b) => a - b)[Math.floor(allCorr.length / 2)] ?? 0,
+    n: allCorr.length,
+  };
 
   // ---- 4. META-ORCHESTRATION: what signals does fraud need? ----
   const requiredSignals = classifyTaskSignals(taskDescription);
-  // Read each skill's source to detect its signal types
-  const candidateSkillTypes = [];
-  for (const s of candidateSkills) {
-    try {
-      const src = await fs.readFile(path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", `${s.skillKey}.py`), "utf-8");
-      const types = detectSignalTypes(s.skillKey, src);
-      candidateSkillTypes.push({ skillKey: s.skillKey, signalTypes: types });
-    } catch {
-      candidateSkillTypes.push({ skillKey: s.skillKey, signalTypes: [] });
+  // BUG FIX #4: Use AST-based signal detection, not regex. The
+  // Python AST analyzer parses imports, function calls, and
+  // return shapes to determine what signals each skill produces.
+  // This is more robust than matching substrings.
+  const skillKeys = candidateSkills.map((s) => s.skillKey);
+  const astMap = await detectSignalTypesAST(workspaceRoot, skillKeys);
+  const candidateSkillTypes = skillKeys.map((k) => ({
+    skillKey: k,
+    signalTypes: astMap[k]?.signalTypes ?? [],
+    signalCounts: astMap[k]?.signalCounts ?? {},
+  }));
+  // Fall back to regex if AST failed for any skill
+  for (const c of candidateSkillTypes) {
+    if (c.signalTypes.length === 0) {
+      try {
+        const src = await fs.readFile(path.join(workspaceRoot, "packages", "metamorfus-src", "dna_library", `${c.skillKey}.py`), "utf-8");
+        c.signalTypes = detectSignalTypes(c.skillKey, src);
+      } catch {}
     }
   }
   const metaReport = await metaOrchestrate(workspaceRoot, taskDescription, candidateSkillTypes);
+  metaReport.astMap = astMap;
 
   // ---- 5. AUTO-FORGE: if required signals are missing, forge a new one ----
   let forgeReport = { neededForge: false };
@@ -206,6 +226,7 @@ export async function measureGapFilling(workspaceRoot) {
       coveredSignals: metaReport.coveredSignals,
       missingSignals: metaReport.missingSignals,
       recommendation: metaReport.recommendation,
+      astMap: metaReport.astMap ?? {},
     },
     forgeReport: {
       neededForge: forgeReport.neededForge,

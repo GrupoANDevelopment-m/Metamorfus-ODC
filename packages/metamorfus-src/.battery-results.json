@@ -125,7 +125,7 @@
     "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
     "newSkillOk": true,
     "validInputOk": true,
-    "pythonBytes": 935,
+    "pythonBytes": 959,
     "llmAttempts": 3
   },
   "T7": {
@@ -497,7 +497,13 @@
         }
       ],
       "threshold": 0.7,
-      "targetDomain": "fraud_analyst"
+      "targetDomain": "fraud_analyst",
+      "adaptiveThreshold": 0.7,
+      "correlationStats": {
+        "mean": 0.9997479747974797,
+        "median": 1,
+        "n": 6
+      }
     },
     "metaReport": {
       "requiredSignals": [
@@ -509,25 +515,212 @@
       ],
       "selectedSkills": [
         "fraud_anomaly_protocol",
-        "rsi_calculator_v2_protocol"
+        "real_port_scanner_protocol"
       ],
       "coveredSignals": [
         "statistical",
         "magnitude",
+        "graph",
         "temporal"
       ],
       "missingSignals": [
         "anomaly",
         "categorical"
       ],
-      "recommendation": "missing 2 signal types (anomaly, categorical) — consider forging a new skill"
+      "recommendation": "missing 2 signal types (anomaly, categorical) — consider forging a new skill",
+      "astMap": {
+        "fraud_anomaly_protocol": {
+          "signalTypes": [],
+          "signalCounts": {},
+          "details": {
+            "imports": [],
+            "function_calls": [
+              "context.get",
+              "len",
+              "float",
+              "sum",
+              "len",
+              "sum",
+              "len",
+              "t.get",
+              "round",
+              "round",
+              "len",
+              "abs",
+              "float",
+              "t.get"
+            ],
+            "control_flow": {
+              "for": 0,
+              "while": 0,
+              "if": 1,
+              "try": 0
+            },
+            "return_keys": [
+              "action",
+              "intensity",
+              "version",
+              "result",
+              "action",
+              "intensity",
+              "version",
+              "result"
+            ]
+          },
+          "error": null
+        },
+        "rsi_calculator_v2_protocol": {
+          "signalTypes": [],
+          "signalCounts": {},
+          "details": {
+            "imports": [],
+            "function_calls": [
+              "context.get",
+              "int",
+              "range",
+              "range",
+              "context.get",
+              "len",
+              "len",
+              "gains.append",
+              "losses.append",
+              "sum",
+              "sum",
+              "len",
+              "max",
+              "max",
+              "round",
+              "len",
+              "len"
+            ],
+            "control_flow": {
+              "for": 2,
+              "while": 0,
+              "if": 2,
+              "try": 0
+            },
+            "return_keys": [
+              "action",
+              "intensity",
+              "version",
+              "result",
+              "action",
+              "intensity",
+              "version",
+              "result"
+            ]
+          },
+          "error": null
+        },
+        "analyze_pressure_gradient_protocol": {
+          "signalTypes": [
+            "statistical"
+          ],
+          "signalCounts": {
+            "statistical": 1
+          },
+          "details": {
+            "imports": [
+              "math"
+            ],
+            "function_calls": [
+              "context.get",
+              "int",
+              "out.sort",
+              "context.get",
+              "grid.get",
+              "out.append",
+              "round",
+              "round",
+              "round",
+              "round",
+              "max",
+              "abs",
+              "len",
+              "round",
+              "math.cos",
+              "round",
+              "math.radians"
+            ],
+            "control_flow": {
+              "for": 1,
+              "while": 0,
+              "if": 2,
+              "try": 0
+            },
+            "return_keys": [
+              "action",
+              "intensity",
+              "version",
+              "result",
+              "action",
+              "intensity",
+              "version",
+              "result"
+            ]
+          },
+          "error": null
+        },
+        "real_port_scanner_protocol": {
+          "signalTypes": [
+            "graph",
+            "temporal"
+          ],
+          "signalCounts": {
+            "graph": 1,
+            "temporal": 1
+          },
+          "details": {
+            "imports": [
+              "asyncio",
+              "socket",
+              "json",
+              "time"
+            ],
+            "function_calls": [
+              "context.get",
+              "context.get",
+              "float",
+              "time.time",
+              "asyncio.run",
+              "context.get",
+              "run_all",
+              "w.close",
+              "asyncio.gather",
+              "len",
+              "len",
+              "int",
+              "asyncio.wait_for",
+              "asyncio.open_connection",
+              "w.wait_closed",
+              "len",
+              "len",
+              "check",
+              "time.time"
+            ],
+            "control_flow": {
+              "for": 0,
+              "while": 0,
+              "if": 0,
+              "try": 2
+            },
+            "return_keys": [
+              "action",
+              "intensity",
+              "version",
+              "result"
+            ]
+          },
+          "error": null
+        }
+      }
     },
     "forgeReport": {
       "neededForge": true,
       "initialScore": 0.18181818181818182,
       "finalScore": 1,
       "improved": true,
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv5wmch8",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7tdmc6",
       "trainTestSplit": {
         "trainSize": 70,
         "testSize": 30
@@ -542,7 +735,7 @@
       "truePositives": 10,
       "falsePositives": 0,
       "falseNegatives": 0,
-      "name": "forged forged_fraud_anomaly_protocol_mv5wmch8"
+      "name": "forged forged_fraud_anomaly_protocol_mv7tdmc6"
     },
     "cacheReport": {
       "totalEntries": 4,
@@ -646,16 +839,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499997398158218,
-          "score": 7.599999479631643
+          "mastery": 0.5499997473168903,
+          "score": 7.5999994946337806
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.6354999328055085,
-          "score": 4.770999865611017
+          "mastery": 0.6354999360724188,
+          "score": 4.770999872144838
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -694,32 +887,32 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999932343274,
-          "score": 1.5999999864686547
+          "mastery": 0.549999993528487,
+          "score": 1.599999987056974
         },
         {
           "key": "doctor_triage_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999860274153,
-          "score": 1.5999999720548306
+          "mastery": 0.5499999874982137,
+          "score": 1.5999999749964273
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999705840326,
-          "score": 1.5999999411680652
+          "mastery": 0.5499999707311124,
+          "score": 1.5999999414622248
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999957935167,
-          "score": 1.599999915870334
+          "mastery": 0.5499999548464906,
+          "score": 1.5999999096929811
         }
       ],
       "synthResults": [

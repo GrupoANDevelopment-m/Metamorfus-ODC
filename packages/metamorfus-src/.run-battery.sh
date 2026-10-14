@@ -234,7 +234,9 @@ test("T13 — Gap Filler (auto-forge when skills lack signals)", async () => {
   console.log("[T13] crossDomain F1=" + r.crossDomain.f1.toFixed(3));
   console.log("[T13] required signals: " + r.metaReport.requiredSignals.join(", "));
   console.log("[T13] missing signals: " + (r.metaReport.missingSignals.join(", ") || "none"));
+  console.log("[T13] adaptive threshold: " + r.complementarityReport.adaptiveThreshold.toFixed(3) + " (mean corr: " + r.complementarityReport.correlationStats.mean.toFixed(3) + ", median: " + r.complementarityReport.correlationStats.median.toFixed(3) + ")");
   console.log("[T13] complementary selected: " + r.complementarityReport.selected.join(", ") + " (rejected: " + r.complementarityReport.rejected.join(", ") + ")");
+  console.log("[T13] AST signal types: " + Object.entries(r.metaReport.astMap).map(([k, v]) => k + "=" + (v.signalTypes ?? []).join("/")).join(", "));
   console.log("[T13] forge: " + r.forgeReport.reason);
   console.log("[T13] final F1=" + r.final.f1.toFixed(3));
   console.log("[T13] cache suggestion for similar task: " + (r.cacheReport.suggestion ? r.cacheReport.suggestion.skills.join(",") + " (mean=" + r.cacheReport.suggestion.meanScore.toFixed(3) + ")" : "none"));
