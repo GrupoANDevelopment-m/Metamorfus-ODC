@@ -136,11 +136,19 @@ export function stratifiedKFold(n, fraudIds, k = 5) {
 /**
  * Score a binary prediction: precision, recall, F1, confusion matrix.
  * Real-world ref: sklearn.metrics.precision_recall_fscore_support
+ *
+ * BUG FIX: TN requires knowing the total population. Without it,
+ * the previous implementation estimated TN from flagged.size +
+ * truth.size, which is wildly wrong (TN should be much larger
+ * for typical imbalanced datasets).
+ *
+ * Now takes an optional `nTotal` parameter (the population size)
+ * to compute TN correctly. If not provided, TN is omitted.
  */
-export function scoreBinary(flagged, truth) {
+export function scoreBinary(flagged, truth, nTotal = null) {
   const flaggedSet = new Set(flagged);
   const truthSet = new Set(truth);
-  let tp = 0, fp = 0, fn = 0, tn = 0;
+  let tp = 0, fp = 0, fn = 0;
   for (const id of flaggedSet) {
     if (truthSet.has(id)) tp++;
     else fp++;
@@ -148,26 +156,64 @@ export function scoreBinary(flagged, truth) {
   for (const id of truthSet) {
     if (!flaggedSet.has(id)) fn++;
   }
-  // Total negatives
-  const allIds = new Set([...flaggedSet, ...truthSet]);
-  // tn is the count of negatives that weren't flagged — for a generic
-  // set of "everything that exists", we approximate: total - (tp + fp + fn)
-  const totalEstimate = flaggedSet.size + truthSet.size + (allIds.size === flaggedSet.size + truthSet.size ? 0 : 0);
-  tn = Math.max(0, totalEstimate - tp - fp - fn);
+  // TN: only computable if we know the total population
+  let tn = null;
+  if (nTotal !== null && nTotal >= tp + fp + fn) {
+    tn = nTotal - tp - fp - fn;
+  }
   const precision = tp + fp > 0 ? tp / (tp + fp) : 0;
   const recall = tp + fn > 0 ? tp / (tp + fn) : 0;
   const f1 = precision + recall > 0 ? (2 * precision * recall) / (precision + recall) : 0;
-  return { precision, recall, f1, tp, fp, fn, tn, confusionMatrix: { tp, fp, fn, tn } };
+  return {
+    precision, recall, f1, tp, fp, fn, tn,
+    confusionMatrix: { tp, fp, fn, tn },
+  };
 }
 
 /**
- * Bootstrap 95% confidence interval for F1.
- * Resample with replacement B times, compute F1 each, take 2.5% and 97.5% quantiles.
- * Ref: Efron 1979, "Bootstrap Methods: Another Look at the Jackknife"
+ * Student's t-distribution confidence interval for k-fold CV.
+ *
+ * The proper CI for k-fold cross-validation is the t-distribution:
+ *   CI = mean ± t_{alpha/2, k-1} * std / sqrt(k)
+ *
+ * This is the standard protocol since Kohavi 1995. We use t-critical
+ * values from a lookup table (more accurate than the asymptotic
+ * normal approximation for small k).
+ *
+ * Refs:
+ *   - Kohavi 1995, "A Study of Cross-Validation and Bootstrap for
+ *     Accuracy Estimation and Model Selection"
+ *   - scikit-learn's cross_val_score returns mean +/- 1.96*std/sqrt(k)
+ *     for 95% CI (asymptotic), which we improve with t-distribution
+ *     for small k (e.g., k=5)
+ */
+const T_CRITICAL_95 = { 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228, 20: 2.086, 30: 2.042, 60: 2.000, 1000: 1.96 };
+export function tCI(f1s, alpha = 0.05) {
+  if (f1s.length === 0) return { mean: 0, ci: [0, 0], std: 0, tCritical: 0, sem: 0 };
+  const n = f1s.length;
+  const mean = f1s.reduce((a, b) => a + b, 0) / n;
+  const std = Math.sqrt(f1s.map((v) => (v - mean) ** 2).reduce((a, b) => a + b, 0) / Math.max(1, n - 1));
+  const sem = std / Math.sqrt(n);
+  // Find t-critical for given df = n-1
+  const df = n - 1;
+  let t = 1.96;
+  if (T_CRITICAL_95[df] !== undefined) t = T_CRITICAL_95[df];
+  else if (df < 2) t = 12.706;  // very small
+  const halfWidth = t * sem;
+  return {
+    mean, std, sem, tCritical: t, df,
+    ci: [Math.max(0, mean - halfWidth), Math.min(1, mean + halfWidth)],
+    method: "t-distribution",
+  };
+}
+
+/**
+ * Bootstrap confidence interval (legacy, kept for comparison).
+ * Note: this resamples F1 values directly, which is a simplified
+ * proxy. The proper t-distribution CI above is preferred.
  */
 export function bootstrapCI(f1s, B = 1000, alpha = 0.05) {
   if (f1s.length === 0) return { mean: 0, ci: [0, 0], std: 0 };
-  // We resample the F1 values themselves (proxy for sampling from the population)
   const samples = [];
   for (let i = 0; i < B; i++) {
     const sample = [];
@@ -181,25 +227,25 @@ export function bootstrapCI(f1s, B = 1000, alpha = 0.05) {
   const std = Math.sqrt(f1s.map((v) => (v - mean) ** 2).reduce((a, b) => a + b, 0) / f1s.length);
   const lower = samples[Math.floor(B * alpha / 2)];
   const upper = samples[Math.floor(B * (1 - alpha / 2))];
-  return { mean, ci: [lower, upper], std, n: f1s.length };
+  return { mean, ci: [lower, upper], std, n: f1s.length, method: "bootstrap (simplified)" };
 }
 
 /**
- * ROC analysis: compute TPR and FPR at multiple thresholds.
- * For fraud detection, the "score" is whether a transaction was
- * flagged. We sweep the threshold to get the ROC curve.
+ * ROC analysis. For BINARY classifiers (flagged or not), the ROC
+ * curve is degenerate — only 1 point exists. Real ROC AUC requires
+ * a continuous score per item, not a binary flag.
+ *
+ * For honest reporting: we return the single operating point with
+ * TPR and FPR, and explicitly note the AUC is NOT defined for
+ * binary classifiers (would require score-based ranking).
  *
  * Ref: Fawcett 2006, "An introduction to ROC analysis"
  * sklearn.metrics.roc_curve
  */
 export function rocCurve(flagged, truth, allIds) {
-  if (allIds.length === 0) return { tpr: [], fpr: [], auc: 0 };
+  if (allIds.length === 0) return { tpr: 0, fpr: 0, auc: null, degenerate: true };
   const flaggedSet = new Set(flagged);
   const truthSet = new Set(truth);
-  // Each threshold flips some transactions from flagged to not.
-  // For binary output, we just have 2 points: (0,0)→(1,0)→(1,1)→(0,1)→(0,0)
-  // Real ROC requires continuous scores. For binary: 1 point only.
-  // For ROC AUC, we approximate using the precision-recall curve.
   let tp = 0, fp = 0, fn = 0, tn = 0;
   for (const id of allIds) {
     const isFlagged = flaggedSet.has(id);
@@ -211,15 +257,13 @@ export function rocCurve(flagged, truth, allIds) {
   }
   const tpr = tp / Math.max(1, tp + fn);  // sensitivity / recall
   const fpr = fp / Math.max(1, fp + tn);  // 1 - specificity
-  // Single-point ROC: not a real curve, but we can compute AUC
-  // using precision-recall as a proxy (Average Precision)
   const precision = tp / Math.max(1, tp + fp);
-  const recall = tp / Math.max(1, tp + fn);
-  const ap = (precision + recall) / 2;
+  const recall = tpr;
   return {
-    points: [{ tpr, fpr, threshold: 0.5 }],
-    tpr, fpr,
-    precision, recall, averagePrecision: ap,
+    degenerate: true,
+    reason: "binary classifier — ROC AUC not defined (needs score-based ranking)",
+    tpr, fpr, precision, recall,
+    operatingPoint: { tpr, fpr, threshold: "binary" },
     confusionMatrix: { tp, fp, fn, tn },
   };
 }
@@ -227,13 +271,18 @@ export function rocCurve(flagged, truth, allIds) {
 /**
  * Run the full k-fold evaluation on a skill. Returns:
  *   - perFoldScores: array of F1 per fold
- *   - meanF1, stdF1, ci
+ *   - meanF1, stdF1, t-distribution CI
  *   - confusion matrix (summed across folds)
- *   - ROC analysis
+ *   - ROC analysis (note: degenerate for binary skills)
  */
 export async function kFoldEvaluate(workspaceRoot, skillKey, profession, txs, fraudIds, k = 5) {
   const { runSkill } = await import(path.join(ROOT, "server/skills/runner.mjs"));
-  const folds = stratifiedKFold(txs.length, new Set(txs.map((_, i) => fraudIds.has(txs[i].id) ? i : -1).filter(i => i >= 0)), k);
+  // Build the set of fraud INDICES (not IDs)
+  const fraudIndices = new Set();
+  for (let i = 0; i < txs.length; i++) {
+    if (fraudIds.has(txs[i].id)) fraudIndices.add(i);
+  }
+  const folds = stratifiedKFold(txs.length, fraudIndices, k);
   const perFoldScores = [];
   const perFoldConfusion = [];
   let totalTp = 0, totalFp = 0, totalFn = 0, totalTn = 0;
@@ -247,32 +296,40 @@ export async function kFoldEvaluate(workspaceRoot, skillKey, profession, txs, fr
       context: { transactions: testTxs },
     });
     const flagged = (r.result?.result?.flagged ?? []).map((t) => t.id ?? t);
-    const sc = scoreBinary(flagged, testFraudIds);
+    // Pass nTotal so TN is computed correctly
+    const sc = scoreBinary(flagged, testFraudIds, testTxs.length);
     perFoldScores.push(sc.f1);
     perFoldConfusion.push(sc.confusionMatrix);
     totalTp += sc.tp;
     totalFp += sc.fp;
     totalFn += sc.fn;
-    totalTn += sc.tn;
+    if (sc.tn !== null) totalTn += sc.tn;
   }
-  const ci = bootstrapCI(perFoldScores);
+  // Use t-distribution CI (proper for k-fold)
+  const tci = tCI(perFoldScores);
   const allIds = txs.map((t) => t.id);
-  // For ROC: run the skill on the FULL dataset and compare to all fraud
+  // Run on FULL dataset for the operational confusion matrix
   const fullRes = await runSkill(workspaceRoot, {
     skillKey,
     byProfession: profession,
     context: { transactions: txs },
   });
   const fullFlagged = (fullRes.result?.result?.flagged ?? []).map((t) => t.id ?? t);
+  const fullSc = scoreBinary(fullFlagged, fraudIds, txs.length);
   const roc = rocCurve(fullFlagged, fraudIds, allIds);
   return {
     k,
     perFoldScores: perFoldScores.map((s) => Math.round(s * 1000) / 1000),
-    meanF1: ci.mean,
-    stdF1: ci.std,
-    ci95: { lower: ci.ci[0], upper: ci.ci[1] },
+    meanF1: tci.mean,
+    stdF1: tci.std,
+    sem: tci.sem,
+    tCritical: tci.tCritical,
+    ci95: { lower: tci.ci[0], upper: tci.ci[1] },
+    ciMethod: tci.method,
     totalConfusionMatrix: { tp: totalTp, fp: totalFp, fn: totalFn, tn: totalTn },
+    fullDatasetConfusionMatrix: fullSc.confusionMatrix,
+    fullDatasetF1: fullSc.f1,
     roc,
-    robustness: ci.std < 0.1 ? "robust" : ci.std < 0.2 ? "moderate" : "brittle",
+    robustness: tci.std < 0.1 ? "robust" : tci.std < 0.2 ? "moderate" : "brittle",
   };
 }

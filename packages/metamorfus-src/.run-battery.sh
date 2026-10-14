@@ -255,13 +255,18 @@ test("T14 — Statistical Validation (k-fold + bootstrap CI + ROC)", async () =>
   const r = await measureStatisticalPerformance(ws);
   results.T14 = r;
   console.log("[T14] dataset: " + r.dataset.n + " txs, " + r.dataset.nFraud + " fraud, " + r.dataset.nPatterns + " patterns");
-  console.log("[T14] baseline k-fold: " + JSON.stringify(r.baseline.kfold.perFoldScores) + " mean=" + r.baseline.kfold.meanF1.toFixed(3) + " ci=[" + r.baseline.kfold.ci95.lower.toFixed(3) + "," + r.baseline.kfold.ci95.upper.toFixed(3) + "] (" + r.baseline.kfold.robustness + ")");
+  console.log("[T14] baseline k-fold: " + JSON.stringify(r.baseline.kfold.perFoldScores) + " mean=" + r.baseline.kfold.meanF1.toFixed(3) + " ci=[" + r.baseline.kfold.ci95.lower.toFixed(3) + "," + r.baseline.kfold.ci95.upper.toFixed(3) + "] t=" + r.baseline.kfold.tCritical.toFixed(3) + " (" + r.baseline.kfold.robustness + ")");
   if (r.forged) {
-    console.log("[T14] forged k-fold:   " + JSON.stringify(r.forged.kfold.perFoldScores) + " mean=" + r.forged.kfold.meanF1.toFixed(3) + " ci=[" + r.forged.kfold.ci95.lower.toFixed(3) + "," + r.forged.kfold.ci95.upper.toFixed(3) + "] (" + r.forged.kfold.robustness + ")");
+    console.log("[T14] forged k-fold:   " + JSON.stringify(r.forged.kfold.perFoldScores) + " mean=" + r.forged.kfold.meanF1.toFixed(3) + " ci=[" + r.forged.kfold.ci95.lower.toFixed(3) + "," + r.forged.kfold.ci95.upper.toFixed(3) + "] t=" + r.forged.kfold.tCritical.toFixed(3) + " (" + r.forged.kfold.robustness + ")");
     console.log("[T14] forged vs baseline: improvement=" + r.verdict.improvement.toFixed(3) + ", significant=" + r.verdict.significant);
   }
-  console.log("[T14] baseline confusion: " + JSON.stringify(r.baseline.kfold.totalConfusionMatrix));
-  if (r.forged) console.log("[T14] forged confusion:   " + JSON.stringify(r.forged.kfold.totalConfusionMatrix));
+  console.log("[T14] baseline kfold CM: " + JSON.stringify(r.baseline.kfold.totalConfusionMatrix));
+  console.log("[T14] baseline full CM:  " + JSON.stringify(r.baseline.kfold.fullDatasetConfusionMatrix));
+  if (r.forged) {
+    console.log("[T14] forged kfold CM:   " + JSON.stringify(r.forged.kfold.totalConfusionMatrix));
+    console.log("[T14] forged full CM:    " + JSON.stringify(r.forged.kfold.fullDatasetConfusionMatrix));
+  }
+  console.log("[T14] ROC: " + JSON.stringify(r.baseline.kfold.roc));
   console.log("[T14] conclusion: " + r.verdict.conclusion);
   await fs.rm(ws, { recursive: true, force: true });
 });

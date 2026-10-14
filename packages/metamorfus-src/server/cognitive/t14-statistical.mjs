@@ -40,7 +40,8 @@ export async function measureStatisticalPerformance(workspaceRoot) {
       skillKey, byProfession: "fraud_analyst", context: { transactions: trainingData },
     });
     const flagged = (r.result?.result?.flagged ?? []).map((t) => t.id ?? t);
-    const sc = scoreBinary(flagged, groundTruth);
+    // Pass nTotal so TN is computed correctly
+    const sc = scoreBinary(flagged, groundTruth, trainingData.length);
     return { score: sc.f1, ...sc, missed: trainingData.filter((t) => groundTruth.has(t.id) && !flagged.includes(t.id)) };
   };
   const forgeReport = await autoForgeForGap(workspaceRoot, {
