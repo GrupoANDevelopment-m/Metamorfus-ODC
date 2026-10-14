@@ -125,7 +125,7 @@
     "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
     "newSkillOk": true,
     "validInputOk": true,
-    "pythonBytes": 959,
+    "pythonBytes": 935,
     "llmAttempts": 3
   },
   "T7": {
@@ -720,7 +720,7 @@
       "initialScore": 0.18181818181818182,
       "finalScore": 1,
       "improved": true,
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7tdmc6",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7vz8ez",
       "trainTestSplit": {
         "trainSize": 70,
         "testSize": 30
@@ -735,7 +735,7 @@
       "truePositives": 10,
       "falsePositives": 0,
       "falseNegatives": 0,
-      "name": "forged forged_fraud_anomaly_protocol_mv7tdmc6"
+      "name": "forged forged_fraud_anomaly_protocol_mv7vz8ez"
     },
     "cacheReport": {
       "totalEntries": 4,
@@ -764,6 +764,126 @@
     "passed": true,
     "passedReason": "gap correctly identified (missing: anomaly, categorical) + auto-forge attempted",
     "verdict": "Auto-forge IMPROVED F1 from 0.571 to 1.000 (75.0%)"
+  },
+  "T14": {
+    "dataset": {
+      "n": 200,
+      "nFraud": 20,
+      "nPatterns": 7,
+      "description": "Varied dataset: spike, micro-spike, late-night, round numbers, rare merchants, crypto, test-tx"
+    },
+    "baseline": {
+      "kfold": {
+        "k": 5,
+        "perFoldScores": [
+          0,
+          0.333,
+          0.4,
+          0.4,
+          0.667
+        ],
+        "meanF1": 0.36,
+        "stdF1": 0.21333333333333332,
+        "ci95": {
+          "lower": 0.16,
+          "upper": 0.5466666666666666
+        },
+        "totalConfusionMatrix": {
+          "tp": 5,
+          "fp": 3,
+          "fn": 15,
+          "tn": 5
+        },
+        "roc": {
+          "points": [
+            {
+              "tpr": 0.3,
+              "fpr": 0,
+              "threshold": 0.5
+            }
+          ],
+          "tpr": 0.3,
+          "fpr": 0,
+          "precision": 1,
+          "recall": 0.3,
+          "averagePrecision": 0.65,
+          "confusionMatrix": {
+            "tp": 6,
+            "fp": 0,
+            "fn": 14,
+            "tn": 180
+          }
+        },
+        "robustness": "brittle"
+      },
+      "description": "fraud_anomaly_protocol (stdev-based outlier detection)"
+    },
+    "forged": {
+      "kfold": {
+        "k": 5,
+        "perFoldScores": [
+          0.462,
+          0.5,
+          0.571,
+          0.5,
+          0.727
+        ],
+        "meanF1": 0.5520479520479521,
+        "stdF1": 0.09454023139088336,
+        "ci95": {
+          "lower": 0.48461538461538467,
+          "upper": 0.6506493506493507
+        },
+        "totalConfusionMatrix": {
+          "tp": 17,
+          "fp": 25,
+          "fn": 3,
+          "tn": 17
+        },
+        "roc": {
+          "points": [
+            {
+              "tpr": 1,
+              "fpr": 0.3277777777777778,
+              "threshold": 0.5
+            }
+          ],
+          "tpr": 1,
+          "fpr": 0.3277777777777778,
+          "precision": 0.25316455696202533,
+          "recall": 1,
+          "averagePrecision": 0.6265822784810127,
+          "confusionMatrix": {
+            "tp": 20,
+            "fp": 59,
+            "fn": 0,
+            "tn": 121
+          }
+        },
+        "robustness": "robust"
+      },
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7vzfc9",
+      "description": "LLM-forged skill with multi-strategy detection"
+    },
+    "forgeReport": {
+      "improved": true,
+      "initialScore": 0.2608695652173913,
+      "finalScore": 0.7826086956521738,
+      "reason": "LLM-forged skill improved test score from 0.261 to 0.783 (honest held-out evaluation)"
+    },
+    "verdict": {
+      "baselineMeanF1": 0.36,
+      "baselineRobustness": "brittle",
+      "forgedMeanF1": 0.5520479520479521,
+      "forgedRobustness": "robust",
+      "improvement": 0.1920479520479521,
+      "ci95": {
+        "lower": 0.48461538461538467,
+        "upper": 0.6506493506493507
+      },
+      "significant": false,
+      "conclusion": "forged skill is better but CI overlap — not statistically significant at 95%"
+    }
   },
   "T11": {
     "distinctProfessionsUsed": 3,
@@ -839,16 +959,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499997473168903,
-          "score": 7.5999994946337806
+          "mastery": 0.5499997270198818,
+          "score": 7.5999994540397635
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.6354999360724188,
-          "score": 4.770999872144838
+          "mastery": 0.6354999242910574,
+          "score": 4.770999848582115
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -887,32 +1007,32 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999993528487,
-          "score": 1.599999987056974
+          "mastery": 0.5499999866157347,
+          "score": 1.5999999732314694
         },
         {
           "key": "doctor_triage_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999874982137,
-          "score": 1.5999999749964273
+          "mastery": 0.5499999791146629,
+          "score": 1.5999999582293258
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999707311124,
-          "score": 1.5999999414622248
+          "mastery": 0.5499999629358813,
+          "score": 1.5999999258717625
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999548464906,
-          "score": 1.5999999096929811
+          "mastery": 0.5499999494045369,
+          "score": 1.5999998988090738
         }
       ],
       "synthResults": [
