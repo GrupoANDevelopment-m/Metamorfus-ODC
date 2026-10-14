@@ -271,6 +271,28 @@ test("T14 — Statistical Validation (k-fold + bootstrap CI + ROC)", async () =>
   await fs.rm(ws, { recursive: true, force: true });
 });
 
+test("T15 — PaySim Real-Data Validation (k=10 + LLM-informed prompt)", async () => {
+  const ws = await bootWorkspace();
+  const c = ctx(ws);
+  for (const p of ["fraud_analyst"]) {
+    try { await adopt(p, c); } catch (e) {}
+  }
+  const { measurePaySimPerformance } = await import(path.join(ROOT, "server/cognitive/t15-paysim.mjs"));
+  const r = await measurePaySimPerformance(ws);
+  results.T15 = r;
+  console.log("[T15] PaySim-like dataset: " + r.dataset.n + " txs, " + r.dataset.nFraud + " fraud (" + (r.dataset.fraudRate*100).toFixed(2) + "%)");
+  console.log("[T15] fraud by type: " + JSON.stringify(r.dataset.fraudByType));
+  console.log("[T15] baseline k=10 F1: " + JSON.stringify(r.baseline.kfold.perFoldScores.map(s => s.toFixed(2))) + " mean=" + r.baseline.kfold.meanF1.toFixed(3) + " ci=[" + r.baseline.kfold.ci95.lower.toFixed(3) + "," + r.baseline.kfold.ci95.upper.toFixed(3) + "]");
+  if (r.forged) {
+    console.log("[T15] forged k=10 F1:   " + JSON.stringify(r.forged.kfold.perFoldScores.map(s => s.toFixed(2))) + " mean=" + r.forged.kfold.meanF1.toFixed(3) + " ci=[" + r.forged.kfold.ci95.lower.toFixed(3) + "," + r.forged.kfold.ci95.upper.toFixed(3) + "]");
+    console.log("[T15] diff: " + r.statistics.difference.toFixed(3) + " cohen-d: " + r.statistics.cohensD.toFixed(3));
+    console.log("[T15] min detectable: " + r.statistics.minDetectableEffect.toFixed(3));
+    console.log("[T15] significant: " + r.statistics.significant);
+  }
+  console.log("[T15] verdict: " + r.verdict);
+  await fs.rm(ws, { recursive: true, force: true });
+});
+
 test("T11 — Supreme Test", async () => {
   const ws = await bootWorkspace();
   const r = await measureSupreme(ws, {

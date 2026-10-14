@@ -125,7 +125,7 @@
     "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
     "newSkillOk": true,
     "validInputOk": true,
-    "pythonBytes": 935,
+    "pythonBytes": 1005,
     "llmAttempts": 3
   },
   "T7": {
@@ -717,15 +717,15 @@
     },
     "forgeReport": {
       "neededForge": true,
-      "initialScore": 0.33333333333333337,
+      "initialScore": 0.18181818181818182,
       "finalScore": 1,
       "improved": true,
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7wkwmj",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7wugr1",
       "trainTestSplit": {
         "trainSize": 70,
         "testSize": 30
       },
-      "reason": "LLM-forged skill improved test score from 0.333 to 1.000 (honest held-out evaluation)"
+      "reason": "LLM-forged skill improved test score from 0.182 to 1.000 (honest held-out evaluation)"
     },
     "final": {
       "precision": 1,
@@ -735,7 +735,7 @@
       "truePositives": 10,
       "falsePositives": 0,
       "falseNegatives": 0,
-      "name": "forged forged_fraud_anomaly_protocol_mv7wkwmj"
+      "name": "forged forged_fraud_anomaly_protocol_mv7wugr1"
     },
     "cacheReport": {
       "totalEntries": 4,
@@ -776,54 +776,54 @@
       "kfold": {
         "k": 5,
         "perFoldScores": [
-          0,
+          0.4,
           0.4,
           0.333,
           0.333,
-          0.333
+          0.286
         ],
-        "meanF1": 0.27999999999999997,
-        "stdF1": 0.15916448515084428,
-        "sem": 0.07118052168020873,
+        "meanF1": 0.3504761904761905,
+        "stdF1": 0.04921146926767167,
+        "sem": 0.02200803811103113,
         "tCritical": 2.776,
         "ci95": {
-          "lower": 0.08240287181574055,
-          "upper": 0.47759712818425937
+          "lower": 0.28938187667996806,
+          "upper": 0.41157050427241293
         },
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
+          "tp": 5,
+          "fp": 4,
+          "fn": 15,
+          "tn": 176
+        },
+        "fullDatasetConfusionMatrix": {
           "tp": 4,
           "fp": 4,
           "fn": 16,
           "tn": 176
         },
-        "fullDatasetConfusionMatrix": {
-          "tp": 4,
-          "fp": 2,
-          "fn": 16,
-          "tn": 178
-        },
-        "fullDatasetF1": 0.30769230769230765,
+        "fullDatasetF1": 0.28571428571428575,
         "roc": {
           "degenerate": true,
           "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
           "tpr": 0.2,
-          "fpr": 0.011111111111111112,
-          "precision": 0.6666666666666666,
+          "fpr": 0.022222222222222223,
+          "precision": 0.5,
           "recall": 0.2,
           "operatingPoint": {
             "tpr": 0.2,
-            "fpr": 0.011111111111111112,
+            "fpr": 0.022222222222222223,
             "threshold": "binary"
           },
           "confusionMatrix": {
             "tp": 4,
-            "fp": 2,
+            "fp": 4,
             "fn": 16,
-            "tn": 178
+            "tn": 176
           }
         },
-        "robustness": "moderate"
+        "robustness": "robust"
       },
       "description": "fraud_anomaly_protocol (stdev-based outlier detection)"
     },
@@ -831,77 +831,188 @@
       "kfold": {
         "k": 5,
         "perFoldScores": [
-          0.533,
-          0.111,
-          0.308,
-          0.615,
-          0.533
+          0.444,
+          0.471,
+          0.375,
+          0.333,
+          0.4
         ],
-        "meanF1": 0.4201709401709401,
-        "stdF1": 0.2072976447922554,
-        "sem": 0.09270632506621766,
+        "meanF1": 0.40467320261437906,
+        "stdF1": 0.05458538708982074,
+        "sem": 0.024411327222195717,
         "tCritical": 2.776,
         "ci95": {
-          "lower": 0.16281818178711988,
-          "upper": 0.6775236985547604
+          "lower": 0.3369073582455637,
+          "upper": 0.4724390469831944
         },
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
           "tp": 15,
-          "fp": 39,
+          "fp": 38,
           "fn": 5,
-          "tn": 141
+          "tn": 142
         },
         "fullDatasetConfusionMatrix": {
-          "tp": 20,
-          "fp": 67,
-          "fn": 0,
-          "tn": 113
+          "tp": 17,
+          "fp": 72,
+          "fn": 3,
+          "tn": 108
         },
-        "fullDatasetF1": 0.37383177570093457,
+        "fullDatasetF1": 0.3119266055045872,
         "roc": {
           "degenerate": true,
           "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
-          "tpr": 1,
-          "fpr": 0.37222222222222223,
-          "precision": 0.22988505747126436,
-          "recall": 1,
+          "tpr": 0.85,
+          "fpr": 0.4,
+          "precision": 0.19101123595505617,
+          "recall": 0.85,
           "operatingPoint": {
-            "tpr": 1,
-            "fpr": 0.37222222222222223,
+            "tpr": 0.85,
+            "fpr": 0.4,
             "threshold": "binary"
           },
           "confusionMatrix": {
-            "tp": 20,
-            "fp": 67,
-            "fn": 0,
-            "tn": 113
+            "tp": 17,
+            "fp": 72,
+            "fn": 3,
+            "tn": 108
           }
         },
-        "robustness": "brittle"
+        "robustness": "robust"
       },
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7wmc4b",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mv7wumqg",
       "description": "LLM-forged skill with multi-strategy detection"
     },
     "forgeReport": {
       "improved": true,
-      "initialScore": 0.2608695652173913,
-      "finalScore": 0.6938775510204082,
-      "reason": "LLM-forged skill improved test score from 0.261 to 0.694 (honest held-out evaluation)"
+      "initialScore": 0.18181818181818182,
+      "finalScore": 0.7727272727272727,
+      "reason": "LLM-forged skill improved test score from 0.182 to 0.773 (honest held-out evaluation)"
     },
     "verdict": {
-      "baselineMeanF1": 0.27999999999999997,
-      "baselineRobustness": "moderate",
-      "forgedMeanF1": 0.4201709401709401,
-      "forgedRobustness": "brittle",
-      "improvement": 0.14017094017094012,
+      "baselineMeanF1": 0.3504761904761905,
+      "baselineRobustness": "robust",
+      "forgedMeanF1": 0.40467320261437906,
+      "forgedRobustness": "robust",
+      "improvement": 0.05419701213818856,
       "ci95": {
-        "lower": 0.16281818178711988,
-        "upper": 0.6775236985547604
+        "lower": 0.3369073582455637,
+        "upper": 0.4724390469831944
       },
       "significant": false,
       "conclusion": "forged skill is better but CI overlap — not statistically significant at 95%"
     }
+  },
+  "T15": {
+    "dataset": {
+      "n": 1000,
+      "nFraud": 13,
+      "fraudRate": 0.013,
+      "types": {
+        "CASH_IN": 199,
+        "DEBIT": 182,
+        "CASH_OUT": 224,
+        "PAYMENT": 196,
+        "TRANSFER": 199
+      },
+      "fraudByType": {
+        "TRANSFER": 6,
+        "CASH_OUT": 7
+      },
+      "note": "PaySim-like data: fraud ONLY in TRANSFER and CASH_OUT, per documented schema",
+      "description": "PaySim-like: schema from Lopez-Rojas 2016, fraud patterns from 5 GitHub references",
+      "sources": [
+        "ashritkvs/paysim-fraud-detection",
+        "rayenlatrech/fraud-detection-paysim",
+        "CodeGrandMaster69/paysim-fraud-detection",
+        "Sikene3/PaySim-Fraud-Detection",
+        "m1rd1n/paysim-fraud-detection"
+      ]
+    },
+    "baseline": {
+      "kfold": {
+        "k": 10,
+        "perFoldScores": [
+          1,
+          0.667,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "meanF1": 0.9666666666666666,
+        "stdF1": 0.10540925533894599,
+        "sem": 0.03333333333333333,
+        "tCritical": 2.262,
+        "ci95": {
+          "lower": 0.8912666666666665,
+          "upper": 1
+        },
+        "ciMethod": "t-distribution",
+        "totalConfusionMatrix": {
+          "tp": 12,
+          "fp": 0,
+          "fn": 1,
+          "tn": 987
+        },
+        "fullDatasetConfusionMatrix": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 13,
+          "tn": 987
+        },
+        "fullDatasetF1": 0,
+        "roc": {
+          "degenerate": true,
+          "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
+          "tpr": 0,
+          "fpr": 0,
+          "precision": 0,
+          "recall": 0,
+          "operatingPoint": {
+            "tpr": 0,
+            "fpr": 0,
+            "threshold": "binary"
+          },
+          "confusionMatrix": {
+            "tp": 0,
+            "fp": 0,
+            "fn": 13,
+            "tn": 987
+          }
+        },
+        "robustness": "moderate"
+      },
+      "description": "fraud_anomaly_protocol (stdev-based, not informed by PaySim)"
+    },
+    "forged": null,
+    "forgeReport": {
+      "improved": false,
+      "initialScore": 0.8750000000000001,
+      "finalScore": 0.8750000000000001,
+      "reason": "baseline score 0.875 already >= threshold 0.3"
+    },
+    "statistics": {
+      "kFolds": 10,
+      "tCritical": 2.262,
+      "baselineMean": 0.9666666666666666,
+      "baselineCI": [
+        0.8912666666666665,
+        1
+      ],
+      "forgedMean": null,
+      "forgedCI": null,
+      "difference": 0,
+      "cohensD": 0,
+      "minDetectableEffect": null,
+      "significant": null,
+      "powerAnalysis": "with k=10 and t=2.262, can detect effect >= NaN at 95% confidence"
+    },
+    "verdict": "no improvement"
   },
   "T11": {
     "distinctProfessionsUsed": 3,
@@ -977,16 +1088,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499997209896114,
-          "score": 7.5999994419792225
+          "mastery": 0.54999970937031,
+          "score": 7.5999994187406195
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.63549993627686,
-          "score": 4.77099987255372
+          "mastery": 0.6354999350337678,
+          "score": 4.770999870067536
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -1025,32 +1136,32 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999939697265,
-          "score": 1.599999987939453
+          "mastery": 0.5499999938226467,
+          "score": 1.5999999876452935
         },
         {
           "key": "doctor_triage_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999988086533,
-          "score": 1.599999976173066
+          "mastery": 0.5499999874982137,
+          "score": 1.5999999749964273
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999729373098,
-          "score": 1.5999999458746197
+          "mastery": 0.5499999716135914,
+          "score": 1.5999999432271828
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999958817646,
-          "score": 1.599999917635292
+          "mastery": 0.5499999539640116,
+          "score": 1.5999999079280232
         }
       ],
       "synthResults": [
