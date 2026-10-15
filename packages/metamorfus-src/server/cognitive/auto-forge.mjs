@@ -153,18 +153,36 @@ export async function autoForgeForGap(workspaceRoot, opts) {
     existingSkill,
     threshold = 0.6,
     profession = "synthetic",
+    overrideTestTxs = null,
+    overrideTestFraud = null,
   } = opts;
 
   // BUG FIX #2: Split data into training (for LLM prompt) and
   // held-out test (for honest evaluation). Without this split,
   // the LLM sees the EXACT same transactions it'll be evaluated
   // on, so any improvement is overfit.
-  const n = trainingData.length;
-  const splitIdx = Math.floor(n * 0.7);
-  const trainSample = trainingData.slice(0, splitIdx);
-  const testSample = trainingData.slice(splitIdx);
-  const trainTruth = new Set([...groundTruth].filter((id) => trainSample.some((t) => t.id === id)));
-  const testTruth = new Set([...groundTruth].filter((id) => testSample.some((t) => t.id === id)));
+  //
+  // If overrideTestTxs is provided (e.g. for covariate-shift
+  // prevention), use that as the test set instead of slicing
+  // trainingData. This is the right thing to do when trainingData
+  // is oversampled.
+  let testSample, testTruth;
+  if (overrideTestTxs) {
+    testSample = overrideTestTxs;
+    testTruth = overrideTestFraud ?? new Set();
+  } else {
+    const n = trainingData.length;
+    const splitIdx = Math.floor(n * 0.7);
+    testSample = trainingData.slice(splitIdx);
+    testTruth = new Set([...groundTruth].filter((id) => testSample.some((t) => t.id === id)));
+  }
+  // The training sample for the LLM is the original trainingData
+  // (which may be oversampled for the directional forge case)
+  const trainSample = trainingData;
+  const trainTruth = groundTruth;
+  // For reporting
+  const trainSize = trainSample.length;
+  const testSize = testSample.length;
 
   // 1. Measure baseline on TEST data (honest evaluation)
   const baseline = await evaluateFn(workspaceRoot, existingSkill, testSample, testTruth);
@@ -211,7 +229,7 @@ export async function autoForgeForGap(workspaceRoot, opts) {
       improved: true,
       forgedSkillKey: newKey,
       improvement: after.score - baseline.score,
-      trainTestSplit: { trainSize: splitIdx, testSize: n - splitIdx },
+      trainTestSplit: { trainSize, testSize },
       reason: `LLM-forged skill improved test score from ${baseline.score.toFixed(3)} to ${after.score.toFixed(3)} (honest held-out evaluation)`,
     };
   } else {
@@ -227,7 +245,7 @@ export async function autoForgeForGap(workspaceRoot, opts) {
       initialScore: baseline.score,
       finalScore: after.score,
       improved: false,
-      trainTestSplit: { trainSize: splitIdx, testSize: n - splitIdx },
+      trainTestSplit: { trainSize, testSize },
       reason: `LLM-forged skill did not improve on HELD-OUT test (${baseline.score.toFixed(3)} → ${after.score.toFixed(3)}), discarded`,
     };
   }

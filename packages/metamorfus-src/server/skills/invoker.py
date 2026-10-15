@@ -1,13 +1,18 @@
 #!/usr/bin/env python3
 """Skill invoker — invoked by server/skills/runner.mjs.
 
-Reads METAMORFUS_CONTEXT env var (JSON-encoded), imports the skill
-module from a path passed as argv[1], calls skill(organism={},
-context=parsed_ctx), and prints the result with the __METAMORFUS_RESULT__
-prefix expected by Node.js runner.
+Reads context from METAMORFUS_CONTEXT_FILE (path to a JSON file)
+or METAMORFUS_CONTEXT env var (JSON-encoded). The file approach
+is used for large contexts (>~100KB) because the OS env var
+size limit (ARG_MAX) is ~128KB on Linux — passing 1000+ txs
+as JSON would hit E2BIG.
 
-If the skill raises, we print a structured error instead of crashing
-silently with exit 0 (which would hide the failure).
+Imports the skill module from argv[1], calls skill(organism={},
+context=parsed_ctx), and prints the result with the
+__METAMORFUS_RESULT__ prefix expected by Node.js runner.
+
+If the skill raises, prints a structured error instead of crashing
+silently with exit 0.
 """
 import json
 import os
@@ -16,6 +21,10 @@ import traceback
 
 PREFIX = "__METAMORFUS_RESULT__"
 
+# Size threshold (bytes) — env vars can hold about 128KB on Linux.
+# Above this we use a file to avoid E2BIG.
+ENV_LIMIT = 65536  # 64KB to be safe
+
 
 def main():
     if len(sys.argv) < 2:
@@ -23,7 +32,18 @@ def main():
         sys.exit(1)
     skill_path = sys.argv[1]
 
-    raw_ctx = os.environ.get("METAMORFUS_CONTEXT", "{}")
+    # Prefer file (handles large contexts); fall back to env var
+    ctx_file = os.environ.get("METAMORFUS_CONTEXT_FILE")
+    if ctx_file and os.path.isfile(ctx_file):
+        try:
+            with open(ctx_file, "r") as f:
+                raw_ctx = f.read()
+        except Exception as e:
+            print(PREFIX + json.dumps({"error": f"invoker: cannot read context file: {e}"}))
+            sys.exit(1)
+    else:
+        raw_ctx = os.environ.get("METAMORFUS_CONTEXT", "{}")
+
     try:
         context = json.loads(raw_ctx)
     except json.JSONDecodeError as e:
@@ -58,7 +78,6 @@ def main():
         print(PREFIX + json.dumps({
             "error": f"invoker: skill raised: {e}",
             "traceback": traceback.format_exc(),
-            "context": context,
         }))
         sys.exit(0)  # exit 0 but include error in JSON so Node can see it
 

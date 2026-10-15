@@ -48,14 +48,28 @@ export async function runSkill(workspaceRoot, opts) {
   // invoker wrapper that loads METAMORFUS_CONTEXT, imports the
   // module, calls skill(), and prints the result as JSON with the
   // __METAMORFUS_RESULT__ prefix.
+  //
+  // For large contexts (>64KB), we write the context to a temp file
+  // and pass METAMORFUS_CONTEXT_FILE instead. The OS env var size
+  // limit (ARG_MAX, ~128KB on Linux) would otherwise cause E2BIG.
   const startedAt = Date.now();
   let parsed, exitCode, stdout, stderr;
   const invokerPath = path.join(__dirname, "invoker.py");
+  const contextJson = JSON.stringify(context);
+  let contextFile = null;
+  let invokerEnv = { ...process.env };
+  if (contextJson.length > 65536) {
+    contextFile = path.join(workspaceRoot, `.tmp-context-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.json`);
+    await fs.writeFile(contextFile, contextJson);
+    invokerEnv = { ...process.env, METAMORFUS_CONTEXT_FILE: contextFile };
+  } else {
+    invokerEnv = { ...process.env, METAMORFUS_CONTEXT: contextJson };
+  }
   try {
     ({ parsed, exitCode, stdout, stderr } = await new Promise((resolve, reject) => {
       const p = spawn("python3", [invokerPath, pyPath], {
         cwd: workspaceRoot,
-        env: { ...process.env, METAMORFUS_CONTEXT: JSON.stringify(context) },
+        env: invokerEnv,
         stdio: ["ignore", "pipe", "pipe"],
       });
       let out = "", err = "";
@@ -73,6 +87,11 @@ export async function runSkill(workspaceRoot, opts) {
     }));
   } catch (e) {
     return { ok: false, error: `spawn failed: ${e.message}` };
+  } finally {
+    // Clean up the temp context file
+    if (contextFile) {
+      try { await fs.unlink(contextFile); } catch {}
+    }
   }
   const durationMs = Date.now() - startedAt;
 

@@ -293,6 +293,27 @@ test("T15 — PaySim Real-Data Validation (k=10 + LLM-informed prompt)", async (
   await fs.rm(ws, { recursive: true, force: true });
 });
 
+test("T16 — Directional Forge (real failures → situational data → targeted LLM)", async () => {
+  const ws = await bootWorkspace();
+  const c = ctx(ws);
+  for (const p of ["fraud_analyst"]) {
+    try { await adopt(p, c); } catch (e) {}
+  }
+  const { measureDirectionalForge } = await import(path.join(ROOT, "server/cognitive/t16-directional.mjs"));
+  const r = await measureDirectionalForge(ws);
+  results.T16 = r;
+  console.log("[T16] dataset: " + r.dataset.n + " txs, " + r.dataset.nFraud + " fraud");
+  console.log("[T16] diagnosis: caught=" + r.diagnosis.caught + ", missed=" + r.diagnosis.missed + " (byType: " + JSON.stringify(r.diagnosis.missedByType) + ")");
+  console.log("[T16] situational: " + r.situationalData.originalSize + " → " + r.situationalData.situationalSize + " txs (oversample " + r.situationalData.oversampleRate.toFixed(1) + "x, " + r.situationalData.situationalFraud + " fraud in situational)");
+  console.log("[T16] baseline k=10 F1: mean=" + r.baseline.kfold.meanF1.toFixed(3) + " ci=[" + r.baseline.kfold.ci95.lower.toFixed(3) + "," + r.baseline.kfold.ci95.upper.toFixed(3) + "]");
+  if (r.forged) {
+    console.log("[T16] forged k=10 F1:   mean=" + r.forged.kfold.meanF1.toFixed(3) + " ci=[" + r.forged.kfold.ci95.lower.toFixed(3) + "," + r.forged.kfold.ci95.upper.toFixed(3) + "]");
+    console.log("[T16] difference: " + r.statistics.difference.toFixed(3) + " cohen-d: " + r.statistics.cohensD.toFixed(3) + " significant: " + r.statistics.significant);
+  }
+  console.log("[T16] verdict: " + r.verdict);
+  await fs.rm(ws, { recursive: true, force: true });
+});
+
 test("T11 — Supreme Test", async () => {
   const ws = await bootWorkspace();
   const r = await measureSupreme(ws, {
