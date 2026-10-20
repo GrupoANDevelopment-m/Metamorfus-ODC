@@ -177,12 +177,33 @@ async function localCortex(req) {
     }
   }
   const router = new LlmRouter(store);
-  const result = await router.complete("text", {
-    messages: req.body?.messages ?? [],
-    temperature: req.body?.temperature ?? 0.7,
-    maxTokens: req.body?.max_tokens ?? 4096,
-  });
-  return { agent: "cortex", backend: "local-llm-library", content: result.content, model: result.model, provider: result.provider };
+  // A fallback that throws is not a fallback. When every provider is
+  // unreachable — no key, expired key, rate limit, provider outage — this
+  // must degrade to a usable response naming what went wrong, otherwise
+  // the whole local path dies with the remote one it was meant to replace.
+  let result;
+  try {
+    result = await router.complete("text", {
+      messages: req.body?.messages ?? [],
+      temperature: req.body?.temperature ?? 0.7,
+      maxTokens: req.body?.max_tokens ?? 4096,
+    });
+  } catch (e) {
+    return {
+      agent: "cortex",
+      backend: "local-llm-library",
+      ok: false,
+      content: null,
+      error: e.message?.slice(0, 500) ?? String(e),
+      attempts: e.attempts?.map((a) => ({
+        model: a.model,
+        provider: a.provider,
+        httpStatus: a.httpStatus,
+        error: a.error,
+      })),
+    };
+  }
+  return { agent: "cortex", backend: "local-llm-library", ok: true, content: result.content, model: result.model, provider: result.provider };
 }
 
 async function localExecutor(req) {
