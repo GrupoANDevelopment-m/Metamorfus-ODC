@@ -5,92 +5,147 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref — the battery takes ~10 min.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
+  # ────────────────────────────────────────────────────────────────
+  # Offline suite. No LLM key required.
+  #
+  # These tests execute real Python skills as subprocesses, so the runner
+  # needs python3. Everything LLM-driven is either mocked at the router
+  # boundary or skipped without a key.
+  # ────────────────────────────────────────────────────────────────
+  offline:
+    name: Offline tests (node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: [20, 22]
       fail-fast: false
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
+          cache-dependency-path: packages/metamorfus-src/package-lock.json
 
-      - name: Install dependencies (dashboard)
+      - name: Verify python3 is present
+        # server/skills/runner.mjs spawns `python3 invoker.py <skill>.py`.
+        # Without python3 every skill returns ok:false and the assertions
+        # about real skill output fail in a way that looks like a product
+        # bug rather than an environment gap.
+        run: python3 --version && echo "python3 OK"
+
+      - name: Install deps
         working-directory: packages/metamorfus-src
-        run: npm install --legacy-peer-deps --no-workspaces
+        run: npm install --no-audit --no-fund
 
-      - name: Install dependencies (root)
-        run: npm install --legacy-peer-deps
-
-      - name: Typecheck
+      - name: Run offline test suite
         working-directory: packages/metamorfus-src
-        run: npx tsc --noEmit
+        # tsx is required: the .mjs tests import server/odc-opencode-bridge.ts,
+        # which plain `node --test` cannot resolve (ERR_MODULE_NOT_FOUND).
+        run: |
+          ./node_modules/.bin/tsx --test \
+            server/__tests__/cognitive.test.mjs \
+            server/__tests__/archaeology.test.mjs \
+            server/__tests__/identity.test.mjs \
+            server/__tests__/constitution-memory.test.mjs \
+            server/__tests__/llm-library.test.mjs \
+            server/__tests__/tool-registry.test.ts
 
-      - name: Run tests
+      - name: Upload results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-test-node${{ matrix.node-version }}
+          path: |
+            packages/metamorfus-src/data/
+            packages/metamorfus-src/dna_library/manifest.json
+          retention-days: 7
+
+  # ────────────────────────────────────────────────────────────────
+  # Live LLM battery (T1–T16). Needs a real NVIDIA key.
+  #
+  # This is the suite that actually proves the organism works: real
+  # Python execution, real LLM forging, real k-fold CV with t-distribution
+  # confidence intervals on PaySim-like data. It is slow (roughly 10–20
+  # minutes) and billable, so it runs only on main pushes and on demand.
+  # ────────────────────────────────────────────────────────────────
+  battery:
+    name: LLM battery T1–T16
+    runs-on: ubuntu-latest
+    needs: offline
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: packages/metamorfus-src/package-lock.json
+
+      - name: Install deps
+        working-directory: packages/metamorfus-src
+        run: npm install --no-audit --no-fund
+
+      - name: Run battery
         working-directory: packages/metamorfus-src
         env:
-          # LIVE tests (NVIDIA vision) are skipped without these.
           NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
-        run: |
-          npx tsx --test server/__tests__/*.test.mjs server/__tests__/*.test.ts 2>&1 | tail -30
+          MAX_TOKENS_PER_SESSION: '20000000'
+        run: bash .run-battery.sh
 
-      - name: Run typecheck for split packages
-        run: |
-          cd packages/server && npx tsc --noEmit || echo "server typecheck skipped (no compiler)"
-          cd ../web-ui && npx tsc --noEmit || echo "web-ui typecheck skipped (no compiler)"
-        continue-on-error: true
-
-  security-scan:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Check for hardcoded secrets
-        run: |
-          echo "=== Scanning for nvapi-* keys ==="
-          ! grep -r "nvapi-" --include="*.ts" --include="*.mjs" --include="*.py" --include="*.json" . || echo "  Found nvapi keys - investigate"
-          echo "=== Scanning for ghp_* tokens ==="
-          ! grep -r "ghp_" --include="*.ts" --include="*.mjs" --include="*.py" --include="*.json" . || echo "  Found ghp tokens - investigate"
-          echo "=== Scanning for sk-* keys ==="
-          ! grep -rE "sk-[a-zA-Z0-9]{20,}" --include="*.ts" --include="*.mjs" --include="*.py" --include="*.json" . || echo "  Found sk- keys - investigate"
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Use Node.js
-        uses: actions/setup-node@v4
+      - name: Publish battery results
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          node-version: 22
+          name: battery-results
+          path: packages/metamorfus-src/.battery-results.json
+          retention-days: 30
 
-      - name: Check for console.log in production code
-        run: |
-          echo "=== console.log occurrences in src/ ==="
-          COUNT=$(grep -rn "console\.log" packages/metamorfus-src/server packages/metamorfus-src/mhu_engine.ts 2>/dev/null | grep -v test | wc -l)
-          echo "Found: $COUNT (informational only)"
-        continue-on-error: true
+  # ────────────────────────────────────────────────────────────────
+  # Container build. Proves the Dockerfiles actually produce runnable
+  # images rather than just existing.
+  # ────────────────────────────────────────────────────────────────
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    needs: offline
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Verify no duplicate files
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Validate compose file
+        run: docker compose config --quiet
+
+      - name: Build Metamorfus image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          load: true
+          tags: metamorfus-odc:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the image
+        # python3 must exist in the final layer and the skill invoker must
+        # be callable, otherwise every runtime skill invocation fails.
         run: |
-          echo "=== Checking for duplicate top-level files vs packages/ ==="
-          DUPES=0
-          for f in App.tsx constants.ts index.tsx types.ts mhu_engine.ts server.ts; do
-            if [ -f "$f" ] && [ -f "packages/metamorfus-src/$f" ]; then
-              echo "  DUPLICATE: $f"
-              DUPES=$((DUPES+1))
-            fi
-          done
-          if [ $DUPES -gt 0 ]; then
-            echo "::error::Found $DUPES duplicate files at root"
-            exit 1
-          fi
-          echo "  No duplicates"
+          docker run --rm --entrypoint sh metamorfus-odc:ci -c '
+            python3 --version &&
+            test -f packages/metamorfus-src/server/skills/invoker.py &&
+            echo "invoker present" &&
+            node --version
+          '

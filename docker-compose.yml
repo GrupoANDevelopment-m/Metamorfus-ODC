@@ -1,0 +1,95 @@
+# Metamorfus ODC — full stack
+#
+#   docker compose up --build
+#
+# Two services:
+#   opencode  — the LLM agent framework (anomalyco/opencode). Provides the
+#               HTTP surface that the ODC bridge talks to (ODC
+#               -> OPENCODE_URL -> provider). Also exposes its own web UI.
+#   metamorfus— the cognitive organism. Executes Python skills as
+#               subprocesses, runs the cognitive pipeline, and exposes
+#               the ODC API.
+#
+# The bridge degrades gracefully: if OpenCode is unreachable, Metamorfus
+# falls back to NVIDIA direct (see server/nvidia-direct.mjs). So you can
+# also run just the organism:
+#
+#   docker compose up metamorfus
+#
+# ...or nothing at all but the agent framework:
+#
+#   docker compose up opencode
+
+services:
+  opencode:
+    build:
+      context: ./packages/opencode-src
+      dockerfile: ../Dockerfile.opencode
+    image: metamorfus-opencode:latest
+    container_name: odc-opencode
+    ports:
+      - "4096:4096"
+    environment:
+      # OpenCode's own config. Providers are configured here so the ODC
+      # bridge can route through them.
+      OPENCODE_SERVER_HOST: 0.0.0.0
+      OPENCODE_SERVER_PORT: "4096"
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_GENERATIVE_AI_API_KEY: ${GOOGLE_GENERATIVE_AI_API_KEY:-}
+    volumes:
+      # Persist OpenCode's session/message storage across restarts.
+      - opencode-data:/root/.local/share/opencode
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4096/ >/dev/null 2>&1 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  metamorfus:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: metamorfus-odc:latest
+    container_name: odc-metamorfus
+    depends_on:
+      opencode:
+        condition: service_healthy
+    ports:
+      - "3457:3457"
+    environment:
+      METAMORFUS_PORT: "3457"
+      OPENCODE_URL: http://opencode:4096
+      OPENCODE_AGENT: cortex
+      # Used by the direct-NVIDIA fallback and by every LLM-driven
+      # cognitive step (auto-forge, auto-reform, directional forge).
+      NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
+      NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
+      # Auto-forged skills write into dna_library. Without a volume they
+      # vanish on container rebuild — the organism would forget what it
+      # learned. This is the single most important volume here.
+      - METAMORFUS_MAX_TOKENS_PER_SESSION: ${MAX_TOKENS_PER_SESSION:-2000000}
+    volumes:
+      # Durable organism state: forged skills, usage history,
+      # ensemble cache, constitution memory, identity.
+      - metamorfus-dna:/app/packages/metamorfus-src/dna_library
+      - metamorfus-data:/app/packages/metamorfus-src/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          node -e "fetch('http://127.0.0.1:3457/api/health')
+          .then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  opencode-data:
+  metamorfus-dna:
+  metamorfus-data:

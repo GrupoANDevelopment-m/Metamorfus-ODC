@@ -1,0 +1,284 @@
+{
+  "state": {
+    "profession": "architect",
+    "morph_focus": "THINK",
+    "cumulative_skill_count": 10,
+    "active_skill_keys": [
+      "hypothesis_protocol",
+      "experimental_design_protocol",
+      "peer_review_protocol",
+      "fell_tree_protocol",
+      "sharpen_axe_protocol",
+      "navigate_forest_protocol",
+      "weather_read_protocol",
+      "blueprint_protocol",
+      "structural_analysis_protocol",
+      "material_selection_protocol"
+    ],
+    "retained_from_past_professions": [
+      "hypothesis_protocol",
+      "experimental_design_protocol",
+      "peer_review_protocol",
+      "fell_tree_protocol",
+      "sharpen_axe_protocol",
+      "navigate_forest_protocol",
+      "weather_read_protocol"
+    ],
+    "decayed_skills": []
+  },
+  "skills": [
+    {
+      "key": "hypothesis_protocol",
+      "profession": "scientist",
+      "transferable": true,
+      "version": 1,
+      "morph_focus": "THINK",
+      "source": "def skill(organism, context):\n    \"\"\"Form a falsifiable hypothesis from an observation.\n\n    Transferable: any deductive profession can use this.\n    Originally forged by: scientist.adopt\n    \"\"\"\n    observation = context.get(\"observation\", \"\")\n    return {\n        \"action\": \"FORM_HYPOTHESIS\",\n        \"intensity\": 0.6,\n        \"required_attributes\": {\"cpu\": 25},\n        \"version\": 1,\n        \"params\": {\"observation\": observation, \"falsifiable\": True}\n    }",
+      "foraged_by": "scientist.adopt",
+      "forged_at": "2026-09-17T16:55:12.274Z",
+      "mastery": 0.49839338127281085,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "experimental_design_protocol",
+      "profession": "scientist",
+      "transferable": true,
+      "version": 1,
+      "morph_focus": "THINK",
+      "source": "def skill(organism, context):\n    \"\"\"Design an experiment to test a hypothesis.\n\n    Transferable: any profession that needs controlled comparison.\n    Originally forged by: scientist.adopt\n    \"\"\"\n    hypothesis = context.get(\"hypothesis\", \"\")\n    return {\n        \"action\": \"DESIGN_EXPERIMENT\",\n        \"intensity\": 0.7,\n        \"required_attributes\": {\"cpu\": 40},\n        \"version\": 1,\n        \"params\": {\"hypothesis\": hypothesis, \"controls\": True}\n    }",
+      "foraged_by": "scientist.adopt",
+      "forged_at": "2026-09-17T16:55:12.280Z",
+      "mastery": 0.4983933844715142,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "peer_review_protocol",
+      "profession": "scientist",
+      "transferable": false,
+      "version": 1,
+      "morph_focus": "THINK",
+      "source": "def skill(organism, context):\n    \"\"\"Review a colleague's claim for rigor.\n\n    NOT transferable: peer review is a social artifact of academic\n    science. A lumberjack doesn't peer-review trees.\n    Originally forged by: scientist.adopt\n    \"\"\"\n    claim = context.get(\"claim\", \"\")\n    return {\n        \"action\": \"PEER_REVIEW\",\n        \"intensity\": 0.5,\n        \"required_attributes\": {\"cpu\": 30},\n        \"version\": 1,\n        \"params\": {\"claim\": claim}\n    }",
+      "foraged_by": "scientist.adopt",
+      "forged_at": "2026-09-17T16:55:12.286Z",
+      "mastery": 0.4983933876702176,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "fell_tree_protocol",
+      "profession": "lumberjack",
+      "transferable": false,
+      "version": 1,
+      "morph_focus": "HUNT",
+      "source": "def skill(organism, context):\n    \"\"\"Chop down a tree. Pure physical action.\n\n    NOT transferable outside forest-work contexts.\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    tree_id = context.get(\"tree_id\", \"\")\n    return {\n        \"action\": \"FELL_TREE\",\n        \"intensity\": 0.9,\n        \"required_attributes\": {\"strength\": 60, \"agility\": 20},\n        \"version\": 1,\n        \"params\": {\"tree_id\": tree_id}\n    }",
+      "foraged_by": "lumberjack.adopt",
+      "forged_at": "2026-09-17T16:55:12.305Z",
+      "mastery": 0.49839339779944536,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "sharpen_axe_protocol",
+      "profession": "lumberjack",
+      "transferable": false,
+      "version": 1,
+      "morph_focus": "HUNT",
+      "source": "def skill(organism, context):\n    \"\"\"Maintain the edge. Tool care.\n\n    NOT transferable outside tool-using contexts.\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    return {\n        \"action\": \"SHARPEN_AXE\",\n        \"intensity\": 0.4,\n        \"required_attributes\": {\"strength\": 10},\n        \"version\": 1\n    }",
+      "foraged_by": "lumberjack.adopt",
+      "forged_at": "2026-09-17T16:55:12.311Z",
+      "mastery": 0.4983934009981488,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "navigate_forest_protocol",
+      "profession": "lumberjack",
+      "transferable": true,
+      "version": 1,
+      "morph_focus": "HUNT",
+      "source": "def skill(organism, context):\n    \"\"\"Read trails, find bearings, return home.\n\n    Transferable: any outdoor profession (surveyor, ranger, hiker).\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    destination = context.get(\"destination\", \"\")\n    return {\n        \"action\": \"NAVIGATE_FOREST\",\n        \"intensity\": 0.5,\n        \"required_attributes\": {\"agility\": 30},\n        \"version\": 1,\n        \"params\": {\"destination\": destination}\n    }",
+      "foraged_by": "lumberjack.adopt",
+      "forged_at": "2026-09-17T16:55:12.317Z",
+      "mastery": 0.49839340419685235,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "weather_read_protocol",
+      "profession": "lumberjack",
+      "transferable": true,
+      "version": 1,
+      "morph_focus": "HUNT",
+      "source": "def skill(organism, context):\n    \"\"\"Read sky, wind, pressure to predict weather.\n\n    Transferable: anyone under the open sky (farmer, sailor, soldier).\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    return {\n        \"action\": \"READ_WEATHER\",\n        \"intensity\": 0.3,\n        \"required_attributes\": {\"cpu\": 10},\n        \"version\": 1\n    }",
+      "foraged_by": "lumberjack.adopt",
+      "forged_at": "2026-09-17T16:55:12.323Z",
+      "mastery": 0.498393407395556,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "blueprint_protocol",
+      "profession": "architect",
+      "transferable": true,
+      "version": 1,
+      "morph_focus": "THINK",
+      "source": "def skill(organism, context):\n    \"\"\"Draft a blueprint from a brief.\n\n    Transferable: any design profession (industrial designer, UX).\n    Originally forged by: architect.adopt\n    \"\"\"\n    brief = context.get(\"brief\", \"\")\n    return {\n        \"action\": \"DRAFT_BLUEPRINT\",\n        \"intensity\": 0.7,\n        \"required_attributes\": {\"cpu\": 50},\n        \"version\": 1,\n        \"params\": {\"brief\": brief}\n    }",
+      "foraged_by": "architect.adopt",
+      "forged_at": "2026-09-17T16:55:12.341Z",
+      "mastery": 0.4983934169916668,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "structural_analysis_protocol",
+      "profession": "architect",
+      "transferable": false,
+      "version": 1,
+      "morph_focus": "THINK",
+      "source": "def skill(organism, context):\n    \"\"\"Compute load-bearing requirements.\n\n    NOT transferable outside building contexts.\n    Originally forged by: architect.adopt\n    \"\"\"\n    span = context.get(\"span_meters\", 0)\n    return {\n        \"action\": \"STRUCTURAL_ANALYSIS\",\n        \"intensity\": 0.8,\n        \"required_attributes\": {\"cpu\": 60},\n        \"version\": 1,\n        \"params\": {\"span_meters\": span}\n    }",
+      "foraged_by": "architect.adopt",
+      "forged_at": "2026-09-17T16:55:12.347Z",
+      "mastery": 0.49839342019037036,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    },
+    {
+      "key": "material_selection_protocol",
+      "profession": "architect",
+      "transferable": false,
+      "version": 1,
+      "morph_focus": "THINK",
+      "source": "def skill(organism, context):\n    \"\"\"Pick materials from a constraint set.\n\n    NOT transferable outside material-handling contexts.\n    Originally forged by: architect.adopt\n    \"\"\"\n    constraints = context.get(\"constraints\", {})\n    return {\n        \"action\": \"SELECT_MATERIALS\",\n        \"intensity\": 0.6,\n        \"required_attributes\": {\"cpu\": 40},\n        \"version\": 1,\n        \"params\": {\"constraints\": constraints}\n    }",
+      "foraged_by": "architect.adopt",
+      "forged_at": "2026-09-17T16:55:12.352Z",
+      "mastery": 0.4983934228559567,
+      "last_used_at": null,
+      "usage_history": [],
+      "reactivation_triggers": [],
+      "status": "dormant"
+    }
+  ],
+  "profession_chain": [
+    "scientist",
+    "lumberjack",
+    "architect"
+  ],
+  "metamorphosis_log": [
+    {
+      "from": "(unborn)",
+      "to": "scientist",
+      "at": "2026-09-17T16:55:12.286Z",
+      "skills_forged": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol"
+      ],
+      "retained_from_past": [],
+      "skills_reactivated": []
+    },
+    {
+      "from": "scientist",
+      "to": "lumberjack",
+      "at": "2026-09-17T16:55:12.323Z",
+      "skills_forged": [
+        "fell_tree_protocol",
+        "sharpen_axe_protocol",
+        "navigate_forest_protocol",
+        "weather_read_protocol"
+      ],
+      "retained_from_past": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol"
+      ],
+      "skills_reactivated": []
+    },
+    {
+      "from": "lumberjack",
+      "to": "architect",
+      "at": "2026-09-17T16:55:12.352Z",
+      "skills_forged": [
+        "blueprint_protocol",
+        "structural_analysis_protocol",
+        "material_selection_protocol"
+      ],
+      "retained_from_past": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol",
+        "fell_tree_protocol",
+        "sharpen_axe_protocol",
+        "navigate_forest_protocol",
+        "weather_read_protocol"
+      ],
+      "skills_reactivated": []
+    },
+    {
+      "from": "architect",
+      "to": "scientist",
+      "at": "2026-09-17T17:45:03.287Z",
+      "skills_forged": [],
+      "skills_reactivated": [],
+      "retained_from_past": [
+        "fell_tree_protocol",
+        "sharpen_axe_protocol",
+        "navigate_forest_protocol",
+        "weather_read_protocol",
+        "blueprint_protocol",
+        "structural_analysis_protocol",
+        "material_selection_protocol"
+      ]
+    },
+    {
+      "from": "scientist",
+      "to": "lumberjack",
+      "at": "2026-09-17T17:45:26.983Z",
+      "skills_forged": [],
+      "skills_reactivated": [],
+      "retained_from_past": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol",
+        "blueprint_protocol",
+        "structural_analysis_protocol",
+        "material_selection_protocol"
+      ]
+    },
+    {
+      "from": "lumberjack",
+      "to": "architect",
+      "at": "2026-09-17T17:45:26.997Z",
+      "skills_forged": [],
+      "skills_reactivated": [],
+      "retained_from_past": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol",
+        "fell_tree_protocol",
+        "sharpen_axe_protocol",
+        "navigate_forest_protocol",
+        "weather_read_protocol"
+      ]
+    }
+  ]
+}

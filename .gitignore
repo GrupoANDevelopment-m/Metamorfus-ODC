@@ -1,48 +1,12 @@
-# Build outputs
 node_modules/
 dist/
-build/
-*.tsbuildinfo
-.vite/
-
-# OS / IDE
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
-
-# Logs
+.svelte-kit/
 *.log
-logs/
-
-# Test artifacts / temp
-.tmp/
-.cache/
-coverage/
-.tmp-*.py
-.tmp-*.mjs
-.tmp-*.ts
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-.venv/
-venv/
-
-# Environment
+.DS_Store
 .env
 .env.local
-.env.*.local
-
-# The OpenCode source clone (anomalyco/opencode) — too big for this repo.
-# It was used for analysis and adaptation; users can clone separately.
-packages/opencode-src/
-
-# The dna_library holds the organism's forged skills.
-# It is data, not source. Exclude by default; users can re-forge.
-packages/metamorfus-src/dna_library/manifest.json
-packages/metamorfus-src/dna_library/*.py
-
-data/
-packages/metamorfus-src/packages/
+.tmp-context-*.json
+.battery-results.json
+.run-battery-output.txt
+coverage/
+*.tsbuildinfo

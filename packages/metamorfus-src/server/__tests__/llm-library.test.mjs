@@ -54,16 +54,37 @@ function okJson(res, body) {
 
 // ─── store ──────────────────────────────────────────────────────────
 
-test("store: defaults from env create a single NVIDIA entry", async () => {
+test("store: defaults from env register the verified NVIDIA chain per category", async () => {
   const file = await tmpFile();
   process.env.NVIDIA_API_KEY = "nvapi-test-1234567890abcd";
   const s = new LlmLibraryStore(file);
   await s.load();
-  assert.equal(s.list().length, 1);
-  const c = s.list()[0];
-  assert.equal(c.provider, "nvidia-direct");
-  assert.equal(c.category, "multimodal");
-  assert.equal(c.apiKey, "nvapi-test-1234567890abcd");
+
+  // An NVIDIA_API_KEY alone must populate EVERY category, because the
+  // router filters by category before trying anything. Registering only
+  // "multimodal" left the text and reasoning categories empty, which is
+  // what made every forge path fail with
+  // `No available LLM in category "text"` when only NVIDIA was configured.
+  for (const category of ["text", "reasoning", "multimodal"]) {
+    const inCategory = s.list({ category });
+    assert.ok(inCategory.length > 0, `expected at least one default in "${category}"`);
+    for (const c of inCategory) {
+      assert.equal(c.provider, "nvidia-direct");
+      assert.equal(c.apiKey, "nvapi-test-1234567890abcd");
+      assert.equal(c.category, category);
+    }
+  }
+
+  // The chain must be ordered so the model that actually compiles Python
+  // is tried first. moonshotai/kimi-k3 (the previous default) reached end
+  // of life on 2026-10-15 and now answers 410 Gone.
+  const textModels = s.list({ category: "text" }).sort((a, b) => a.priority - b.priority);
+  assert.equal(textModels[0].model, "nvidia/nemotron-3-super-120b-a12b");
+  assert.ok(!textModels.some((c) => c.model.includes("kimi-k3")));
+
+  // Distinct models form a real fallback chain, not three copies of one.
+  const unique = new Set(textModels.map((c) => c.model));
+  assert.equal(unique.size, textModels.length);
   delete process.env.NVIDIA_API_KEY;
 });
 

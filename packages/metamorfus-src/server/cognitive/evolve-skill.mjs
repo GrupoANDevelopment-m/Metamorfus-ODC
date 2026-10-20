@@ -9,6 +9,7 @@
 import path from "node:path";
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
+import { DEFAULT_CODE_MODEL } from "../llm-library/model-registry.mjs";
 
 const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
 
@@ -27,7 +28,7 @@ async function callLlmForPython(skillKey, profession, sourceCode, errors) {
         category: "reasoning",
         endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
         apiKey: process.env.NVIDIA_API_KEY,
-        model: "moonshotai/kimi-k3",
+        model: DEFAULT_CODE_MODEL,
         priority: 5,
         metadata: { contextWindow: 128000, source: "evolve-skill" },
       });

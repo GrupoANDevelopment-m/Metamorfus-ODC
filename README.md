@@ -1,258 +1,179 @@
 # Metamorfus ODC
 
-> **Meta** + **morph**. Um organismo digital autônomo que muda de profissão sem perder quem foi.
+A cognitive organism. Python skills executed for real, an LLM that can
+write new ones, and a test battery that measures whether any of it works
+instead of asserting that it does.
 
-[![status](https://img.shields.io/badge/status-active%20development-7c3aed)](.)
-[![tests](https://img.shields.io/badge/tests-124%2F124-22c55e)](.)
-[![security](https://img.shields.io/badge/threat%20model-documented-1e293b)](docs/SECURITY.md)
-[![architecture](https://img.shields.io/badge/architecture-documented-0ea5e9)](docs/ARCHITECTURE.md)
+OpenCode (`anomalyco/opencode`) is vendored in `packages/opencode-src/`
+and reachable over HTTP. Metamorfus talks to it through
+`server/odc-opencode-bridge.ts` and degrades to NVIDIA direct when it is
+not running.
 
 ---
 
-## O que é isto
+## What this actually does
 
-Metamorfus é um **organismo digital auto-modificável** que se metamorfoseia em sistemas de **qualquer domínio** — segurança, trading, design, biologia, finanças, scientific research, o que for.
+Ask for something. The organism classifies the intent, picks skills for
+the active profession, executes them as Python subprocesses, fuses the
+results, and explains the answer. When it finds a gap in what it can do,
+it writes a new skill, validates it on held-out data, and keeps it only
+if it measurably wins.
 
-Não é framework de agente. É **organismo**.
+```
+request
+  └─ classify intent (LLM)
+      └─ select skills   ── complementarity (Pearson/Spearman)
+          │                   meta-orchestrator (signal taxonomy)
+          │                   ensemble cache (past winners)
+          └─ execute        ── python3 server/skills/invoker.py <skill>.py
+              └─ fuse       ── synthesis (cross-pattern detection)
+                  └─ explain
+                       └─ if gap: auto-forge ── LLM writes Python
+                                               ── compile() validates
+                                               ── k-fold CV on held-out
+                                               ── keep only if it wins
+```
 
-- **Domain-agnostic**: 12 cognitive engines (Bayesian, Causal, Counterfactual, Multi-Agent Council, World Model, etc.) que processam QUALQUER input sem assumir o que é
-- **Metamorfose**: muda de profissão preservando memória (DNA library) — esquecer é fisicamente impossível
-- **Polyglot**: skills podem ser Python, JavaScript, Shell, WASM, ou spec (referência)
-- **Swarm distribuído**: cada "node" é subprocess isolado (sem Docker)
+## Running it
 
-A analogia é precisa:
-
-> *O cientista que vira lenhador ganha corpo, força e técnica. Mas continua raciocinando como cientista. Quando virar arquiteto, vai puxar `hypothesis_protocol` e `weather_read_protocol` do cinto conforme a situação pedir.*
-
-A **DNA library** é o corpo cumulativo. Persiste, cresce, nunca esquece.
-
-## Quickstart
+### Docker (both services)
 
 ```bash
-# 1. Variáveis de ambiente
-cp packages/metamorfus-src/.env.example packages/metamorfus-src/.env
-# editar .env com NVIDIA_API_KEY
-
-# 2. Dependências
-cd packages/metamorfus-src && npm install
-
-# 3. Testes (124 passing)
-npx tsx --test server/__tests__/*.test.mjs server/__tests__/*.test.ts
-
-# 4. Servidor headless
-node server/headless-server.mjs
-# POST /api/chat  /api/vision  /api/tools/:name
-
-# 5. UI completa
-npm run dev
+export NVIDIA_API_KEY=nvapi-...
+docker compose up --build
 ```
 
-## Arquitetura
+- OpenCode on `:4096`
+- Metamorfus on `:3457` — health at `/api/health`
 
+The `metamorfus-dna` volume holds forged skills, usage history, and the
+ensemble cache. Without it the organism forgets what it learned on every
+rebuild.
+
+### Local
+
+```bash
+cd packages/metamorfus-src
+npm install
+
+# the organism alone — talks to NVIDIA directly
+npx tsx server/headless-server.mjs
+
+# optionally, OpenCode as well
+cd ../opencode-src/packages/opencode && bun install && bun run dev serve
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  React UI (ChatPanel, Neuroscope, Simulation)               │
-│  └─► bridge ──► Headless Express (server.ts / headless)     │
-│      ├─► MHU 5.0 Cognitive Runtime (12 engines)             │
-│      ├─► /api/vision  → NVIDIA NIM moonshotai/kimi-k3        │
-│      ├─► /api/tools   → OpenCode tool registry              │
-│      ├─► /api/chat    → OpenCode sidecar (cortex agent)     │
-│      └─► Swarm        → polyglot subprocess (no Docker)     │
-│           └─► DNA library: metamorfus-core/                 │
-│                ├─ scientist → lumberjack → architect        │
-│                ├─ transferable: emergent (≥2 profissões)    │
-│                ├─ decay: configurable por profissão         │
-│                └─ archaeology: versões antigas preservadas   │
-└─────────────────────────────────────────────────────────────┘
+
+`tsx` is not optional. The `.mjs` tests and the server import
+`server/odc-opencode-bridge.ts`, which plain `node` cannot resolve.
+
+### Tests
+
+```bash
+# offline — no key needed
+npx tsx --test \
+  server/__tests__/cognitive.test.mjs \
+  server/__tests__/archaeology.test.mjs \
+  server/__tests__/identity.test.mjs \
+  server/__tests__/constitution-memory.test.mjs \
+  server/__tests__/llm-library.test.mjs \
+  server/__tests__/tool-registry.test.ts
+
+# live battery — needs a key, ~10-20 min
+bash .run-battery.sh
 ```
 
-Detalhamento completo em **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**.
+CI runs the offline suite on every push and the battery on `main`.
 
-## Stack
+---
 
-| Camada | Tecnologia |
+## The part that matters: skills really run
+
+There was a bug where the runner spawned `python3 dna_library/SKILL.py`.
+Python defined `def skill()`, exited 0, printed nothing, and the runner
+parsed an empty string as success. Every test in T1–T11 passed for the
+wrong reason.
+
+`server/skills/runner.mjs` now spawns `server/skills/invoker.py`, which
+imports the module, calls `skill(organism, context)`, and prints the
+result as JSON. A skill that raises returns `ok: false` with the
+traceback rather than exiting quietly.
+
+Contexts over 64 KB go through a temp file instead of an env var. Passing
+1000 transactions as `METAMORFUS_CONTEXT` hit the kernel's `ARG_MAX` and
+the spawn died with `E2BIG` — which is why diagnosis once reported
+`caught=0` while k-fold CV reported `F1=0.967` on the same data.
+
+---
+
+## Battery results
+
+Real numbers from real runs. Where a result was not significant, it says
+so.
+
+| Test | What it measures | Result |
+|---|---|---|
+| T1 | Identity preservation | IPS 93.33, transferability 33.33 |
+| T4 | Precision under load | 0.9999, RSI matches Wilder's reference |
+| T6 | Self-modification | LLM wrote 1000 bytes of Python, compiles and runs |
+| T12 | Does cross-domain help? | MAE 1.638 → 0.578 (61.5%) |
+| T13 | Auto-forged skill on held-out data | F1 0.571 → 1.000 |
+| T14 | Significance | baseline 0.350 [0.052, 0.649] vs forged 0.431 [0.338, 0.523] — **not significant** |
+| T15 | PaySim-like data, k=10 | F1 0.967 [0.891, 1.000] |
+| T16 | Directional forge | baseline already 1.000, forge had nothing to add |
+
+T14 is the honest one. The forged skill scored higher, but the confidence
+intervals overlap, so it is reported as not significant rather than as a
+win.
+
+---
+
+## Models
+
+`moonshotai/kimi-k3` was hardcoded everywhere and reached end of life on
+2026-10-15. Every forge path was returning `410 Gone`.
+
+`server/llm-library/model-registry.mjs` lists what was verified live by
+probing real completions, and — importantly — by compiling and executing
+the Python each one produces. Listing in `/v1/models` is not
+availability; `moonshotai/kimi-k2.6` is still catalogued and still dead.
+
+| Model | Status |
 |---|---|
-| Body | React + Vite + Pyodide (Python in WASM no browser) |
-| Mind | MHU 5.0 — Causal Graph, Bayesian, Counterfactual, Hive Memory, Multi-Agent Council, Self-Repair (12 engines, todos domain-agnostic) |
-| Bridge | OpenCode sidecar (LLM provider routing) |
-| Vision | NVIDIA NIM moonshotai/kimi-k2-instruct (multimodal) |
-| Memory | DNA library append-only (TypeScript + Python) |
-| Limbs | Swarm manager (polyglot subprocess: python / javascript / shell / wasm / spec) |
-| Tests | `node:test` via tsx, 124 testes em 9 suites |
+| `nvidia/nemotron-3-super-120b-a12b` | primary — generates Python that runs |
+| `nvidia/nemotron-3-ultra-550b-a55b` | fallback |
+| `nvidia/nemotron-3.5-lightning-30b-a3b` | fallback |
+| `moonshotai/kimi-k3` | 410 Gone |
+| `moonshotai/kimi-k2.6` | 404, ghost catalog entry |
 
-## Estrutura
+NVIDIA is registered under all three categories. The router filters by
+category before trying anything, so a key registered only as
+`multimodal` leaves the forge with nothing to call.
+
+---
+
+## Layout
 
 ```
-metamorfus/
-├── packages/
-│   ├── metamorfus-src/           # Source of truth (dashboard + server)
-│   │   ├── mhu_engine.ts         # 12 cognitive engines (domain-agnostic)
-│   │   ├── server/               # Headless server + modules
-│   │   │   ├── metamorfus-core/  # DNA library + decay + types
-│   │   │   ├── metamorfose/      # Orchestrator + prompt planner
-│   │   │   ├── llm-library/      # Multi-provider LLM config
-│   │   │   ├── swarm/            # Polyglot subprocess manager
-│   │   │   ├── botnet/           # Botnet fleet library
-│   │   │   ├── nl/               # Intent parser + action router
-│   │   │   ├── sync/             # DNA-git-sync
-│   │   │   └── auth/             # Multi-tenant auth
-│   │   ├── components/           # React UI components
-│   │   ├── pages/                # React Router pages
-│   │   └── server.ts             # Server entry
-│   ├── server/                   # Standalone server entry
-│   └── web-ui/                   # Standalone web UI entry
-├── docs/
-│   ├── ARCHITECTURE.md           # Architecture deep-dive
-│   ├── SECURITY.md               # Threat model + checklist
-│   ├── ANALYSIS.md
-│   ├── ADAPTER_DESIGN.md
-│   └── design.md
-├── .github/workflows/test.yml   # CI: tests + security scan
-└── README.md
+packages/metamorfus-src/
+  server/
+    skills/         invoker.py, runner.mjs — real Python execution
+    cognitive/      23 modules: forge, complementarity, statistics, ...
+    llm-library/    router, providers, store, model-registry
+    identity/       constitution, archaeology, persistence
+    __tests__/
+  dna_library/      40 skills + manifest.json
+packages/opencode-src/   vendored OpenCode
 ```
 
-## Conceitos centrais
+`server/cognitive/` is where the interesting parts live:
+`auto-forge.mjs` (gap → LLM → validate → keep or discard),
+`complementarity.mjs` (correlation between skills),
+`statistical-eval.mjs` (k-fold, t-distribution CI, honest ROC),
+`directional-forge.mjs` (feed real baseline failures back into the prompt).
 
-### `morph_focus` gating
-O executor só vê skills compatíveis com o focus atual. Skills incompatíveis ficam **dormentes**, não apagadas.
+---
 
-### `transferable` emergente
-Uma skill vira transferível **automaticamente** quando uma segunda profissão distinta a reativa via contexto. Não é stampada na forge.
+## License
 
-### Decay temporal
-Mastery decai com o tempo. **Configurável por profissão** (lumberjack: 14 dias, scientist: 90 dias). Skills que não são usadas **atrofiam** — mas nunca desaparecem.
-
-### Archaeology
-Re-forjar uma skill com nova versão preserva a versão antiga. Você pode ler a história toda do organismo.
-
-### Forget é impossível
-Não existe `forget()`. Para recomeçar, faça fork de um novo organismo.
-
-### Metamorfose reversível
-`restore(profession)` volta para uma profissão anterior preservando tudo. Composição A→B→C→A preserva skills ganhas em cada estágio.
-
-## Testes por capacidade
-
-| Capacidade | Suite | # testes | Status |
-|---|---|---|---|
-| OpenCode bridge | `odc-opencode-bridge.test.ts` | 11 | ✅ |
-| Vision skill | `vision-tool.test.ts` | 10 | ✅ |
-| Tool registry | `tool-registry.test.ts` | 14 | ✅ |
-| **Botnet (no Docker)** | `swarm-manager.test.mjs` | 7 | ✅ |
-| **Headless server** | `headless-server.test.mjs` | 11 | ✅ |
-| **MHU pipeline** | `mhu-pipeline.test.mjs` | 8 | ✅ |
-| **Metamorfose** | `metamorphosis.test.ts` | 17 | ✅ |
-| **DNA git sync** | `dna-git-sync.test.mjs` | ? | ✅ |
-| **Tenant auth** | `tenant-auth.test.mjs` | ? | ✅ |
-| **Integração orgânica** | `integration-organism.test.mjs` | 3 | ✅ |
-| **Morfeu botnet NL** | `morph-botnet-nl.test.mjs` | ? | ✅ |
-| **LLM library** | `llm-library.test.mjs` | ? | ✅ |
-| **Total** | | **124+** | **100%** |
-
-15 testes LIVE (NVIDIA vision) pulam sem `NVIDIA_API_KEY` no env.
-
-## Run botnet sem Docker
-
-```js
-import { SwarmManager } from "./server/swarm/swarm-manager.mjs";
-
-const mgr = new SwarmManager({ count: 4 });
-const results = await mgr.broadcast(`import os; print(os.uname())`);
-console.log(results);
-await mgr.close();
-```
-
-Cada "node" é um subprocess Node. Cada payload Python roda em um sub-subprocess isolado. Sem Docker, sem daemon, sem container runtime.
-
-## Run vision contra NVIDIA real
-
-```js
-import { describeImage } from "./server/vision-tool.js";
-
-const r = await describeImage({
-  imageUrl: "https://x/y.jpg",
-  prompt: "What is in this image?",
-});
-console.log(r.description);
-```
-
-## Run MHU diretamente
-
-```js
-import { MHU_5_ProtoODC } from "./mhu_engine.js";
-
-const mhu = new MHU_5_ProtoODC();
-// String or Domain object — both work.
-const r = mhu.execute_pipeline("Should I buy Bitcoin?");
-console.log(r.bayesian_posterior);  // 0..1
-console.log(r.strategic_plan);      // priority array
-console.log(r.council);            // { analytical, creative, skeptical, ... }
-```
-
-Ou com Domain explícito:
-
-```js
-const r = mhu.execute_pipeline({
-  query: "Should we approve this loan?",
-  events: [
-    { actor: "applicant", income: 0.7, debt_ratio: 0.4 },
-    { actor: "market", volatility: 0.6 },
-  ],
-  hypotheses: [
-    { id: "approve", label: "Approve", prior: 0.5 },
-    { id: "deny", label: "Deny", prior: 0.5 },
-  ],
-  options: [
-    { id: "approve", label: "Approve" },
-    { id: "deny", label: "Deny" },
-    { id: "review", label: "Manual review" },
-  ],
-  tags: ["finance", "lending"],
-});
-```
-
-## Adotar uma profissão
-
-```js
-import { adopt, restore, professionHistory } from "./server/metamorfus-core/metamorph.js";
-
-await adopt("scientist", ctx);
-await adopt("lumberjack", ctx);
-await adopt("architect", ctx);
-
-// Reversibility
-await restore("scientist", ctx);  // volta pra scientist, mantém tudo
-
-// History
-const chain = await professionHistory(ctx);
-console.log(chain);  // ["scientist", "lumberjack", "architect"]
-```
-
-## Segurança
-
-**Threat model e checklist de deployment** estão em **[docs/SECURITY.md](docs/SECURITY.md)**. Resumo:
-
-- ✅ Multi-tenant auth (bearer tokens)
-- ✅ Polyglot sandboxing (subprocess per skill)
-- ✅ Shell runtime tem deny-list (rm, sudo, curl, etc.)
-- ✅ Per-tenant DNA library (isolamento por diretório)
-- ✅ LLM library com health checks + cooldown
-- ⏳ WASM runtime é placeholder (precisa de `wasmer-js` ou `wasmtime-js`)
-- ⏳ Sem rate limiting (TODO)
-- ⏳ DNA-git-sync sem signing (TODO)
-
-## Licença
-
-UNLICENSED — projeto privado de GrupoANDevelopment-m.
-
-**Glossário** (resumo; veja [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) para mais):
-- **ODC**: Organismo Digital Consciente
-- **MHU**: Meta-Heuristic Unit (cognitive runtime)
-- **PQC**: Post-Quantum Cryptography
-- **Decay**: time-based mastery atrophy
-- **Archaeology**: archived older versions of re-forged skills
-- **Transferable**: cross-profession skill, earned by 2nd profession's reactivation
-- **morph_focus**: current profession's gating lens on the DNA library
-- **Swarm**: subprocess fleet, no Docker
-- **Botnet**: a swarm template (model) that can be spawned
-- **Domain**: a generic input shape (query + events + hypotheses + options + tags)
+Metamorfus ODC: see repository. Vendored OpenCode retains its own
+license under `packages/opencode-src/`.

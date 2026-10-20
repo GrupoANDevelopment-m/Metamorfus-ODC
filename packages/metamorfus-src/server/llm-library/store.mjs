@@ -94,17 +94,43 @@ export class LlmLibraryStore {
   defaults() {
     const out = [];
     const ts = () => this._now();
+    // NVIDIA fallback chain. The previous default was
+    // moonshotai/kimi-k3, which hit EOL on 2026-10-15 and now answers
+    // `410 Gone`. moonshotai/kimi-k2-instruct-0905 is also dead. Both are
+    // replaced by models verified reachable on 2026-10-20 — see
+    // server/llm-library/model-registry.mjs for the probe results.
+    //
+    // Three entries, not one, so the router has somewhere to fall when the
+    // primary rate-limits or goes down. Priority orders the attempt.
+    const nvidiaChain = [
+      { model: "nvidia/nemotron-3-super-120b-a12b", priority: 100, contextWindow: 131072 },
+      { model: "nvidia/nemotron-3-ultra-550b-a55b", priority: 110, contextWindow: 131072 },
+      { model: "nvidia/nemotron-3.5-lightning-30b-a3b", priority: 120, contextWindow: 131072 },
+    ];
+    // One entry PER CATEGORY. The router filters by category before it
+    // tries anything, so a model registered only as "multimodal" is
+    // invisible to a `complete("text", ...)` call — which is what every
+    // forge path uses. That mismatch is why auto-forge failed with
+    // "All 1 LLM candidate(s) in category \"text\" failed" even though a
+    // working NVIDIA endpoint was configured.
+    //
+    // "reasoning" is included because T14 (statistical validation) calls
+    // the forge with that category, and Anthropic was the only default
+    // there — so with just an NVIDIA key the forge had zero candidates
+    // and the whole test aborted.
     const envConfigs = [
-      {
-        envKey: "NVIDIA_API_KEY",
-        name: "NVIDIA NIM (env)",
-        provider: "nvidia-direct",
-        category: "multimodal",
-        endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
-        model: "moonshotai/kimi-k2-instruct-0905",
-        priority: 100,
-        metadata: { contextWindow: 128000, source: "env" },
-      },
+      ...nvidiaChain.flatMap(({ model, priority, contextWindow }) =>
+        ["text", "reasoning", "multimodal"].map((category) => ({
+          envKey: "NVIDIA_API_KEY",
+          name: `NVIDIA NIM — ${model} (${category}, env)`,
+          provider: "nvidia-direct",
+          category,
+          endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
+          model,
+          priority,
+          metadata: { contextWindow, source: "env", verifiedLive: "2026-10-20" },
+        })),
+      ),
       {
         envKey: "OPENAI_API_KEY",
         name: "OpenAI (env)",
@@ -120,7 +146,7 @@ export class LlmLibraryStore {
         name: "Anthropic Claude (env)",
         provider: "anthropic",
         category: "reasoning",
-        endpoint: "https://api.anthropic.com/v1/messages",
+        endpoint: "https://api.anthropic.com/messages",
         model: "claude-3-5-sonnet-latest",
         priority: 95,
         metadata: { contextWindow: 200000, source: "env" },
