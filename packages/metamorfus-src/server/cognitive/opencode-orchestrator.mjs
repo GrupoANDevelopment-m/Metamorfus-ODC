@@ -19,8 +19,11 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import fssync from "node:fs";
 import { DEFAULT_CODE_MODEL } from "../llm-library/model-registry.mjs";
+import { packageRoot } from "../package-root.mjs";
 
-const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
+// Resolved from this module's own location — see server/package-root.mjs.
+// The literal sandbox path this replaced only existed on one machine.
+const ROOT = packageRoot();
 
 /**
  * Classify the request intent. Three classes:

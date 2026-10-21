@@ -29,8 +29,11 @@
 
 import path from "node:path";
 import fs from "node:fs/promises";
+import { packageRoot } from "../package-root.mjs";
 
-const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
+// Resolved from this module's own location — see server/package-root.mjs.
+// The literal sandbox path this replaced only existed on one machine.
+const ROOT = packageRoot();
 
 export async function measureGapFilling(workspaceRoot) {
   const { generateFraudDataset, scoreFraudPrediction } = await import(path.join(ROOT, "server/cognitive/performance.mjs"));

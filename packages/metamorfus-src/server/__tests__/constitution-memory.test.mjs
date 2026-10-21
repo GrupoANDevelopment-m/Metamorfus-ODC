@@ -7,6 +7,15 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+
+// Resolved from this file's own location so the suite works from any
+// checkout. It used to be the literal
+// "/workspace/metamorfus-opencode/packages/metamorfus-src", which only
+// exists inside one developer's sandbox — on CI or a fresh clone every
+// test that needed the real dna_library failed or silently found nothing.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const PKG_ROOT = path.resolve(HERE, "..", "..");
 
 const { startHeadlessServer } = await import("../headless-server.mjs");
 const { executeBridgeTool } = await import("../odc-opencode-bridge.js");
@@ -14,8 +23,8 @@ const { adopt } = await import("../metamorfus-core/metamorph.js");
 
 async function bootIsolatedServer() {
   const ws = await fs.mkdtemp(path.join(os.tmpdir(), "metamorfus-const-"));
-  try { await fs.symlink("/workspace/metamorfus-opencode/packages/metamorfus-src/node_modules", path.join(ws, "node_modules")); } catch {}
-  const srcDna = "/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library";
+  try { await fs.symlink(path.join(PKG_ROOT, "node_modules"), path.join(ws, "node_modules")); } catch {}
+  const srcDna = path.join(PKG_ROOT, "dna_library");
   const dstDna = path.join(ws, "packages", "metamorfus-src", "dna_library");
   await fs.mkdir(dstDna, { recursive: true });
   for (const f of await fs.readdir(srcDna)) {

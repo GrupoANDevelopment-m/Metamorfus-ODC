@@ -45,7 +45,19 @@ jobs:
 
       - name: Install deps
         working-directory: packages/metamorfus-src
-        run: npm install --no-audit --no-fund
+        # --workspaces=false is required, not cosmetic.
+        #
+        # The repo root is a Bun workspace (`workspaces: ["packages/*"]`)
+        # and the vendored OpenCode packages depend on each other via
+        # `workspace:*`, a protocol only Bun understands. Running plain
+        # `npm install` from here walks up to that root, tries to resolve
+        # the whole workspace, and dies with
+        #   EUNSUPPORTEDPROTOCOL — Unsupported URL Type "workspace:"
+        # before installing a single Metamorfus dependency.
+        #
+        # This was the reason every CI run failed, including the ones that
+        # ran the older minimal workflow.
+        run: npm install --workspaces=false --no-audit --no-fund
 
       - name: Run offline test suite
         working-directory: packages/metamorfus-src
@@ -94,7 +106,19 @@ jobs:
 
       - name: Install deps
         working-directory: packages/metamorfus-src
-        run: npm install --no-audit --no-fund
+        # --workspaces=false is required, not cosmetic.
+        #
+        # The repo root is a Bun workspace (`workspaces: ["packages/*"]`)
+        # and the vendored OpenCode packages depend on each other via
+        # `workspace:*`, a protocol only Bun understands. Running plain
+        # `npm install` from here walks up to that root, tries to resolve
+        # the whole workspace, and dies with
+        #   EUNSUPPORTEDPROTOCOL — Unsupported URL Type "workspace:"
+        # before installing a single Metamorfus dependency.
+        #
+        # This was the reason every CI run failed, including the ones that
+        # ran the older minimal workflow.
+        run: npm install --workspaces=false --no-audit --no-fund
 
       - name: Run battery
         working-directory: packages/metamorfus-src

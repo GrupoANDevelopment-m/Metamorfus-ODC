@@ -1075,9 +1075,21 @@ export async function startHeadlessServer(opts = {}) {
     await new Promise((resolve) => server.close(() => resolve()));
   };
 
-  const port = opts.port ?? Number(process.env.PORT ?? 3000);
+  // Port resolution order: explicit opts → METAMORFUS_PORT → PORT → 3000.
+  // METAMORFUS_PORT comes first because the Docker image and compose file
+  // set it, and PORT is a common ambient variable that can collide with
+  // another service on the same host.
+  const port =
+    opts.port ??
+    Number(process.env.METAMORFUS_PORT ?? process.env.PORT ?? 3000);
+
+  // Bind address: 127.0.0.1 by default (dev/tests), 0.0.0.0 when asked.
+  // A container bound to loopback is unreachable from outside it, which
+  // made the published port do nothing.
+  const host = opts.host ?? process.env.METAMORFUS_HOST ?? "127.0.0.1";
+
   const server = await new Promise((resolve, reject) => {
-    const s = app.listen(port, "127.0.0.1", () => resolve(s));
+    const s = app.listen(port, host, () => resolve(s));
     s.on("error", reject);
   });
   const addr = server.address();
@@ -1085,6 +1097,7 @@ export async function startHeadlessServer(opts = {}) {
 
   return {
     port: actualPort,
+    host,
     server,
     llmStore,
     llmRouter,

@@ -24,8 +24,11 @@
 //      or robust (low variance) across folds?
 
 import path from "node:path";
+import { packageRoot } from "../package-root.mjs";
 
-const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
+// Resolved from this module's own location — see server/package-root.mjs.
+// The literal sandbox path this replaced only existed on one machine.
+const ROOT = packageRoot();
 
 /**
  * Generate a MORE VARIED synthetic fraud dataset. The previous

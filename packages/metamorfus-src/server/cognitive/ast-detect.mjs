@@ -9,8 +9,11 @@
 
 import { spawn } from "node:child_process";
 import path from "node:path";
+import { packageRoot } from "../package-root.mjs";
 
-const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
+// Resolved from this module's own location — see server/package-root.mjs.
+// The literal sandbox path this replaced only existed on one machine.
+const ROOT = packageRoot();
 
 /**
  * Detect signal types for one or more skills by parsing their

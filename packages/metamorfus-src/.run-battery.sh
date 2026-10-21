@@ -6,6 +6,7 @@ export MAX_TOKENS_PER_SESSION=20000000
 
 cat > .battery.test.mjs <<'BATTERY_EOF'
 import { test } from "node:test";
+import assert from "node:assert/strict";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
@@ -142,9 +143,26 @@ test("T6 — Self-Evolution (LLM-driven, not fallback)", async () => {
     });
     results.T6 = evo;
     console.log("[T6] attempts:", evo.attempts, "evolved:", evo.evolved, "ok:", evo.ok, "newSkillKey:", evo.newSkillKey, "validInputOk:", evo.validInputOk, "pythonBytes:", evo.pythonBytes);
+
+    // This test used to only console.log the outcome. It passed when the
+    // forge produced nothing at all — ok:false, pythonBytes:0, no new
+    // skill — because nothing was ever asserted. A battery that cannot
+    // fail is a battery that reports fiction.
+    assert.ok(evo.evolved, `T6: no skill was evolved: ${evo.error ?? "no error reported"}`);
+    assert.equal(evo.ok, true, "T6: evolved skill did not execute successfully");
+    assert.ok(evo.pythonBytes > 100, `T6: forged skill is suspiciously small (${evo.pythonBytes} bytes)`);
+    assert.ok(evo.newSkillKey, "T6: no new skill key was produced");
+    // A forged skill that only works on the input that motivated it is
+    // overfit; it must survive a well-formed input too.
+    assert.equal(evo.validInputOk, true, "T6: forged skill broke on a valid input");
+    // It must not be a copy of the skill it replaced.
+    assert.notEqual(evo.newSkillKey, "analyze_pressure_gradient_protocol",
+      "T6: forge claimed to evolve the skill but returned the same key");
   } catch (e) {
     console.error("[T6 EXCEPTION]", e.message);
     results.T6 = { ok: false, error: e.message };
+    await fs.rm(ws, { recursive: true, force: true });
+    throw e;
   }
   await fs.rm(ws, { recursive: true, force: true });
 });

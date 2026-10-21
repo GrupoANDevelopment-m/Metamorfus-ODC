@@ -7,8 +7,17 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import os from "node:os";
 import fs from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 
-const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
+// Resolved from this file's own location so the suite works from any
+// checkout. It used to be the literal
+// "/workspace/metamorfus-opencode/packages/metamorfus-src", which only
+// exists inside one developer's sandbox — on CI or a fresh clone every
+// test that needed the real dna_library failed or silently found nothing.
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const PKG_ROOT = path.resolve(HERE, "..", "..");
+
+const ROOT = PKG_ROOT;
 process.env.NVIDIA_API_KEY = process.env.NVIDIA_API_KEY ?? "test-key";
 
 const { startHeadlessServer } = await import(path.join(ROOT, "server/headless-server.mjs"));

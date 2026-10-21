@@ -29,12 +29,17 @@ WORKDIR /app/packages/metamorfus-src
 
 # Copy manifests first so the dependency layer caches independently
 # of source changes.
-COPY packages/metamorfus-src/package.json packages/metamorfus-src/package-lock.json* ./
-RUN npm install --omit=optional --no-audit --no-fund
+COPY packages/metamorfus-src/package.json packages/metamorfus-src/package-lock.json ./
 
-# tsx is a devDependency but the headless server is run with it, so we
-# need dev deps too. Simpler and more robust than compiling separately.
-RUN npm install --no-audit --no-fund
+# tsx is a devDependency but the headless server runs through it, so dev
+# deps must be installed. Installing once with dev deps included is simpler
+# and more robust than a separate --omit=dev pass.
+#
+# --workspaces=false is required. The repo root is a Bun workspace and the
+# vendored OpenCode packages use `workspace:*`, which npm cannot resolve.
+# Without this the build dies with EUNSUPPORTEDPROTOCOL before installing
+# anything. Verified on a clean clone: with it, 149 packages in ~6s.
+RUN npm install --workspaces=false --no-audit --no-fund
 
 
 # ---------- Stage 2: runtime ----------
@@ -57,6 +62,7 @@ COPY packages/metamorfus-src ./packages/metamorfus-src
 
 ENV NODE_ENV=production \
     METAMORFUS_PORT=3457 \
+    METAMORFUS_HOST=0.0.0.0 \
     OPENCODE_URL=http://opencode:4096 \
     OPENCODE_AGENT=cortex \
     PYTHONUNBUFFERED=1

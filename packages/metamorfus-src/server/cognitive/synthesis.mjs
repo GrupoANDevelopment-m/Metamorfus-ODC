@@ -109,7 +109,7 @@ export function combineResults(skillResults) {
 export async function runTransdomainSynthesis(workspaceRoot, opts) {
   const { sequence, finalProfession, task, runSkill } = opts;
   const { adopt, loadManifest } = await import(
-    path.join("/workspace/metamorfus-opencode/packages/metamorfus-src/server/metamorfus-core/metamorph.js")
+    path.join(packageRoot(), "server", "metamorfus-core", "metamorph.js")
   );
   const c = { workspaceRoot, dnaDir: "packages/metamorfus-src/dna_library" };
 

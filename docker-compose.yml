@@ -62,6 +62,9 @@ services:
       - "3457:3457"
     environment:
       METAMORFUS_PORT: "3457"
+      # Bind all interfaces. Without this the server listens on 127.0.0.1
+      # inside the container and the published port reaches nothing.
+      METAMORFUS_HOST: 0.0.0.0
       OPENCODE_URL: http://opencode:4096
       OPENCODE_AGENT: cortex
       # Used by the direct-NVIDIA fallback and by every LLM-driven

@@ -23,8 +23,11 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { DEFAULT_CODE_MODEL } from "../llm-library/model-registry.mjs";
+import { packageRoot } from "../package-root.mjs";
 
-const ROOT = "/workspace/metamorfus-opencode/packages/metamorfus-src";
+// Resolved from this module's own location — see server/package-root.mjs.
+// The literal sandbox path this replaced only existed on one machine.
+const ROOT = packageRoot();
 
 async function callLlmForTaskSkill(taskDescription, trainingDataSample, errorAnalysis) {
   const { LlmLibraryStore } = await import(path.join(ROOT, "server/llm-library/store.mjs"));
