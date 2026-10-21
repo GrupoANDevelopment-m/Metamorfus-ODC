@@ -183,12 +183,38 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Smoke test the image
-        # python3 must exist in the final layer and the skill invoker must
-        # be callable, otherwise every runtime skill invocation fails.
+        # Presence checks are not enough. This boots the container for
+        # real and asks it for a skill result computed by Python, which is
+        # the only thing that exercises the whole chain: express boot,
+        # auth, the skill manifest, the python3 subprocess, and the
+        # invoker's JSON framing. A missing binary or a wrong WORKDIR
+        # still passes an `--version` check and fails here.
         run: |
-          docker run --rm --entrypoint sh metamorfus-odc:ci -c '
-            python3 --version &&
-            test -f packages/metamorfus-src/server/skills/invoker.py &&
-            echo "invoker present" &&
-            node --version
-          '
+          set -euo pipefail
+          docker run -d --name odc-smoke -p 3457:3457 metamorfus-odc:ci
+
+          # Wait for the real health route, not a fixed sleep.
+          for i in $(seq 1 40); do
+            if curl -sf http://127.0.0.1:3457/api/health >/dev/null 2>&1; then
+              echo "healthy after ${i}s"; break
+            fi
+            if [ "$i" -eq 40 ]; then
+              echo "--- container logs ---"; docker logs odc-smoke; exit 1
+            fi
+            sleep 1
+          done
+
+          echo "--- python3 present in the final layer ---"
+          docker exec odc-smoke python3 --version
+
+          # RSI over a known series, computed by the Python skill.
+          echo "--- skill invoke ---"
+          RESULT=$(curl -sf -X POST http://127.0.0.1:3457/api/skills/rsi_calculator_v2_protocol/invoke \
+            -H 'Authorization: Bearer dev-secret-local' \
+            -H 'Content-Type: application/json' \
+            -d '{"context":{"prices":[44.34,44.09,44.15,43.61,44.33,44.83,45.10,45.42,45.84,46.08,45.89,46.03,45.61,46.28,46.28,46.00]}}')
+          echo "$RESULT"
+          echo "$RESULT" | grep -q '"ok":true' || { echo "skill did not report ok"; docker logs odc-smoke; exit 1; }
+          echo "$RESULT" | grep -q '"rsi"'    || { echo "skill returned no rsi"; docker logs odc-smoke; exit 1; }
+
+          docker rm -f odc-smoke
