@@ -1,13 +1,43 @@
+# Build context control.
+#
+# Without these, `docker build -f Dockerfile .` from the repo root ships
+# ~144 MB of the vendored OpenCode tree to the daemon on every build, and
+# the OpenCode image is built from its own context instead (see
+# Dockerfile.opencode, referenced by docker-compose.yml with
+# context: ./packages/opencode-src).
+
 node_modules/
+**/node_modules/
 dist/
+**/dist/
 .svelte-kit/
+**/.svelte-kit/
+__pycache__/
+**/__pycache__/
+*.pyc
+
+.git/
+.github/
+.vscode/
+.idea/
+
 *.log
 .DS_Store
 .env
-.env.local
-.tmp-context-*.json
-.battery-results.json
-.run-battery-output.txt
+.env.*
+!.env.example
 coverage/
 test-results/
 *.tsbuildinfo
+
+# Organism runtime state — never bake a previous run's learned state
+# into the image. The compose volume owns this at runtime.
+packages/metamorfus-src/data/
+packages/metamorfus-src/.battery-results.json
+packages/metamorfus-src/.run-battery-output.txt
+.tmp-context-*.json
+
+# Documentation and local reports
+docs/
+*.md
+!README.md

@@ -25,6 +25,7 @@ import fs from "node:fs/promises";
 import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { packageRoot } from "./package-root.mjs";
 
 // Pull the same TypeScript modules the real server uses. We re-export
 // the runtime instances we need.
@@ -91,7 +92,12 @@ export async function startHeadlessServer(opts = {}) {
   const orchestrator = new MetamorphoseOrchestrator({
     forgeSkill: async ({ skillKey, pythonSource }) =>
       executeBridgeTool("forge_skill", { skillKey, pythonSource }),
-    dnaDir: path.resolve(opts.workspaceRoot ?? process.cwd(), "packages/metamorfus-src/dna_library"),
+    // Resolved through packageRoot() rather than a literal
+    // "packages/metamorfus-src/dna_library" relative to CWD. That literal
+    // only holds for a monorepo checkout; in the container the package is
+    // the working directory, so the tenant would have pointed at a
+    // dna_library that does not exist.
+    dnaDir: packageRoot("dna_library"),
     pythonBin: process.env.PYTHON_BIN ?? "python3",
     onLog: (line) => console.log(line),
   });
