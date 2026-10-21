@@ -46,11 +46,15 @@ services:
       # Persist OpenCode's session/message storage across restarts.
       - opencode-data:/root/.local/share/opencode
     healthcheck:
+      # The image is oven/bun:alpine, which ships busybox wget — so this
+      # works without adding a package.
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:4096/ >/dev/null 2>&1 || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      # `bun run dev` compiles the whole opencode package on first request,
+      # so the first probe takes noticeably longer than five seconds.
+      start_period: 90s
     restart: unless-stopped
 
   metamorfus:
@@ -75,10 +79,7 @@ services:
       # cognitive step (auto-forge, auto-reform, directional forge).
       NVIDIA_API_KEY: ${NVIDIA_API_KEY:-}
       NVIDIA_BASE_URL: ${NVIDIA_BASE_URL:-https://integrate.api.nvidia.com/v1}
-      # Auto-forged skills write into dna_library. Without a volume they
-      # vanish on container rebuild — the organism would forget what it
-      # learned. This is the single most important volume here.
-      - METAMORFUS_MAX_TOKENS_PER_SESSION: ${MAX_TOKENS_PER_SESSION:-2000000}
+      METAMORFUS_MAX_TOKENS_PER_SESSION: ${MAX_TOKENS_PER_SESSION:-2000000}
     volumes:
       # Durable organism state: forged skills, usage history,
       # ensemble cache, constitution memory, identity.
