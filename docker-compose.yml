@@ -24,7 +24,11 @@ services:
   opencode:
     build:
       context: ./packages/opencode-src
-      dockerfile: ../Dockerfile.opencode
+      # The Dockerfile must live INSIDE the build context. An earlier
+      # version used `dockerfile: ../Dockerfile.opencode`, which Docker
+      # rejects — it cannot reference a file above the context root — and
+      # `docker compose config` fails validation on it.
+      dockerfile: Dockerfile
     image: metamorfus-opencode:latest
     container_name: odc-opencode
     ports:

@@ -1,10 +1,10 @@
 # Build context control.
 #
 # Without these, `docker build -f Dockerfile .` from the repo root ships
-# ~144 MB of the vendored OpenCode tree to the daemon on every build, and
-# the OpenCode image is built from its own context instead (see
-# Dockerfile.opencode, referenced by docker-compose.yml with
-# context: ./packages/opencode-src).
+# ~144 MB of the vendored OpenCode tree to the daemon on every build. The
+# OpenCode image is built from its own context instead
+# (packages/opencode-src/Dockerfile — it has to live inside the context,
+# since Docker cannot reference a file above the context root).
 
 node_modules/
 **/node_modules/

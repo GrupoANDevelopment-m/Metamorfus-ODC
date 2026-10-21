@@ -10,3 +10,25 @@ node_modules
 **/.turbo
 **/.vite
 **/coverage
+
+# Large binary assets that the server build never reads. Roughly 50 MB
+# of demo video and icons that would otherwise be shipped to the daemon
+# on every build.
+artifacts/
+**/asset/lander/
+**/src/assets/help/
+**/test/**/fixtures/
+**/icons/
+**/*.mp4
+**/*.icns
+
+# Test fixtures and docs
+**/*.test.ts
+docs/
+*.md
+!README.md
+
+# Individual heavy fixtures that survived the blanket patterns above.
+packages/opencode/test/image/fixtures/picture-5mb-base64.png
+packages/opencode/test/tool/fixtures/models-api.json
+packages/opencode/test/tool/fixtures/large-image.png
