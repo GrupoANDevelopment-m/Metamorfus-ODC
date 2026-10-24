@@ -76,13 +76,27 @@ test("store: defaults from env register the verified NVIDIA chain per category",
   }
 
   // The chain must be ordered so the model that actually compiles Python
-  // is tried first. moonshotai/kimi-k3 (the previous default) reached end
-  // of life on 2026-10-15 and now answers 410 Gone.
-  const textModels = s.list({ category: "text" }).sort((a, b) => a.priority - b.priority);
-  assert.equal(textModels[0].model, "nvidia/nemotron-3-super-120b-a12b");
-  assert.ok(!textModels.some((c) => c.model.includes("kimi-k3")));
+  // is tried first, and it must not contain a model that has died.
+  //
+  // The catalog churns faster than a hardcoded list can keep up:
+  // moonshotai/kimi-k3 hit EOL on 2026-10-15, and
+  // nvidia/nemotron-3-super-120b-a12b — the primary for two days — was
+  // answering 404 by 2026-10-23. This asserts against the live registry
+  // rather than repeating a list that goes stale.
+  const { DEFAULT_CODE_MODEL, MODEL_FALLBACK_CHAIN, DEPRECATED_MODELS } =
+    await import("../llm-library/model-registry.mjs");
 
-  // Distinct models form a real fallback chain, not three copies of one.
+  const textModels = s.list({ category: "text" }).sort((a, b) => a.priority - b.priority);
+  assert.equal(textModels[0].model, DEFAULT_CODE_MODEL);
+  assert.ok(!textModels.some((c) => DEPRECATED_MODELS[c.model]),
+    `registered a known-dead model: ${textModels.map((c) => c.model).filter((m) => DEPRECATED_MODELS[m]).join(", ")}`);
+  // Every registered model must be on the verified chain.
+  for (const c of textModels) {
+    assert.ok(MODEL_FALLBACK_CHAIN.includes(c.model),
+      `${c.model} is registered but not on the verified chain`);
+  }
+
+  // Distinct models form a real fallback chain, not copies of one.
   const unique = new Set(textModels.map((c) => c.model));
   assert.equal(unique.size, textModels.length);
   delete process.env.NVIDIA_API_KEY;

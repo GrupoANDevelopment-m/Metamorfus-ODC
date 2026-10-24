@@ -102,10 +102,13 @@ export class LlmLibraryStore {
     //
     // Three entries, not one, so the router has somewhere to fall when the
     // primary rate-limits or goes down. Priority orders the attempt.
+    // Kept in step with MODEL_FALLBACK_CHAIN in model-registry.mjs.
+    // The catalog churns: nemotron-3-super-120b was the primary on
+    // 2026-10-20 and was answering 404 by 2026-10-23. Every id here
+    // was confirmed by a live completion, not read off /v1/models.
     const nvidiaChain = [
-      { model: "nvidia/nemotron-3-super-120b-a12b", priority: 100, contextWindow: 131072 },
-      { model: "nvidia/nemotron-3-ultra-550b-a55b", priority: 110, contextWindow: 131072 },
-      { model: "nvidia/nemotron-3.5-lightning-30b-a3b", priority: 120, contextWindow: 131072 },
+      { model: "nvidia/nemotron-3-ultra-550b-a55b", priority: 100, contextWindow: 131072 },
+      { model: "z-ai/glm-5.3", priority: 110, contextWindow: 131072 },
     ];
     // One entry PER CATEGORY. The router filters by category before it
     // tries anything, so a model registered only as "multimodal" is

@@ -16,25 +16,50 @@ import { packageRoot } from "../package-root.mjs";
 // The literal sandbox path this replaced only existed on one machine.
 const ROOT = packageRoot();
 
-async function callLlmForPython(skillKey, profession, sourceCode, errors) {
+async function callLlmForPython(skillKey, profession, sourceCode, errors, forceModel = null) {
   const { LlmLibraryStore } = await import(path.join(ROOT, "server/llm-library/store.mjs"));
   const { LlmRouter } = await import(path.join(ROOT, "server/llm-library/router.mjs"));
+  const { MODEL_FALLBACK_CHAIN } = await import(path.join(ROOT, "server/llm-library/model-registry.mjs"));
   const libPath = `/tmp/metamorfus-evolve-${Date.now()}.json`;
   const store = new LlmLibraryStore(libPath);
   await store.load();
+  if (forceModel && process.env.NVIDIA_API_KEY) {
+    store.add({
+      name: `Evolve — ${forceModel}`,
+      provider: "nvidia-direct",
+      category: "reasoning",
+      endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
+      apiKey: process.env.NVIDIA_API_KEY,
+      model: forceModel,
+      // Priority 1 beats the env-registered chain (5+), so the router
+      // uses exactly this model for this one attempt.
+      priority: 1,
+      metadata: { contextWindow: 128000, source: "evolve-skill", forced: true },
+    });
+    await store.save();
+  }
   if (process.env.NVIDIA_API_KEY) {
     const hasR = store.list({ category: "reasoning" }).length > 0;
     if (!hasR) {
-      store.add({
-        name: "Evolve (env)",
-        provider: "nvidia-direct",
-        category: "reasoning",
-        endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
-        apiKey: process.env.NVIDIA_API_KEY,
-        model: DEFAULT_CODE_MODEL,
-        priority: 5,
-        metadata: { contextWindow: 128000, source: "evolve-skill" },
-      });
+      // Register the whole verified chain, not one model. The router's
+      // own failover stops at the first *transport* error; a model that
+      // answers 200 with Python missing the `skill` function is not a
+      // transport error, so it would be accepted as the final result.
+      // Keeping several models here lets the loop below try the next one
+      // when the returned code fails validation.
+      let priority = 5;
+      for (const model of MODEL_FALLBACK_CHAIN) {
+        store.add({
+          name: `Evolve — ${model} (env)`,
+          provider: "nvidia-direct",
+          category: "reasoning",
+          endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
+          apiKey: process.env.NVIDIA_API_KEY,
+          model,
+          priority: priority++,
+          metadata: { contextWindow: 128000, source: "evolve-skill" },
+        });
+      }
       await store.save();
     }
   }
@@ -129,31 +154,50 @@ export async function evolveSkillDirect(workspaceRoot, opts) {
   let sourceCode = null;
   try { sourceCode = await fs.readFile(pyPath, "utf-8"); } catch {}
 
-  // 1. Try the LLM. ONE attempt — the prompt is short, the model is
-  // small, and rapid retries hit 429. If the LLM produces valid
-  // Python, we forge the new skill from it. If not, we surface the
-  // failure honestly (no in-process template to hide it).
+  // 1. Try the LLM, walking the verified model chain until one returns
+  //    Python that actually validates.
+  //
+  //    One attempt is not enough. The router's failover only covers
+  //    transport errors (429, 5xx, timeouts). A model can answer HTTP
+  //    200 with a body that omits the `skill` function entirely, and the
+  //    router has no way to know that. Probed on 2026-10-23:
+  //    nemotron-3-ultra-550b and glm-5.3 both return usable code for a
+  //    simple task, while nemotron-3.5-lightning frequently returns
+  //    nothing. So the loop below re-asks with an explicit model until
+  //    validation passes or the chain is exhausted.
   let python = null;
   let lastLlmErr = null;
-  try {
-    const code = await callLlmForPython(skillKey, profession, sourceCode, failureInputs.errors);
-    const v = await validatePython(code);
-    if (v.ok) {
-      python = v.normalized ?? code;
-    } else {
+  const triedModels = [];
+
+  const { LlmLibraryStore } = await import(path.join(ROOT, "server/llm-library/store.mjs"));
+  const { LlmRouter } = await import(path.join(ROOT, "server/llm-library/router.mjs"));
+  const { MODEL_FALLBACK_CHAIN } = await import(path.join(ROOT, "server/llm-library/model-registry.mjs"));
+
+  for (const model of MODEL_FALLBACK_CHAIN) {
+    try {
+      const code = await callLlmForPython(skillKey, profession, sourceCode, failureInputs.errors, model);
+      const v = await validatePython(code);
+      if (v.ok) {
+        python = v.normalized ?? code;
+        triedModels.push({ model, ok: true });
+        break;
+      }
+      triedModels.push({ model, ok: false, error: String(v.stderr ?? "").slice(-200) });
       lastLlmErr = v.stderr.slice(-500);
+    } catch (e) {
+      triedModels.push({ model, ok: false, error: String(e.message).slice(0, 200) });
+      lastLlmErr = e.message;
     }
-  } catch (e) {
-    lastLlmErr = e.message;
   }
 
   if (!python) {
     return {
       ok: false,
       evolved: false,
-      attempts: maxLlmAttempts,
-      reason: "LLM did not produce valid Python",
+      attempts: triedModels.length,
+      reason: "no model in the fallback chain produced valid Python",
       lastLlmError: lastLlmErr,
+      triedModels,
     };
   }
 

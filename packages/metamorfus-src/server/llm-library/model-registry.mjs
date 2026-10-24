@@ -36,23 +36,37 @@
  */
 
 /** Primary: verified to produce Python that compiles AND executes. */
-export const DEFAULT_CODE_MODEL = "nvidia/nemotron-3-super-120b-a12b";
+export const DEFAULT_CODE_MODEL = "nvidia/nemotron-3-ultra-550b-a55b";
 
 /** Fallback chain, best-first. Verified reachable as of 2026-10-20. */
 export const MODEL_FALLBACK_CHAIN = [
-  "nvidia/nemotron-3-super-120b-a12b",
+  // Verified reachable AND producing Python that passes validation on
+  // 2026-10-23 (see the probe table at the top of this file).
   "nvidia/nemotron-3-ultra-550b-a55b",
-  "nvidia/nemotron-3.5-lightning-30b-a3b",
+  "z-ai/glm-5.3",
 ];
 
 /**
  * Known-dead models. Kept explicit rather than deleted so that anyone
  * still carrying these ids gets a clear error instead of a silent 410
  * halfway through a forge cycle.
+ *
+ * RE-PROBED 2026-10-23. The catalog churns: nemotron-3-super-120b, which
+ * was the primary in the previous revision of this file, now answers 404.
+ * Every entry below was confirmed by a live completion attempt today, not
+ * inferred from the catalog — /v1/models still lists several of them.
  */
 export const DEPRECATED_MODELS = {
   "moonshotai/kimi-k3": "EOL 2026-10-15 (HTTP 410 Gone)",
   "moonshotai/kimi-k2.6": "listed in catalog but HTTP 404 — ghost entry",
+  "nvidia/nemotron-3-super-120b-a12b": "was primary 2026-10-20; HTTP 404 as of 2026-10-23",
+  "nvidia/nemotron-4-340b-instruct": "HTTP 404",
+  "nvidia/nemotron-nano-3-30b-a3b": "HTTP 404",
+  "nvidia/llama-3.1-nemotron-ultra-253b-v1": "HTTP 404",
+  "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning": "HTTP 503 Service Unavailable",
+  "z-ai/glm-5.3-flash": "responds but returns empty content on codegen",
+  "nvidia/nemotron-3.5-lightning-30b-a3b": "responds but frequently omits the function",
+  "deepseek-ai/deepseek-v4.1-flash": "listed but times out on long generations",
   "qwen/qwen3-coder-480b-a35b-instruct": "EOL (HTTP 410 Gone)",
   "deepseek-ai/deepseek-v4-flash-0731": "deprecated 2026-09-19, unsupported after 2026-09-21",
   "meta/llama-3.3-70b-instruct": "removed from NIM (HTTP 410 Gone)",
