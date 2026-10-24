@@ -184,14 +184,500 @@
       "runtime": "python",
       "morph_focus": "THINK",
       "status": "active",
-      "mastery": 0.5,
+      "mastery": 0.55,
       "transferable": false,
-      "usage_history": [],
+      "usage_history": [
+        {
+          "at": "2026-10-24T08:15:21.959Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "stations"
+          ],
+          "result": {
+            "action": "PRESSURE_GRADIENT",
+            "intensity": 0.5,
+            "version": 1,
+            "result": {
+              "gradients": [],
+              "computed": 0
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 47
+        }
+      ],
       "reactivation_triggers": [
         "evolved"
       ],
       "created_by": "evolve-skill-direct",
-      "created_at": "2026-10-24T08:12:15.773Z"
+      "created_at": "2026-10-24T08:12:15.773Z",
+      "last_used_at": "2026-10-24T08:15:21.959Z"
+    },
+    {
+      "key": "arxiv_search_protocol",
+      "profession": "researcher",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "THINK",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "arxiv_search_v2_protocol",
+      "profession": "researcher",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "THINK",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_agent_reach_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_archify_protocol",
+      "profession": "architect",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "THINK",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_browser_harness_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_browser_skill_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_browser_use_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_github_mcp_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_nginx_agent_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_nginx_skill_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "builtin_playwright_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "crypto_price_v2_protocol",
+      "profession": "trader",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "incident_log_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "pdf_extract_protocol",
+      "profession": "researcher",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "port_scan_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "real_cve_lookup_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "real_http_header_audit_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "real_incident_logger_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "real_port_scanner_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.35,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-24T08:15:21.904Z",
+          "by_profession": "cybersecurity",
+          "context": [
+            "target",
+            "ports"
+          ],
+          "result": {
+            "host": "127.0.0.1",
+            "scanned_ports": 3,
+            "open_ports": [],
+            "open_count": 0,
+            "duration_ms": 2,
+            "summary": "0/3 ports open on 127.0.0.1"
+          },
+          "outcome": 1,
+          "duration_ms": 97
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": "2026-10-24T08:15:21.904Z"
+    },
+    {
+      "key": "recon_protocol",
+      "profession": "cybersecurity",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "rsi_calculator_v2_protocol",
+      "profession": "trader",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.44999999999999996,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-24T08:15:10.712Z",
+          "by_profession": "trader",
+          "context": [
+            "prices"
+          ],
+          "result": {
+            "rsi": 66.25,
+            "period": 14,
+            "signal": "neutral",
+            "samples": 16
+          },
+          "outcome": 1,
+          "duration_ms": 44
+        },
+        {
+          "at": "2026-10-24T08:15:16.712Z",
+          "by_profession": "trader",
+          "context": [
+            "prices"
+          ],
+          "result": {
+            "rsi": 66.25,
+            "period": 14,
+            "signal": "neutral",
+            "samples": 16
+          },
+          "outcome": 1,
+          "duration_ms": 40
+        },
+        {
+          "at": "2026-10-24T08:15:21.798Z",
+          "by_profession": "trader",
+          "context": [
+            "prices"
+          ],
+          "result": {
+            "rsi": 66.25,
+            "period": 14,
+            "signal": "neutral",
+            "samples": 16
+          },
+          "outcome": 1,
+          "duration_ms": 41
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": "2026-10-24T08:15:21.798Z"
+    },
+    {
+      "key": "semantic_summarize_protocol",
+      "profession": "researcher",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "THINK",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "test_realskill_protocol",
+      "profession": "researcher",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.3,
+      "transferable": true,
+      "usage_history": [],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z"
+    },
+    {
+      "key": "text_summarizer_v2_protocol",
+      "profession": "researcher",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.35,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-24T08:15:22.015Z",
+          "by_profession": "researcher",
+          "context": [
+            "text"
+          ],
+          "result": {
+            "summary": "O organismo executa skills Python de verdade Cada skill e um subprocesso isolado que devolve JSON O contexto passa por arquivo quando excede 64KB",
+            "method": "frequency"
+          },
+          "outcome": 1,
+          "duration_ms": 47
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "manifest-backfill",
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": "2026-10-24T08:15:22.015Z"
     }
   ],
   "profession_chain": [
