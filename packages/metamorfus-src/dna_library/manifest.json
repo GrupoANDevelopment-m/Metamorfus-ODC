@@ -1,8 +1,8 @@
 {
   "state": {
-    "profession": "architect",
+    "profession": "physicist",
     "morph_focus": "THINK",
-    "cumulative_skill_count": 10,
+    "cumulative_skill_count": 44,
     "active_skill_keys": [
       "hypothesis_protocol",
       "experimental_design_protocol",
@@ -13,7 +13,41 @@
       "weather_read_protocol",
       "blueprint_protocol",
       "structural_analysis_protocol",
-      "material_selection_protocol"
+      "material_selection_protocol",
+      "evolved_analyze_pressure_gradient_protocol",
+      "arxiv_search_protocol",
+      "arxiv_search_v2_protocol",
+      "builtin_agent_reach_protocol",
+      "builtin_archify_protocol",
+      "builtin_browser_harness_protocol",
+      "builtin_browser_skill_protocol",
+      "builtin_browser_use_protocol",
+      "builtin_github_mcp_protocol",
+      "builtin_nginx_agent_protocol",
+      "builtin_nginx_skill_protocol",
+      "builtin_playwright_protocol",
+      "crypto_price_v2_protocol",
+      "incident_log_protocol",
+      "pdf_extract_protocol",
+      "port_scan_protocol",
+      "real_cve_lookup_protocol",
+      "real_http_header_audit_protocol",
+      "real_incident_logger_protocol",
+      "real_port_scanner_protocol",
+      "recon_protocol",
+      "rsi_calculator_v2_protocol",
+      "semantic_summarize_protocol",
+      "test_realskill_protocol",
+      "text_summarizer_v2_protocol",
+      "doctor_triage_protocol",
+      "doctor_differential_protocol",
+      "doctor_treatment_protocol",
+      "fraud_anomaly_protocol",
+      "fraud_network_protocol",
+      "fraud_report_protocol",
+      "physicist_dimensional_protocol",
+      "physicist_force_balance_protocol",
+      "physicist_wave_protocol"
     ],
     "retained_from_past_professions": [
       "hypothesis_protocol",
@@ -22,9 +56,59 @@
       "fell_tree_protocol",
       "sharpen_axe_protocol",
       "navigate_forest_protocol",
-      "weather_read_protocol"
+      "weather_read_protocol",
+      "blueprint_protocol",
+      "structural_analysis_protocol",
+      "material_selection_protocol",
+      "evolved_analyze_pressure_gradient_protocol",
+      "arxiv_search_protocol",
+      "arxiv_search_v2_protocol",
+      "builtin_agent_reach_protocol",
+      "builtin_archify_protocol",
+      "builtin_browser_harness_protocol",
+      "builtin_browser_skill_protocol",
+      "builtin_browser_use_protocol",
+      "builtin_github_mcp_protocol",
+      "builtin_nginx_agent_protocol",
+      "builtin_nginx_skill_protocol",
+      "builtin_playwright_protocol",
+      "crypto_price_v2_protocol",
+      "incident_log_protocol",
+      "pdf_extract_protocol",
+      "port_scan_protocol",
+      "real_cve_lookup_protocol",
+      "real_http_header_audit_protocol",
+      "real_incident_logger_protocol",
+      "real_port_scanner_protocol",
+      "recon_protocol",
+      "rsi_calculator_v2_protocol",
+      "semantic_summarize_protocol",
+      "test_realskill_protocol",
+      "text_summarizer_v2_protocol",
+      "doctor_triage_protocol",
+      "doctor_differential_protocol",
+      "doctor_treatment_protocol",
+      "fraud_anomaly_protocol",
+      "fraud_network_protocol",
+      "fraud_report_protocol"
     ],
-    "decayed_skills": []
+    "decayed_skills": [
+      "fell_tree_protocol",
+      "sharpen_axe_protocol",
+      "navigate_forest_protocol",
+      "weather_read_protocol",
+      "blueprint_protocol",
+      "structural_analysis_protocol",
+      "material_selection_protocol"
+    ],
+    "profession_chain": [
+      "scientist",
+      "lumberjack",
+      "architect",
+      "doctor",
+      "fraud_analyst",
+      "physicist"
+    ]
   },
   "skills": [
     {
@@ -36,7 +120,7 @@
       "source": "def skill(organism, context):\n    \"\"\"Form a falsifiable hypothesis from an observation.\n\n    Transferable: any deductive profession can use this.\n    Originally forged by: scientist.adopt\n    \"\"\"\n    observation = context.get(\"observation\", \"\")\n    return {\n        \"action\": \"FORM_HYPOTHESIS\",\n        \"intensity\": 0.6,\n        \"required_attributes\": {\"cpu\": 25},\n        \"version\": 1,\n        \"params\": {\"observation\": observation, \"falsifiable\": True}\n    }",
       "foraged_by": "scientist.adopt",
       "forged_at": "2026-09-17T16:55:12.274Z",
-      "mastery": 0.49839338127281085,
+      "mastery": 0.2062761085763495,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
@@ -51,7 +135,7 @@
       "source": "def skill(organism, context):\n    \"\"\"Design an experiment to test a hypothesis.\n\n    Transferable: any profession that needs controlled comparison.\n    Originally forged by: scientist.adopt\n    \"\"\"\n    hypothesis = context.get(\"hypothesis\", \"\")\n    return {\n        \"action\": \"DESIGN_EXPERIMENT\",\n        \"intensity\": 0.7,\n        \"required_attributes\": {\"cpu\": 40},\n        \"version\": 1,\n        \"params\": {\"hypothesis\": hypothesis, \"controls\": True}\n    }",
       "foraged_by": "scientist.adopt",
       "forged_at": "2026-09-17T16:55:12.280Z",
-      "mastery": 0.4983933844715142,
+      "mastery": 0.20627611023120718,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
@@ -66,7 +150,7 @@
       "source": "def skill(organism, context):\n    \"\"\"Review a colleague's claim for rigor.\n\n    NOT transferable: peer review is a social artifact of academic\n    science. A lumberjack doesn't peer-review trees.\n    Originally forged by: scientist.adopt\n    \"\"\"\n    claim = context.get(\"claim\", \"\")\n    return {\n        \"action\": \"PEER_REVIEW\",\n        \"intensity\": 0.5,\n        \"required_attributes\": {\"cpu\": 30},\n        \"version\": 1,\n        \"params\": {\"claim\": claim}\n    }",
       "foraged_by": "scientist.adopt",
       "forged_at": "2026-09-17T16:55:12.286Z",
-      "mastery": 0.4983933876702176,
+      "mastery": 0.20627611188606487,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
@@ -81,11 +165,11 @@
       "source": "def skill(organism, context):\n    \"\"\"Chop down a tree. Pure physical action.\n\n    NOT transferable outside forest-work contexts.\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    tree_id = context.get(\"tree_id\", \"\")\n    return {\n        \"action\": \"FELL_TREE\",\n        \"intensity\": 0.9,\n        \"required_attributes\": {\"strength\": 60, \"agility\": 20},\n        \"version\": 1,\n        \"params\": {\"tree_id\": tree_id}\n    }",
       "foraged_by": "lumberjack.adopt",
       "forged_at": "2026-09-17T16:55:12.305Z",
-      "mastery": 0.49839339779944536,
+      "mastery": 0.05,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
-      "status": "dormant"
+      "status": "decayed"
     },
     {
       "key": "sharpen_axe_protocol",
@@ -96,11 +180,11 @@
       "source": "def skill(organism, context):\n    \"\"\"Maintain the edge. Tool care.\n\n    NOT transferable outside tool-using contexts.\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    return {\n        \"action\": \"SHARPEN_AXE\",\n        \"intensity\": 0.4,\n        \"required_attributes\": {\"strength\": 10},\n        \"version\": 1\n    }",
       "foraged_by": "lumberjack.adopt",
       "forged_at": "2026-09-17T16:55:12.311Z",
-      "mastery": 0.4983934009981488,
+      "mastery": 0.05,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
-      "status": "dormant"
+      "status": "decayed"
     },
     {
       "key": "navigate_forest_protocol",
@@ -111,11 +195,11 @@
       "source": "def skill(organism, context):\n    \"\"\"Read trails, find bearings, return home.\n\n    Transferable: any outdoor profession (surveyor, ranger, hiker).\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    destination = context.get(\"destination\", \"\")\n    return {\n        \"action\": \"NAVIGATE_FOREST\",\n        \"intensity\": 0.5,\n        \"required_attributes\": {\"agility\": 30},\n        \"version\": 1,\n        \"params\": {\"destination\": destination}\n    }",
       "foraged_by": "lumberjack.adopt",
       "forged_at": "2026-09-17T16:55:12.317Z",
-      "mastery": 0.49839340419685235,
+      "mastery": 0.05,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
-      "status": "dormant"
+      "status": "decayed"
     },
     {
       "key": "weather_read_protocol",
@@ -126,11 +210,11 @@
       "source": "def skill(organism, context):\n    \"\"\"Read sky, wind, pressure to predict weather.\n\n    Transferable: anyone under the open sky (farmer, sailor, soldier).\n    Originally forged by: lumberjack.adopt\n    \"\"\"\n    return {\n        \"action\": \"READ_WEATHER\",\n        \"intensity\": 0.3,\n        \"required_attributes\": {\"cpu\": 10},\n        \"version\": 1\n    }",
       "foraged_by": "lumberjack.adopt",
       "forged_at": "2026-09-17T16:55:12.323Z",
-      "mastery": 0.498393407395556,
+      "mastery": 0.05,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
-      "status": "dormant"
+      "status": "decayed"
     },
     {
       "key": "blueprint_protocol",
@@ -141,11 +225,11 @@
       "source": "def skill(organism, context):\n    \"\"\"Draft a blueprint from a brief.\n\n    Transferable: any design profession (industrial designer, UX).\n    Originally forged by: architect.adopt\n    \"\"\"\n    brief = context.get(\"brief\", \"\")\n    return {\n        \"action\": \"DRAFT_BLUEPRINT\",\n        \"intensity\": 0.7,\n        \"required_attributes\": {\"cpu\": 50},\n        \"version\": 1,\n        \"params\": {\"brief\": brief}\n    }",
       "foraged_by": "architect.adopt",
       "forged_at": "2026-09-17T16:55:12.341Z",
-      "mastery": 0.4983934169916668,
+      "mastery": 0.13270500551825526,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
-      "status": "dormant"
+      "status": "decayed"
     },
     {
       "key": "structural_analysis_protocol",
@@ -156,11 +240,11 @@
       "source": "def skill(organism, context):\n    \"\"\"Compute load-bearing requirements.\n\n    NOT transferable outside building contexts.\n    Originally forged by: architect.adopt\n    \"\"\"\n    span = context.get(\"span_meters\", 0)\n    return {\n        \"action\": \"STRUCTURAL_ANALYSIS\",\n        \"intensity\": 0.8,\n        \"required_attributes\": {\"cpu\": 60},\n        \"version\": 1,\n        \"params\": {\"span_meters\": span}\n    }",
       "foraged_by": "architect.adopt",
       "forged_at": "2026-09-17T16:55:12.347Z",
-      "mastery": 0.49839342019037036,
+      "mastery": 0.13270500668934915,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
-      "status": "dormant"
+      "status": "decayed"
     },
     {
       "key": "material_selection_protocol",
@@ -171,11 +255,11 @@
       "source": "def skill(organism, context):\n    \"\"\"Pick materials from a constraint set.\n\n    NOT transferable outside material-handling contexts.\n    Originally forged by: architect.adopt\n    \"\"\"\n    constraints = context.get(\"constraints\", {})\n    return {\n        \"action\": \"SELECT_MATERIALS\",\n        \"intensity\": 0.6,\n        \"required_attributes\": {\"cpu\": 40},\n        \"version\": 1,\n        \"params\": {\"constraints\": constraints}\n    }",
       "foraged_by": "architect.adopt",
       "forged_at": "2026-09-17T16:55:12.352Z",
-      "mastery": 0.4983934228559567,
+      "mastery": 0.13270500766526072,
       "last_used_at": null,
       "usage_history": [],
       "reactivation_triggers": [],
-      "status": "dormant"
+      "status": "decayed"
     },
     {
       "key": "evolved_analyze_pressure_gradient_protocol",
@@ -183,8 +267,8 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "THINK",
-      "status": "active",
-      "mastery": 0.55,
+      "status": "dormant",
+      "mastery": 0.4942384295634837,
       "transferable": false,
       "usage_history": [
         {
@@ -219,15 +303,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "THINK",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "arxiv_search_v2_protocol",
@@ -235,15 +320,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "THINK",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_agent_reach_protocol",
@@ -251,15 +337,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_archify_protocol",
@@ -267,15 +354,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "THINK",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_browser_harness_protocol",
@@ -283,15 +371,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_browser_skill_protocol",
@@ -299,15 +388,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_browser_use_protocol",
@@ -315,15 +405,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_github_mcp_protocol",
@@ -331,15 +422,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_nginx_agent_protocol",
@@ -347,15 +439,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_nginx_skill_protocol",
@@ -363,15 +456,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "builtin_playwright_protocol",
@@ -379,15 +473,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "crypto_price_v2_protocol",
@@ -395,15 +490,43 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": 0.1,
       "transferable": true,
-      "usage_history": [],
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:00.508Z",
+          "by_profession": "trader",
+          "context": [
+            "symbol"
+          ],
+          "result": {
+            "prices": {},
+            "fetched_at": 1792963140.4930024
+          },
+          "outcome": 1,
+          "duration_ms": 311
+        },
+        {
+          "at": "2026-10-25T21:19:16.981Z",
+          "by_profession": "trader",
+          "context": [
+            "symbol"
+          ],
+          "result": {
+            "prices": {},
+            "fetched_at": 1792963156.9665318
+          },
+          "outcome": 1,
+          "duration_ms": 188
+        }
+      ],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": "2026-10-25T21:19:16.981Z"
     },
     {
       "key": "incident_log_protocol",
@@ -411,15 +534,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "pdf_extract_protocol",
@@ -427,15 +551,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "port_scan_protocol",
@@ -443,15 +568,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "real_cve_lookup_protocol",
@@ -459,15 +585,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "real_http_header_audit_protocol",
@@ -475,15 +602,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "real_incident_logger_protocol",
@@ -491,15 +619,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "real_port_scanner_protocol",
@@ -507,8 +636,8 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.35,
+      "status": "dormant",
+      "mastery": 0.3145153503900108,
       "transferable": true,
       "usage_history": [
         {
@@ -543,15 +672,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "rsi_calculator_v2_protocol",
@@ -559,8 +689,8 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.44999999999999996,
+      "status": "dormant",
+      "mastery": 0.5043768446851113,
       "transferable": true,
       "usage_history": [
         {
@@ -607,6 +737,36 @@
           },
           "outcome": 1,
           "duration_ms": 41
+        },
+        {
+          "at": "2026-10-25T21:19:00.562Z",
+          "by_profession": "trader",
+          "context": [
+            "prices"
+          ],
+          "result": {
+            "rsi": 66.25,
+            "period": 14,
+            "signal": "neutral",
+            "samples": 16
+          },
+          "outcome": 1,
+          "duration_ms": 44
+        },
+        {
+          "at": "2026-10-25T21:19:17.046Z",
+          "by_profession": "trader",
+          "context": [
+            "prices"
+          ],
+          "result": {
+            "rsi": 66.25,
+            "period": 14,
+            "signal": "neutral",
+            "samples": 16
+          },
+          "outcome": 1,
+          "duration_ms": 54
         }
       ],
       "reactivation_triggers": [
@@ -614,7 +774,7 @@
       ],
       "created_by": "manifest-backfill",
       "created_at": "2026-10-24T08:15:06.016Z",
-      "last_used_at": "2026-10-24T08:15:21.798Z"
+      "last_used_at": "2026-10-25T21:19:17.046Z"
     },
     {
       "key": "semantic_summarize_protocol",
@@ -622,15 +782,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "THINK",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "test_realskill_protocol",
@@ -638,15 +799,16 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.3,
+      "status": "dormant",
+      "mastery": null,
       "transferable": true,
       "usage_history": [],
       "reactivation_triggers": [
         "auto"
       ],
       "created_by": "manifest-backfill",
-      "created_at": "2026-10-24T08:15:06.016Z"
+      "created_at": "2026-10-24T08:15:06.016Z",
+      "last_used_at": null
     },
     {
       "key": "text_summarizer_v2_protocol",
@@ -654,8 +816,8 @@
       "version": 1,
       "runtime": "python",
       "morph_focus": "ACT",
-      "status": "active",
-      "mastery": 0.35,
+      "status": "dormant",
+      "mastery": 0.31451537839765387,
       "transferable": true,
       "usage_history": [
         {
@@ -678,12 +840,2088 @@
       "created_by": "manifest-backfill",
       "created_at": "2026-10-24T08:15:06.016Z",
       "last_used_at": "2026-10-24T08:15:22.015Z"
+    },
+    {
+      "key": "doctor_triage_protocol",
+      "profession": "doctor",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Classify patient acuity from vitals (RED/YELLOW/GREEN).\"\"\"\n    hr = float(context.get(\"heart_rate\", 80))\n    sbp = float(context.get(\"systolic_bp\", 120))\n    spo2 = float(context.get(\"spo2\", 98))\n    if spo2 < 90 or sbp < 90 or hr > 130:\n        acuity = \"RED\"\n    elif spo2 < 94 or sbp < 100 or hr > 110:\n        acuity = \"YELLOW\"\n    else:\n        acuity = \"GREEN\"\n    return {\"action\": \"TRIAGE_\" + acuity,\n            \"intensity\": 0.9 if acuity == \"RED\" else 0.5 if acuity == \"YELLOW\" else 0.2,\n            \"version\": 1,\n            \"result\": {\"acuity\": acuity, \"hr\": hr, \"sbp\": sbp, \"spo2\": spo2}}"
+      },
+      "foraged_by": "doctor.adopt",
+      "morph_focus": "THINK",
+      "mastery": 0.6499999839682976,
+      "last_used_at": "2026-10-25T21:19:17.115Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:16:11.871Z",
+          "by_profession": "doctor",
+          "context": [],
+          "result": {
+            "error": "invoker: failed to load skill module: [Errno 2] No such file or directory: '/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/doctor_triage_protocol.py'",
+            "traceback": "Traceback (most recent call last):\n  File \"/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/metamorfus-opencode/packages/metamorfus-src/server/skills/invoker.py\", line 61, in main\n    spec.loader.exec_module(module)\n  File \"<frozen importlib._bootstrap_external>\", line 936, in exec_module\n  File \"<frozen importlib._bootstrap_external>\", line 1073, in get_code\n  File \"<frozen importlib._bootstrap_external>\", line 1130, in get_data\nFileNotFoundError: [Errno 2] No such file or directory: '/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/doctor_triage_protocol.py'\n"
+          },
+          "outcome": -1,
+          "duration_ms": 112
+        },
+        {
+          "at": "2026-10-25T21:19:00.622Z",
+          "by_profession": "doctor",
+          "context": [
+            "vitals"
+          ],
+          "result": {
+            "action": "TRIAGE",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "acuity": "critical",
+              "score": 13,
+              "max_wait_minutes": 0,
+              "contributions": {
+                "respiratory_rate": 3,
+                "spo2": 3,
+                "systolic_bp": 3,
+                "pulse": 2,
+                "temperature": 2
+              },
+              "escalate": true,
+              "vitals_seen": {
+                "respiratory_rate": 26,
+                "spo2": 89,
+                "systolic_bp": 82,
+                "pulse": 128,
+                "consciousness": null,
+                "temperature": 39.4
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 51
+        },
+        {
+          "at": "2026-10-25T21:19:17.115Z",
+          "by_profession": "doctor",
+          "context": [
+            "vitals"
+          ],
+          "result": {
+            "action": "TRIAGE",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "acuity": "critical",
+              "score": 13,
+              "max_wait_minutes": 0,
+              "contributions": {
+                "respiratory_rate": 3,
+                "spo2": 3,
+                "systolic_bp": 3,
+                "pulse": 2,
+                "temperature": 2
+              },
+              "escalate": true,
+              "vitals_seen": {
+                "respiratory_rate": 26,
+                "spo2": 89,
+                "systolic_bp": 82,
+                "pulse": 128,
+                "consciousness": null,
+                "temperature": 39.4
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 50
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "triage",
+        "urgent",
+        "emergency",
+        "patient"
+      ],
+      "forged_at": "2026-10-25T21:16:11.740Z",
+      "status": "dormant"
+    },
+    {
+      "key": "doctor_differential_protocol",
+      "profession": "doctor",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Rank candidate diagnoses by symptom match count.\"\"\"\n    candidates = context.get(\"candidates\", [])\n    symptoms = set(context.get(\"symptoms\", []))\n    ranked = []\n    for c in candidates:\n        cs = set(c.get(\"symptoms\", []))\n        overlap = len(symptoms & cs)\n        ranked.append({\"diagnosis\": c.get(\"name\"), \"match\": overlap, \"total\": len(cs)})\n    ranked.sort(key=lambda r: -r[\"match\"])\n    return {\"action\": \"DIFFERENTIAL\", \"intensity\": 0.6, \"version\": 1,\n            \"result\": {\"ranked\": ranked[:5]}}"
+      },
+      "foraged_by": "doctor.adopt",
+      "morph_focus": "THINK",
+      "mastery": 0.5999999503939832,
+      "last_used_at": "2026-10-25T21:19:17.167Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:00.686Z",
+          "by_profession": "doctor",
+          "context": [
+            "findings"
+          ],
+          "result": {
+            "action": "DIFFERENTIAL",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "candidates": [
+                {
+                  "condition": "pneumonia",
+                  "score": 13,
+                  "normalised": 1,
+                  "supporting_findings": [
+                    "fever",
+                    "cough",
+                    "hypoxia",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "unsupported_by": [],
+                  "probability": 0.619
+                },
+                {
+                  "condition": "sepsis",
+                  "score": 5,
+                  "normalised": 0.2778,
+                  "supporting_findings": [
+                    "fever",
+                    "tachypnea"
+                  ],
+                  "unsupported_by": [
+                    "cough",
+                    "hypoxia",
+                    "crackles"
+                  ],
+                  "probability": 0.2381
+                },
+                {
+                  "condition": "pulmonary_embolism",
+                  "score": 3,
+                  "normalised": 0.25,
+                  "supporting_findings": [
+                    "hypoxia"
+                  ],
+                  "unsupported_by": [
+                    "fever",
+                    "cough",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "probability": 0.1429
+                }
+              ],
+              "top": "pneumonia",
+              "top_probability": 0.619,
+              "margin_over_second": 8,
+              "decisive": true,
+              "findings_used": [
+                "fever",
+                "cough",
+                "hypoxia",
+                "tachypnea",
+                "crackles"
+              ],
+              "next_best_test": {
+                "finding": "rash",
+                "would_support_against": "sepsis",
+                "weight": 1
+              },
+              "unexplained_findings": []
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 54
+        },
+        {
+          "at": "2026-10-25T21:19:17.167Z",
+          "by_profession": "doctor",
+          "context": [
+            "findings"
+          ],
+          "result": {
+            "action": "DIFFERENTIAL",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "candidates": [
+                {
+                  "condition": "pneumonia",
+                  "score": 13,
+                  "normalised": 1,
+                  "supporting_findings": [
+                    "fever",
+                    "cough",
+                    "hypoxia",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "unsupported_by": [],
+                  "probability": 0.619
+                },
+                {
+                  "condition": "sepsis",
+                  "score": 5,
+                  "normalised": 0.2778,
+                  "supporting_findings": [
+                    "fever",
+                    "tachypnea"
+                  ],
+                  "unsupported_by": [
+                    "cough",
+                    "hypoxia",
+                    "crackles"
+                  ],
+                  "probability": 0.2381
+                },
+                {
+                  "condition": "pulmonary_embolism",
+                  "score": 3,
+                  "normalised": 0.25,
+                  "supporting_findings": [
+                    "hypoxia"
+                  ],
+                  "unsupported_by": [
+                    "fever",
+                    "cough",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "probability": 0.1429
+                }
+              ],
+              "top": "pneumonia",
+              "top_probability": 0.619,
+              "margin_over_second": 8,
+              "decisive": true,
+              "findings_used": [
+                "fever",
+                "cough",
+                "hypoxia",
+                "tachypnea",
+                "crackles"
+              ],
+              "next_best_test": {
+                "finding": "rash",
+                "would_support_against": "sepsis",
+                "weight": 1
+              },
+              "unexplained_findings": []
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "differential",
+        "diagnosis",
+        "symptoms",
+        "disease"
+      ],
+      "forged_at": "2026-10-25T21:16:11.740Z",
+      "status": "dormant"
+    },
+    {
+      "key": "doctor_treatment_protocol",
+      "profession": "doctor",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Recommend first-line treatment for a diagnosis.\"\"\"\n    diagnosis = str(context.get(\"diagnosis\", \"\")).lower()\n    db = {\n        \"hypertension\":       [\"ACE inhibitor\", \"lifestyle change\", \"follow-up 4w\"],\n        \"type 2 diabetes\":    [\"metformin\", \"diet\", \"HbA1c q3mo\"],\n        \"asthma exacerbation\":[\"short-acting beta-agonist\", \"oral corticosteroid\"],\n    }\n    plan = db.get(diagnosis, [\"consult specialist\", \"supportive care\"])\n    return {\"action\": \"TREATMENT_PLAN\", \"intensity\": 0.7, \"version\": 1,\n            \"result\": {\"diagnosis\": diagnosis, \"plan\": plan}}"
+      },
+      "foraged_by": "doctor.adopt",
+      "morph_focus": "THINK",
+      "mastery": 0.5999999503939832,
+      "last_used_at": "2026-10-25T21:19:17.249Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:00.764Z",
+          "by_profession": "doctor",
+          "context": [
+            "treatment",
+            "allergies",
+            "conditions",
+            "age",
+            "weight_kg",
+            "creatinine_mgdl"
+          ],
+          "result": {
+            "error": "invoker: skill raised: name 'crl' is not defined",
+            "traceback": "Traceback (most recent call last):\n  File \"/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/metamorfus-opencode/packages/metamorfus-src/server/skills/invoker.py\", line 74, in main\n    result = module.skill({}, context)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/doctor_treatment_protocol.py\", line 132, in skill\n    \"crcl_ml_min\": round(crl, 1) if crcl is not None else None,\n                         ^^^\nNameError: name 'crl' is not defined\n"
+          },
+          "outcome": -1,
+          "duration_ms": 66
+        },
+        {
+          "at": "2026-10-25T21:19:17.249Z",
+          "by_profession": "doctor",
+          "context": [
+            "treatment",
+            "allergies",
+            "conditions",
+            "age",
+            "weight_kg",
+            "creatinine_mgdl"
+          ],
+          "result": {
+            "action": "TREATMENT",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "ok": false,
+              "drug": "metformin",
+              "original_dose": 1000,
+              "recommended_dose": 0,
+              "dose_adjustment_factor": 0,
+              "crcl_ml_min": 28.4,
+              "blocks": [
+                "contraindicated with renal_failure"
+              ],
+              "cautions": [
+                "renal impairment: reduce or withhold dose"
+              ],
+              "notes": [
+                "Contraindicated below eGFR 30; hold around contrast imaging."
+              ],
+              "requires_review": true
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 71
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "treatment",
+        "therapy",
+        "prescription",
+        "patient"
+      ],
+      "forged_at": "2026-10-25T21:16:11.740Z",
+      "status": "dormant"
+    },
+    {
+      "key": "fraud_anomaly_protocol",
+      "profession": "fraud_analyst",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Flag transactions > 3 standard deviations from the mean amount.\"\"\"\n    txs = context.get(\"transactions\", [])\n    if len(txs) < 2:\n        return {\"action\": \"ANOMALY_SCAN\", \"intensity\": 0.0, \"version\": 1,\n                \"result\": {\"flagged\": [], \"flagged_count\": 0, \"reason\": \"insufficient data\"}}\n    amounts = [float(t.get(\"amount\", 0)) for t in txs]\n    mean = sum(amounts) / len(amounts)\n    var = sum((a - mean) ** 2 for a in amounts) / len(amounts)\n    sd = var ** 0.5\n    flagged = [t for t in txs if abs(float(t.get(\"amount\", 0)) - mean) > 3 * sd]\n    return {\"action\": \"ANOMALY_SCAN\", \"intensity\": 0.7, \"version\": 1,\n            \"result\": {\"mean\": round(mean, 2),\n                       \"stdev\": round(sd, 2),\n                       \"flagged\": flagged[:20],\n                       \"flagged_count\": len(flagged)}}"
+      },
+      "foraged_by": "fraud_analyst.adopt",
+      "morph_focus": "HUNT",
+      "mastery": 0.6499999988233613,
+      "last_used_at": "2026-10-25T21:19:17.343Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:16:11.951Z",
+          "by_profession": "fraud_analyst",
+          "context": [],
+          "result": {
+            "error": "invoker: failed to load skill module: [Errno 2] No such file or directory: '/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/fraud_anomaly_protocol.py'",
+            "traceback": "Traceback (most recent call last):\n  File \"/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/metamorfus-opencode/packages/metamorfus-src/server/skills/invoker.py\", line 61, in main\n    spec.loader.exec_module(module)\n  File \"<frozen importlib._bootstrap_external>\", line 936, in exec_module\n  File \"<frozen importlib._bootstrap_external>\", line 1073, in get_code\n  File \"<frozen importlib._bootstrap_external>\", line 1130, in get_data\nFileNotFoundError: [Errno 2] No such file or directory: '/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/fraud_anomaly_protocol.py'\n"
+          },
+          "outcome": -1,
+          "duration_ms": 44
+        },
+        {
+          "at": "2026-10-25T21:19:00.835Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_ANOMALY_SCAN",
+            "intensity": 0.333,
+            "version": 1,
+            "result": {
+              "flagged": [
+                "t2"
+              ],
+              "flagged_count": 1,
+              "scored": 3,
+              "threshold": 0.5,
+              "mean": 16674,
+              "stdev": 23565.04,
+              "median": 12,
+              "top_risks": [
+                {
+                  "id": "t2",
+                  "amount": 50000,
+                  "risk": 0.85,
+                  "reasons": [
+                    "amount outlier (z=16858.22)",
+                    "off-hours 3",
+                    "drains 98% of balance"
+                  ]
+                },
+                {
+                  "id": "t1",
+                  "amount": 10,
+                  "risk": 0,
+                  "reasons": []
+                },
+                {
+                  "id": "t3",
+                  "amount": 12,
+                  "risk": 0,
+                  "reasons": []
+                }
+              ],
+              "detectors": [
+                "amount_outlier",
+                "merchant_rarity",
+                "unusual_hour",
+                "balance_drain"
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 62
+        },
+        {
+          "at": "2026-10-25T21:19:17.343Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_ANOMALY_SCAN",
+            "intensity": 0.333,
+            "version": 1,
+            "result": {
+              "flagged": [
+                "t2"
+              ],
+              "flagged_count": 1,
+              "scored": 3,
+              "threshold": 0.5,
+              "mean": 16674,
+              "stdev": 23565.04,
+              "median": 12,
+              "top_risks": [
+                {
+                  "id": "t2",
+                  "amount": 50000,
+                  "risk": 0.85,
+                  "reasons": [
+                    "amount outlier (z=16858.22)",
+                    "off-hours 3",
+                    "drains 98% of balance"
+                  ]
+                },
+                {
+                  "id": "t1",
+                  "amount": 10,
+                  "risk": 0,
+                  "reasons": []
+                },
+                {
+                  "id": "t3",
+                  "amount": 12,
+                  "risk": 0,
+                  "reasons": []
+                }
+              ],
+              "detectors": [
+                "amount_outlier",
+                "merchant_rarity",
+                "unusual_hour",
+                "balance_drain"
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 49
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "anomaly",
+        "fraud",
+        "suspicious",
+        "transaction"
+      ],
+      "forged_at": "2026-10-25T21:16:11.892Z",
+      "status": "dormant"
+    },
+    {
+      "key": "fraud_network_protocol",
+      "profession": "fraud_analyst",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Count connections per node in a transaction graph.\"\"\"\n    edges = context.get(\"edges\", [])\n    deg = {}\n    for pair in edges:\n        if not isinstance(pair, (list, tuple)) or len(pair) != 2: continue\n        src, dst = pair\n        deg[src] = deg.get(src, 0) + 1\n        deg[dst] = deg.get(dst, 0) + 1\n    hubs = sorted(deg.items(), key=lambda kv: -kv[1])[:5]\n    return {\"action\": \"NETWORK_ANALYSIS\", \"intensity\": 0.6, \"version\": 1,\n            \"result\": {\"hubs\": hubs, \"nodes\": len(deg), \"edges\": len(edges)}}"
+      },
+      "foraged_by": "fraud_analyst.adopt",
+      "morph_focus": "HUNT",
+      "mastery": 0.5999999910415007,
+      "last_used_at": "2026-10-25T21:19:17.397Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:00.900Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_NETWORK",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "accounts": 4,
+              "edges": 4,
+              "total_flow": 3500,
+              "suspicious": [],
+              "top_central": [
+                {
+                  "account": "C",
+                  "centrality": 0.2679,
+                  "degree": 3,
+                  "triangles": 0,
+                  "sends": 2,
+                  "receives": 1,
+                  "flow": 2500,
+                  "role": "hub"
+                },
+                {
+                  "account": "B",
+                  "centrality": 0.2143,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 2000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "A",
+                  "centrality": 0.2143,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 2000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "D",
+                  "centrality": 0.0536,
+                  "degree": 1,
+                  "triangles": 0,
+                  "sends": 0,
+                  "receives": 1,
+                  "flow": 500,
+                  "role": "leaf"
+                }
+              ],
+              "mules": [],
+              "threshold": 0.4
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 55
+        },
+        {
+          "at": "2026-10-25T21:19:17.397Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_NETWORK",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "accounts": 4,
+              "edges": 4,
+              "total_flow": 3500,
+              "suspicious": [],
+              "top_central": [
+                {
+                  "account": "C",
+                  "centrality": 0.2679,
+                  "degree": 3,
+                  "triangles": 0,
+                  "sends": 2,
+                  "receives": 1,
+                  "flow": 2500,
+                  "role": "hub"
+                },
+                {
+                  "account": "A",
+                  "centrality": 0.2143,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 2000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "B",
+                  "centrality": 0.2143,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 2000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "D",
+                  "centrality": 0.0536,
+                  "degree": 1,
+                  "triangles": 0,
+                  "sends": 0,
+                  "receives": 1,
+                  "flow": 500,
+                  "role": "leaf"
+                }
+              ],
+              "mules": [],
+              "threshold": 0.4
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "network",
+        "graph",
+        "connections",
+        "fraud"
+      ],
+      "forged_at": "2026-10-25T21:16:11.892Z",
+      "status": "dormant"
+    },
+    {
+      "key": "fraud_report_protocol",
+      "profession": "fraud_analyst",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Compose a fraud compliance report from scan + network results.\"\"\"\n    scan = context.get(\"scan\", {})\n    network = context.get(\"network\", {})\n    top_hub = network.get(\"hubs\", [[\"?\", 0]])[0]\n    body = (f\"Flagged {scan.get('flagged_count', 0)} anomalous transactions \"\n            f\"(mean {scan.get('mean', 0)}, sd {scan.get('stdev', 0)}). \"\n            f\"Top hub: {top_hub[0]} with {top_hub[1]} connections.\")\n    return {\"action\": \"FRAUD_REPORT\", \"intensity\": 0.7, \"version\": 1,\n            \"result\": {\"report\": body}}"
+      },
+      "foraged_by": "fraud_analyst.adopt",
+      "morph_focus": "HUNT",
+      "mastery": 0.5999999910415007,
+      "last_used_at": "2026-10-25T21:19:17.449Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:00.960Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_REPORT",
+            "intensity": 0.3,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "severity": "medium",
+              "recommended_action": "manual_review",
+              "confidence": 0.3,
+              "confidence_basis": "1 independent detector(s) fired",
+              "transactions_analysed": 2,
+              "flagged_count": 0,
+              "flagged_ids": [],
+              "estimated_loss": 0,
+              "evidence": [
+                {
+                  "finding": "1 transaction(s) drain over 90% of the origin balance",
+                  "weight": 0.3,
+                  "kind": "balance_drain"
+                }
+              ],
+              "type_distribution": {
+                "CASH_IN": 1,
+                "TRANSFER": 1
+              },
+              "outliers_by_type": {},
+              "median_amount": 45005,
+              "robust_sigma": 66709.59,
+              "repeat_merchants": {},
+              "balance_drains": 1
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 51
+        },
+        {
+          "at": "2026-10-25T21:19:17.449Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_REPORT",
+            "intensity": 0.3,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "severity": "medium",
+              "recommended_action": "manual_review",
+              "confidence": 0.3,
+              "confidence_basis": "1 independent detector(s) fired",
+              "transactions_analysed": 2,
+              "flagged_count": 0,
+              "flagged_ids": [],
+              "estimated_loss": 0,
+              "evidence": [
+                {
+                  "finding": "1 transaction(s) drain over 90% of the origin balance",
+                  "weight": 0.3,
+                  "kind": "balance_drain"
+                }
+              ],
+              "type_distribution": {
+                "CASH_IN": 1,
+                "TRANSFER": 1
+              },
+              "outliers_by_type": {},
+              "median_amount": 45005,
+              "robust_sigma": 66709.59,
+              "repeat_merchants": {},
+              "balance_drains": 1
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "report",
+        "fraud",
+        "summary",
+        "compliance"
+      ],
+      "forged_at": "2026-10-25T21:16:11.892Z",
+      "status": "dormant"
+    },
+    {
+      "key": "physicist_dimensional_protocol",
+      "profession": "physicist",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Parse a dimensional expression and return SI exponents.\"\"\"\n    import re\n    expr = str(context.get(\"expression\", \"\"))\n    base = {\"kg\": 0, \"m\": 0, \"s\": 0, \"K\": 0, \"A\": 0, \"mol\": 0, \"cd\": 0}\n    for sym, exp in re.findall(r\"(kg|m|s|K|A|mol|cd)\\^(-?\\d+)\", expr):\n        if sym in base: base[sym] += int(exp)\n    for sym in re.findall(r\"(?<!\\^)(kg|m|s|K|A|mol|cd)(?!\\^)\", expr):\n        if sym in base: base[sym] += 1\n    return {\"action\": \"DIMENSIONAL\", \"intensity\": 0.5, \"version\": 1,\n            \"result\": {\"expression\": expr, \"dimensions\": base}}"
+      },
+      "foraged_by": "physicist.adopt",
+      "morph_focus": "THINK",
+      "mastery": 0.6500000000000001,
+      "last_used_at": "2026-10-25T21:19:17.503Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:16:12.019Z",
+          "by_profession": "physicist",
+          "context": [],
+          "result": {
+            "error": "invoker: failed to load skill module: [Errno 2] No such file or directory: '/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/physicist_dimensional_protocol.py'",
+            "traceback": "Traceback (most recent call last):\n  File \"/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/metamorfus-opencode/packages/metamorfus-src/server/skills/invoker.py\", line 61, in main\n    spec.loader.exec_module(module)\n  File \"<frozen importlib._bootstrap_external>\", line 936, in exec_module\n  File \"<frozen importlib._bootstrap_external>\", line 1073, in get_code\n  File \"<frozen importlib._bootstrap_external>\", line 1130, in get_data\nFileNotFoundError: [Errno 2] No such file or directory: '/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/physicist_dimensional_protocol.py'\n"
+          },
+          "outcome": -1,
+          "duration_ms": 46
+        },
+        {
+          "at": "2026-10-25T21:19:01.021Z",
+          "by_profession": "physicist",
+          "context": [
+            "unit",
+            "value"
+          ],
+          "result": {
+            "action": "DIMENSIONAL_ANALYSIS",
+            "intensity": 0.5,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "dimensions": {
+                "length": 2,
+                "mass": 1,
+                "time": -2
+              },
+              "description": "length^2 * mass * time^-2",
+              "dimensionless": false,
+              "value": 1
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 52
+        },
+        {
+          "at": "2026-10-25T21:19:17.503Z",
+          "by_profession": "physicist",
+          "context": [
+            "unit",
+            "value"
+          ],
+          "result": {
+            "action": "DIMENSIONAL_ANALYSIS",
+            "intensity": 0.5,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "dimensions": {
+                "length": 2,
+                "mass": 1,
+                "time": -2
+              },
+              "description": "length^2 * mass * time^-2",
+              "dimensionless": false,
+              "value": 1
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 43
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "dimension",
+        "units",
+        "physics",
+        "consistency"
+      ],
+      "forged_at": "2026-10-25T21:16:11.959Z",
+      "status": "dormant"
+    },
+    {
+      "key": "physicist_force_balance_protocol",
+      "profession": "physicist",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Sum forces on a body in 1D and report equilibrium.\"\"\"\n    forces = [float(f) for f in context.get(\"forces_n\", [])]\n    net = sum(forces)\n    return {\"action\": \"EQUILIBRIUM\" if abs(net) < 1e-6 else \"UNBALANCED\",\n            \"intensity\": 0.5, \"version\": 1,\n            \"result\": {\"net_force_n\": round(net, 6), \"count\": len(forces)}}"
+      },
+      "foraged_by": "physicist.adopt",
+      "morph_focus": "THINK",
+      "mastery": 0.6000000000000001,
+      "last_used_at": "2026-10-25T21:19:17.556Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.085Z",
+          "by_profession": "physicist",
+          "context": [
+            "forces",
+            "pivot"
+          ],
+          "result": {
+            "action": "FORCE_BALANCE",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "balanced": true,
+              "resultant_force": 0,
+              "sum_fx": 0,
+              "sum_fy": 0,
+              "sum_fz": 0,
+              "net_moment": 0,
+              "pivot": [
+                0,
+                0
+              ],
+              "forces_counted": 2,
+              "tolerance": 0.000001
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 54
+        },
+        {
+          "at": "2026-10-25T21:19:17.556Z",
+          "by_profession": "physicist",
+          "context": [
+            "forces",
+            "pivot"
+          ],
+          "result": {
+            "action": "FORCE_BALANCE",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "balanced": true,
+              "resultant_force": 0,
+              "sum_fx": 0,
+              "sum_fy": 0,
+              "sum_fz": 0,
+              "net_moment": 0,
+              "pivot": [
+                0,
+                0
+              ],
+              "forces_counted": 2,
+              "tolerance": 0.000001
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 42
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "force",
+        "balance",
+        "equilibrium",
+        "physics"
+      ],
+      "forged_at": "2026-10-25T21:16:11.959Z",
+      "status": "dormant"
+    },
+    {
+      "key": "physicist_wave_protocol",
+      "profession": "physicist",
+      "version": 1,
+      "runtime": "python",
+      "payload": {
+        "source": "def skill(organism, context):\n    \"\"\"Compute wave speed c = f * lambda.\"\"\"\n    f = float(context.get(\"frequency_hz\", 0))\n    lam = float(context.get(\"wavelength_m\", 0))\n    c = f * lam\n    return {\"action\": \"WAVE_SPEED\", \"intensity\": 0.5, \"version\": 1,\n            \"result\": {\"speed_m_s\": round(c, 4),\n                       \"frequency_hz\": f,\n                       \"wavelength_m\": lam}}"
+      },
+      "foraged_by": "physicist.adopt",
+      "morph_focus": "THINK",
+      "mastery": 0.6000000000000001,
+      "last_used_at": "2026-10-25T21:19:17.609Z",
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.147Z",
+          "by_profession": "physicist",
+          "context": [
+            "wave1",
+            "wave2",
+            "depth"
+          ],
+          "result": {
+            "action": "WAVE_ANALYSIS",
+            "intensity": 0.583,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "resulting_height": 3.5,
+              "largest_input": 2,
+              "constructive": true,
+              "total_energy_flux_w_m": 10788.97,
+              "components": [
+                {
+                  "period": 8,
+                  "height": 2,
+                  "phase": 0,
+                  "wavenumber": 0.06288,
+                  "energy_flux_w_m": 6165.13
+                },
+                {
+                  "period": 6,
+                  "height": 1.5,
+                  "phase": 0,
+                  "wavenumber": 0.111786,
+                  "energy_flux_w_m": 4623.84
+                }
+              ],
+              "shoaling": {
+                "depth_m": 20,
+                "coeff_ks": 1.149,
+                "shoaled_height": 2.2981,
+                "wavelength_m": 92.147,
+                "kh": 1.2576,
+                "shallow_water": false
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 52
+        },
+        {
+          "at": "2026-10-25T21:19:17.609Z",
+          "by_profession": "physicist",
+          "context": [
+            "wave1",
+            "wave2",
+            "depth"
+          ],
+          "result": {
+            "action": "WAVE_ANALYSIS",
+            "intensity": 0.583,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "resulting_height": 3.5,
+              "largest_input": 2,
+              "constructive": true,
+              "total_energy_flux_w_m": 10788.97,
+              "components": [
+                {
+                  "period": 8,
+                  "height": 2,
+                  "phase": 0,
+                  "wavenumber": 0.06288,
+                  "energy_flux_w_m": 6165.13
+                },
+                {
+                  "period": 6,
+                  "height": 1.5,
+                  "phase": 0,
+                  "wavenumber": 0.111786,
+                  "energy_flux_w_m": 4623.84
+                }
+              ],
+              "shoaling": {
+                "depth_m": 20,
+                "coeff_ks": 1.149,
+                "shoaled_height": 2.2981,
+                "wavelength_m": 92.147,
+                "kh": 1.2576,
+                "shallow_water": false
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 42
+        }
+      ],
+      "transferable": false,
+      "reactivation_triggers": [
+        "wave",
+        "frequency",
+        "wavelength",
+        "physics"
+      ],
+      "forged_at": "2026-10-25T21:16:11.959Z",
+      "status": "dormant"
+    },
+    {
+      "key": "analyze_pressure_gradient_protocol",
+      "profession": "meteorologist",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.216Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "stations"
+          ],
+          "result": {
+            "action": "PRESSURE_GRADIENT",
+            "intensity": 0.572,
+            "version": 1,
+            "result": {
+              "gradients": [
+                {
+                  "from": "a",
+                  "to": "b",
+                  "distance_km": 157.23,
+                  "delta_pressure": -11,
+                  "gradient_hpa_per_km": -0.06996,
+                  "geostrophic_wind_ms": 1496002,
+                  "direction": "high_to_low"
+                },
+                {
+                  "from": "a",
+                  "to": "c",
+                  "distance_km": 314.4,
+                  "delta_pressure": -18,
+                  "gradient_hpa_per_km": -0.05725,
+                  "geostrophic_wind_ms": 918222.7,
+                  "direction": "high_to_low"
+                },
+                {
+                  "from": "b",
+                  "to": "c",
+                  "distance_km": 157.18,
+                  "delta_pressure": -7,
+                  "gradient_hpa_per_km": -0.04454,
+                  "geostrophic_wind_ms": 571490.82,
+                  "direction": "high_to_low"
+                }
+              ],
+              "computed": 3,
+              "mean_abs_gradient": 0.05725,
+              "anomalous_pairs": 2,
+              "strongest": {
+                "from": "a",
+                "to": "b",
+                "distance_km": 157.23,
+                "delta_pressure": -11,
+                "gradient_hpa_per_km": -0.06996,
+                "geostrophic_wind_ms": 1496002,
+                "direction": "high_to_low"
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 59
+        },
+        {
+          "at": "2026-10-25T21:19:17.663Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "stations"
+          ],
+          "result": {
+            "action": "PRESSURE_GRADIENT",
+            "intensity": 0.572,
+            "version": 1,
+            "result": {
+              "gradients": [
+                {
+                  "from": "a",
+                  "to": "b",
+                  "distance_km": 157.23,
+                  "delta_pressure": -11,
+                  "gradient_hpa_per_km": -0.06996,
+                  "geostrophic_wind_ms": 1496002,
+                  "direction": "high_to_low"
+                },
+                {
+                  "from": "a",
+                  "to": "c",
+                  "distance_km": 314.4,
+                  "delta_pressure": -18,
+                  "gradient_hpa_per_km": -0.05725,
+                  "geostrophic_wind_ms": 918222.7,
+                  "direction": "high_to_low"
+                },
+                {
+                  "from": "b",
+                  "to": "c",
+                  "distance_km": 157.18,
+                  "delta_pressure": -7,
+                  "gradient_hpa_per_km": -0.04454,
+                  "geostrophic_wind_ms": 571490.82,
+                  "direction": "high_to_low"
+                }
+              ],
+              "computed": 3,
+              "mean_abs_gradient": 0.05725,
+              "anomalous_pairs": 2,
+              "strongest": {
+                "from": "a",
+                "to": "b",
+                "distance_km": 157.23,
+                "delta_pressure": -11,
+                "gradient_hpa_per_km": -0.06996,
+                "geostrophic_wind_ms": 1496002,
+                "direction": "high_to_low"
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 42
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:17.663Z"
+    },
+    {
+      "key": "archaeo_artifact_inference_protocol",
+      "profession": "archaeologist",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.278Z",
+          "by_profession": "archaeologist",
+          "context": [
+            "material",
+            "form",
+            "findings"
+          ],
+          "result": {
+            "action": "ARTIFACT_INFERENCE",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "material": "bronze",
+              "form": "socketed axe",
+              "technology": "furnace_smelted",
+              "plausible_technologies": [
+                "furnace_smelted",
+                "cast_metal",
+                "hand_worked_metal"
+              ],
+              "evidence": [
+                {
+                  "trace": "casting_sprue",
+                  "implies": "cast_metal"
+                },
+                {
+                  "trace": "annealing",
+                  "implies": "furnace_smelted"
+                }
+              ],
+              "estimated_labour_hours": 69,
+              "social_context": "specialised_workshop",
+              "confidence": 0.7
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 52
+        },
+        {
+          "at": "2026-10-25T21:19:17.714Z",
+          "by_profession": "archaeologist",
+          "context": [
+            "material",
+            "form",
+            "findings"
+          ],
+          "result": {
+            "action": "ARTIFACT_INFERENCE",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "material": "bronze",
+              "form": "socketed axe",
+              "technology": "furnace_smelted",
+              "plausible_technologies": [
+                "furnace_smelted",
+                "cast_metal",
+                "hand_worked_metal"
+              ],
+              "evidence": [
+                {
+                  "trace": "casting_sprue",
+                  "implies": "cast_metal"
+                },
+                {
+                  "trace": "annealing",
+                  "implies": "furnace_smelted"
+                }
+              ],
+              "estimated_labour_hours": 69,
+              "social_context": "specialised_workshop",
+              "confidence": 0.7
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:17.714Z"
+    },
+    {
+      "key": "archaeo_chronology_protocol",
+      "profession": "archaeologist",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.341Z",
+          "by_profession": "archaeologist",
+          "context": [
+            "items"
+          ],
+          "result": {
+            "action": "CHRONOLOGY",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": false,
+              "error": "no parsable dates found",
+              "undated": [
+                {
+                  "id": "a",
+                  "raw_date": "1500 AD",
+                  "contains": [
+                    "b"
+                  ],
+                  "within": [],
+                  "material": ""
+                },
+                {
+                  "id": "b",
+                  "raw_date": "1200 AD",
+                  "contains": [],
+                  "within": [],
+                  "material": ""
+                }
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 54
+        },
+        {
+          "at": "2026-10-25T21:19:17.770Z",
+          "by_profession": "archaeologist",
+          "context": [
+            "items"
+          ],
+          "result": {
+            "action": "CHRONOLOGY",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": false,
+              "error": "no parsable dates found",
+              "undated": [
+                {
+                  "id": "a",
+                  "raw_date": "1500 AD",
+                  "contains": [
+                    "b"
+                  ],
+                  "within": [],
+                  "material": ""
+                },
+                {
+                  "id": "b",
+                  "raw_date": "1200 AD",
+                  "contains": [],
+                  "within": [],
+                  "material": ""
+                }
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 45
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:17.770Z"
+    },
+    {
+      "key": "archaeo_stratigraphy_protocol",
+      "profession": "archaeologist",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.510Z",
+          "by_profession": "archaeologist",
+          "context": [
+            "contexts"
+          ],
+          "result": {
+            "action": "STRATIGRAPHY",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "contexts": 3,
+              "sequence": [
+                "c1"
+              ],
+              "phases": [
+                [
+                  "c1"
+                ]
+              ],
+              "conflicts": [],
+              "relationship_count": 2,
+              "earliest": "c1",
+              "latest": "c1"
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 160
+        },
+        {
+          "at": "2026-10-25T21:19:17.822Z",
+          "by_profession": "archaeologist",
+          "context": [
+            "contexts"
+          ],
+          "result": {
+            "action": "STRATIGRAPHY",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "contexts": 3,
+              "sequence": [
+                "c1"
+              ],
+              "phases": [
+                [
+                  "c1"
+                ]
+              ],
+              "conflicts": [],
+              "relationship_count": 2,
+              "earliest": "c1",
+              "latest": "c1"
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:17.822Z"
+    },
+    {
+      "key": "engineer_load_calc_protocol",
+      "profession": "engineer",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.572Z",
+          "by_profession": "engineer",
+          "context": [
+            "loads",
+            "section",
+            "material"
+          ],
+          "result": {
+            "action": "LOAD_CALC",
+            "intensity": 0.013,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "utilisation": 0.013,
+              "von_mises_pa": 2225220.2,
+              "allowable_pa": 166666666.66666666,
+              "section_properties": {
+                "I_m4": 0.0003375,
+                "Z_m3": 0.00225,
+                "area_m2": 0.045,
+                "type": "rectangle"
+              },
+              "checks": {
+                "bending": {
+                  "value": 2222222.22,
+                  "utilisation": 0.013
+                },
+                "shear": {
+                  "value": 66666.67,
+                  "utilisation": 0
+                },
+                "axial": {
+                  "value": 0,
+                  "utilisation": 0
+                }
+              },
+              "deflection_m": 0.00003125,
+              "max_deflection_m": 0.008333333333333333,
+              "governing": "bending"
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 52
+        },
+        {
+          "at": "2026-10-25T21:19:17.875Z",
+          "by_profession": "engineer",
+          "context": [
+            "loads",
+            "section",
+            "material"
+          ],
+          "result": {
+            "action": "LOAD_CALC",
+            "intensity": 0.013,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "utilisation": 0.013,
+              "von_mises_pa": 2225220.2,
+              "allowable_pa": 166666666.66666666,
+              "section_properties": {
+                "I_m4": 0.0003375,
+                "Z_m3": 0.00225,
+                "area_m2": 0.045,
+                "type": "rectangle"
+              },
+              "checks": {
+                "bending": {
+                  "value": 2222222.22,
+                  "utilisation": 0.013
+                },
+                "shear": {
+                  "value": 66666.67,
+                  "utilisation": 0
+                },
+                "axial": {
+                  "value": 0,
+                  "utilisation": 0
+                }
+              },
+              "deflection_m": 0.00003125,
+              "max_deflection_m": 0.008333333333333333,
+              "governing": "bending"
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 42
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:17.875Z"
+    },
+    {
+      "key": "engineer_stress_analysis_protocol",
+      "profession": "engineer",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.634Z",
+          "by_profession": "engineer",
+          "context": [
+            "cases",
+            "section",
+            "material"
+          ],
+          "result": {
+            "action": "STRESS_ANALYSIS",
+            "intensity": 0.058,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "cases_evaluated": 2,
+              "governing_case": {
+                "name": "c2",
+                "factor": 1.5,
+                "von_mises_pa": 9600000,
+                "bending_pa": 9600000,
+                "shear_pa": 0,
+                "axial_pa": 0,
+                "utilisation": 0.058
+              },
+              "margin": 0.942,
+              "safety_factor": 1.5,
+              "allowable_pa": 166666666.66666666,
+              "all_cases": [
+                {
+                  "name": "c2",
+                  "factor": 1.5,
+                  "von_mises_pa": 9600000,
+                  "bending_pa": 9600000,
+                  "shear_pa": 0,
+                  "axial_pa": 0,
+                  "utilisation": 0.058
+                },
+                {
+                  "name": "c1",
+                  "factor": 1,
+                  "von_mises_pa": 3200000,
+                  "bending_pa": 3200000,
+                  "shear_pa": 0,
+                  "axial_pa": 0,
+                  "utilisation": 0.019
+                }
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 53
+        },
+        {
+          "at": "2026-10-25T21:19:17.929Z",
+          "by_profession": "engineer",
+          "context": [
+            "cases",
+            "section",
+            "material"
+          ],
+          "result": {
+            "action": "STRESS_ANALYSIS",
+            "intensity": 0.058,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "cases_evaluated": 2,
+              "governing_case": {
+                "name": "c2",
+                "factor": 1.5,
+                "von_mises_pa": 9600000,
+                "bending_pa": 9600000,
+                "shear_pa": 0,
+                "axial_pa": 0,
+                "utilisation": 0.058
+              },
+              "margin": 0.942,
+              "safety_factor": 1.5,
+              "allowable_pa": 166666666.66666666,
+              "all_cases": [
+                {
+                  "name": "c2",
+                  "factor": 1.5,
+                  "von_mises_pa": 9600000,
+                  "bending_pa": 9600000,
+                  "shear_pa": 0,
+                  "axial_pa": 0,
+                  "utilisation": 0.058
+                },
+                {
+                  "name": "c1",
+                  "factor": 1,
+                  "von_mises_pa": 3200000,
+                  "bending_pa": 3200000,
+                  "shear_pa": 0,
+                  "axial_pa": 0,
+                  "utilisation": 0.019
+                }
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 43
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:17.929Z"
+    },
+    {
+      "key": "engineer_tolerance_design_protocol",
+      "profession": "engineer",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.695Z",
+          "by_profession": "engineer",
+          "context": [
+            "dimensions",
+            "target_tolerance",
+            "method"
+          ],
+          "result": {
+            "action": "TOLERANCE_DESIGN",
+            "intensity": 0.447,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "method": "rss",
+              "nominal_sum": 80,
+              "worst_case_stack": 0.6,
+              "rss_stack": 0.223607,
+              "stack_used": 0.223607,
+              "limit_deviation": 0.111803,
+              "target_tolerance": 0.25,
+              "dimensions": [
+                {
+                  "name": "a",
+                  "nominal": 50,
+                  "plus": 0.2,
+                  "minus": 0.2
+                },
+                {
+                  "name": "b",
+                  "nominal": 30,
+                  "plus": 0.1,
+                  "minus": 0.1
+                }
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 51
+        },
+        {
+          "at": "2026-10-25T21:19:17.981Z",
+          "by_profession": "engineer",
+          "context": [
+            "dimensions",
+            "target_tolerance",
+            "method"
+          ],
+          "result": {
+            "action": "TOLERANCE_DESIGN",
+            "intensity": 0.447,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "method": "rss",
+              "nominal_sum": 80,
+              "worst_case_stack": 0.6,
+              "rss_stack": 0.223607,
+              "stack_used": 0.223607,
+              "limit_deviation": 0.111803,
+              "target_tolerance": 0.25,
+              "dimensions": [
+                {
+                  "name": "a",
+                  "nominal": 50,
+                  "plus": 0.2,
+                  "minus": 0.2
+                },
+                {
+                  "name": "b",
+                  "nominal": 30,
+                  "plus": 0.1,
+                  "minus": 0.1
+                }
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:17.981Z"
+    },
+    {
+      "key": "forecast_synthesis_protocol",
+      "profession": "meteorologist",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.764Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "pressure",
+            "temperature",
+            "wind"
+          ],
+          "result": {
+            "action": "FORECAST_SYNTHESIS",
+            "intensity": 0.429,
+            "version": 1,
+            "result": {
+              "forecast": "deteriorating",
+              "confidence": 0.714,
+              "composite_z": -1.286,
+              "signals": {
+                "pressure": {
+                  "slope": -3.7,
+                  "total_change": -11,
+                  "stdev": 4.206,
+                  "z_score": -2.616,
+                  "unit": "hPa",
+                  "n": 4
+                },
+                "temperature": {
+                  "slope": -2,
+                  "total_change": -6,
+                  "stdev": 2.291,
+                  "z_score": -2.619,
+                  "unit": "C",
+                  "n": 4
+                },
+                "wind": {
+                  "slope": 3,
+                  "total_change": 9,
+                  "stdev": 3.391,
+                  "z_score": 2.654,
+                  "unit": "m/s",
+                  "n": 4
+                }
+              },
+              "signals_used": 3
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 59
+        },
+        {
+          "at": "2026-10-25T21:19:18.316Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "pressure",
+            "temperature",
+            "wind"
+          ],
+          "result": {
+            "action": "FORECAST_SYNTHESIS",
+            "intensity": 0.429,
+            "version": 1,
+            "result": {
+              "forecast": "deteriorating",
+              "confidence": 0.714,
+              "composite_z": -1.286,
+              "signals": {
+                "pressure": {
+                  "slope": -3.7,
+                  "total_change": -11,
+                  "stdev": 4.206,
+                  "z_score": -2.616,
+                  "unit": "hPa",
+                  "n": 4
+                },
+                "temperature": {
+                  "slope": -2,
+                  "total_change": -6,
+                  "stdev": 2.291,
+                  "z_score": -2.619,
+                  "unit": "C",
+                  "n": 4
+                },
+                "wind": {
+                  "slope": 3,
+                  "total_change": 9,
+                  "stdev": 3.391,
+                  "z_score": 2.654,
+                  "unit": "m/s",
+                  "n": 4
+                }
+              },
+              "signals_used": 3
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 307
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:18.316Z"
+    },
+    {
+      "key": "front_detection_protocol",
+      "profession": "meteorologist",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.825Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "stations"
+          ],
+          "result": {
+            "action": "FRONT_DETECTION",
+            "intensity": 0.167,
+            "version": 1,
+            "result": {
+              "fronts": [
+                {
+                  "a": "a",
+                  "b": "b",
+                  "distance_km": 31.4,
+                  "dT": 6,
+                  "grad_per_100km": 19.079,
+                  "dP": 0
+                }
+              ],
+              "computed": 6,
+              "front_count": 1,
+              "threshold": 7.009,
+              "median_gradient": 1.378,
+              "mean_gradient": 4.673,
+              "strongest": {
+                "a": "a",
+                "b": "b",
+                "distance_km": 31.4,
+                "dT": 6,
+                "grad_per_100km": 19.079,
+                "dP": 0
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 51
+        },
+        {
+          "at": "2026-10-25T21:19:18.437Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "stations"
+          ],
+          "result": {
+            "action": "FRONT_DETECTION",
+            "intensity": 0.167,
+            "version": 1,
+            "result": {
+              "fronts": [
+                {
+                  "a": "a",
+                  "b": "b",
+                  "distance_km": 31.4,
+                  "dT": 6,
+                  "grad_per_100km": 19.079,
+                  "dP": 0
+                }
+              ],
+              "computed": 6,
+              "front_count": 1,
+              "threshold": 7.009,
+              "median_gradient": 1.378,
+              "mean_gradient": 4.673,
+              "strongest": {
+                "a": "a",
+                "b": "b",
+                "distance_km": 31.4,
+                "dT": 6,
+                "grad_per_100km": 19.079,
+                "dP": 0
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 42
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:18.437Z"
+    },
+    {
+      "key": "signal_synthesis_protocol",
+      "profession": "trader",
+      "version": 1,
+      "runtime": "python",
+      "morph_focus": "ACT",
+      "status": "active",
+      "mastery": 0.39999999999999997,
+      "transferable": true,
+      "usage_history": [
+        {
+          "at": "2026-10-25T21:19:01.891Z",
+          "by_profession": "trader",
+          "context": [
+            "rsi",
+            "macd",
+            "ma_signal"
+          ],
+          "result": {
+            "error": "invoker: skill raised: 'int' object is not subscriptable",
+            "traceback": "Traceback (most recent call last):\n  File \"/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/metamorfus-opencode/packages/metamorfus-src/server/skills/invoker.py\", line 74, in main\n    result = module.skill({}, context)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/signal_synthesis_protocol.py\", line 114, in skill\n    \"components\": {n: {\"label\": s[1][0], \"direction\": s[1][1], \"strength\": round(s[1][2], 3)} for n, s in active},\n                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/signal_synthesis_protocol.py\", line 114, in <dictcomp>\n    \"components\": {n: {\"label\": s[1][0], \"direction\": s[1][1], \"strength\": round(s[1][2], 3)} for n, s in active},\n                                ~~~~^^^\nTypeError: 'int' object is not subscriptable\n"
+          },
+          "outcome": -1,
+          "duration_ms": 55
+        },
+        {
+          "at": "2026-10-25T21:19:18.502Z",
+          "by_profession": "trader",
+          "context": [
+            "rsi",
+            "macd",
+            "ma_signal"
+          ],
+          "result": {
+            "action": "SIGNAL_SYNTHESIS",
+            "intensity": 0.333,
+            "version": 1,
+            "result": {
+              "signal": "bullish",
+              "direction": 0.333,
+              "confidence": 0.48,
+              "agreement": 0.667,
+              "conflict": true,
+              "bulls": 2,
+              "bears": 1,
+              "neutral": 0,
+              "inputs_used": 3,
+              "components": {
+                "rsi": {
+                  "label": "overbought",
+                  "direction": -1,
+                  "strength": 0.14
+                },
+                "macd": {
+                  "label": "bullish",
+                  "direction": 1,
+                  "strength": 0.8
+                },
+                "ma": {
+                  "label": "bullish",
+                  "direction": 1,
+                  "strength": 0.5
+                }
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 54
+        }
+      ],
+      "reactivation_triggers": [
+        "auto"
+      ],
+      "created_by": "seed-backfill",
+      "created_at": "2026-10-25T21:18:50.513Z",
+      "last_used_at": "2026-10-25T21:19:18.502Z"
     }
   ],
   "profession_chain": [
     "scientist",
     "lumberjack",
-    "architect"
+    "architect",
+    "doctor",
+    "fraud_analyst",
+    "physicist"
   ],
   "metamorphosis_log": [
     {
@@ -780,6 +3018,159 @@
         "sharpen_axe_protocol",
         "navigate_forest_protocol",
         "weather_read_protocol"
+      ]
+    },
+    {
+      "from": "architect",
+      "to": "doctor",
+      "at": "2026-10-25T21:16:11.740Z",
+      "skills_forged": [
+        "doctor_triage_protocol",
+        "doctor_differential_protocol",
+        "doctor_treatment_protocol"
+      ],
+      "skills_reactivated": [],
+      "retained_from_past": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol",
+        "fell_tree_protocol",
+        "sharpen_axe_protocol",
+        "navigate_forest_protocol",
+        "weather_read_protocol",
+        "blueprint_protocol",
+        "structural_analysis_protocol",
+        "material_selection_protocol",
+        "evolved_analyze_pressure_gradient_protocol",
+        "arxiv_search_protocol",
+        "arxiv_search_v2_protocol",
+        "builtin_agent_reach_protocol",
+        "builtin_archify_protocol",
+        "builtin_browser_harness_protocol",
+        "builtin_browser_skill_protocol",
+        "builtin_browser_use_protocol",
+        "builtin_github_mcp_protocol",
+        "builtin_nginx_agent_protocol",
+        "builtin_nginx_skill_protocol",
+        "builtin_playwright_protocol",
+        "crypto_price_v2_protocol",
+        "incident_log_protocol",
+        "pdf_extract_protocol",
+        "port_scan_protocol",
+        "real_cve_lookup_protocol",
+        "real_http_header_audit_protocol",
+        "real_incident_logger_protocol",
+        "real_port_scanner_protocol",
+        "recon_protocol",
+        "rsi_calculator_v2_protocol",
+        "semantic_summarize_protocol",
+        "test_realskill_protocol",
+        "text_summarizer_v2_protocol"
+      ]
+    },
+    {
+      "from": "doctor",
+      "to": "fraud_analyst",
+      "at": "2026-10-25T21:16:11.892Z",
+      "skills_forged": [
+        "fraud_anomaly_protocol",
+        "fraud_network_protocol",
+        "fraud_report_protocol"
+      ],
+      "skills_reactivated": [],
+      "retained_from_past": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol",
+        "fell_tree_protocol",
+        "sharpen_axe_protocol",
+        "navigate_forest_protocol",
+        "weather_read_protocol",
+        "blueprint_protocol",
+        "structural_analysis_protocol",
+        "material_selection_protocol",
+        "evolved_analyze_pressure_gradient_protocol",
+        "arxiv_search_protocol",
+        "arxiv_search_v2_protocol",
+        "builtin_agent_reach_protocol",
+        "builtin_archify_protocol",
+        "builtin_browser_harness_protocol",
+        "builtin_browser_skill_protocol",
+        "builtin_browser_use_protocol",
+        "builtin_github_mcp_protocol",
+        "builtin_nginx_agent_protocol",
+        "builtin_nginx_skill_protocol",
+        "builtin_playwright_protocol",
+        "crypto_price_v2_protocol",
+        "incident_log_protocol",
+        "pdf_extract_protocol",
+        "port_scan_protocol",
+        "real_cve_lookup_protocol",
+        "real_http_header_audit_protocol",
+        "real_incident_logger_protocol",
+        "real_port_scanner_protocol",
+        "recon_protocol",
+        "rsi_calculator_v2_protocol",
+        "semantic_summarize_protocol",
+        "test_realskill_protocol",
+        "text_summarizer_v2_protocol",
+        "doctor_triage_protocol",
+        "doctor_differential_protocol",
+        "doctor_treatment_protocol"
+      ]
+    },
+    {
+      "from": "fraud_analyst",
+      "to": "physicist",
+      "at": "2026-10-25T21:16:11.959Z",
+      "skills_forged": [
+        "physicist_dimensional_protocol",
+        "physicist_force_balance_protocol",
+        "physicist_wave_protocol"
+      ],
+      "skills_reactivated": [],
+      "retained_from_past": [
+        "hypothesis_protocol",
+        "experimental_design_protocol",
+        "peer_review_protocol",
+        "fell_tree_protocol",
+        "sharpen_axe_protocol",
+        "navigate_forest_protocol",
+        "weather_read_protocol",
+        "blueprint_protocol",
+        "structural_analysis_protocol",
+        "material_selection_protocol",
+        "evolved_analyze_pressure_gradient_protocol",
+        "arxiv_search_protocol",
+        "arxiv_search_v2_protocol",
+        "builtin_agent_reach_protocol",
+        "builtin_archify_protocol",
+        "builtin_browser_harness_protocol",
+        "builtin_browser_skill_protocol",
+        "builtin_browser_use_protocol",
+        "builtin_github_mcp_protocol",
+        "builtin_nginx_agent_protocol",
+        "builtin_nginx_skill_protocol",
+        "builtin_playwright_protocol",
+        "crypto_price_v2_protocol",
+        "incident_log_protocol",
+        "pdf_extract_protocol",
+        "port_scan_protocol",
+        "real_cve_lookup_protocol",
+        "real_http_header_audit_protocol",
+        "real_incident_logger_protocol",
+        "real_port_scanner_protocol",
+        "recon_protocol",
+        "rsi_calculator_v2_protocol",
+        "semantic_summarize_protocol",
+        "test_realskill_protocol",
+        "text_summarizer_v2_protocol",
+        "doctor_triage_protocol",
+        "doctor_differential_protocol",
+        "doctor_treatment_protocol",
+        "fraud_anomaly_protocol",
+        "fraud_network_protocol",
+        "fraud_report_protocol"
       ]
     }
   ]
