@@ -83,6 +83,47 @@ def skill(organism, context):
         receives[d] += 1
 
     total_flow = sum(edges.values()) or 1.0
+
+    # Chain detector: a pass-through chain that loses only a little
+    # value at each hop. The triangle count below finds closed rings,
+    # but a real laundering chain is often open — money enters one end
+    # and leaves the other, with a small haircut at each step. The
+    # tell is a high retention ratio across consecutive hops.
+    chain_edges = sorted(
+        ({"from": s_, "to": d_, "flow": v, "count": edge_count[(s_, d_)]}
+         for (s_, d_), v in edges.items()),
+        key=lambda e: e["flow"], reverse=True,
+    )
+    chains = []
+    for i, e in enumerate(chain_edges):
+        for j in range(i + 1, len(chain_edges)):
+            nxt = chain_edges[j]
+            if e["to"] != nxt["from"]:
+                continue
+            retention = nxt["flow"] / e["flow"] if e["flow"] else 0
+            if retention >= 0.85 and e["flow"] >= 0.05 * total_flow:
+                chains.append({
+                    "path": [e["from"], e["to"], nxt["to"]],
+                    "retention": round(retention, 4),
+                    "flow": round(e["flow"] + nxt["flow"], 2),
+                })
+    # Extend chains greedily to their full length.
+    adjacency = {s_: d_ for (s_, d_) in edges}
+    longest_chain = []
+    for e in chain_edges:
+        path = [e["from"], e["to"]]
+        flow = e["flow"]
+        cur = e["to"]
+        while cur in adjacency:
+            nxt_flow = edges[(cur, adjacency[cur])]
+            if nxt_flow / flow < 0.85 or flow == 0:
+                break
+            path.append(adjacency[cur])
+            flow = nxt_flow
+            cur = adjacency[cur]
+        if len(path) > len(longest_chain):
+            longest_chain = path
+
     scores = []
     for a in accounts:
         deg = len(undirected.get(a, ()))
@@ -98,6 +139,12 @@ def skill(organism, context):
             + 0.25 * min(1.0, thru / 5.0)
             + 0.20 * min(1.0, flow / total_flow)
         )
+        # An account inside a high-retention pass-through chain is a
+        # link in a laundering path even when the ring is not closed.
+        if a in set(longest_chain) and len(longest_chain) >= 3:
+            score += 0.25
+        elif a in {x for c in chains for x in c["path"]}:
+            score += 0.15
         scores.append({
             "account": a,
             "centrality": round(score, 4),
@@ -106,7 +153,8 @@ def skill(organism, context):
             "sends": sends.get(a, 0),
             "receives": receives.get(a, 0),
             "flow": round(flow, 2),
-            "role": "mule" if thru >= 2 and tri >= 1 else ("hub" if deg >= 3 else "leaf"),
+            "role": ("mule" if (thru >= 1 and (tri >= 1 or a in set(longest_chain)))
+                     else ("hub" if deg >= 3 else "leaf")),
         })
 
     scores.sort(key=lambda s: s["centrality"], reverse=True)
@@ -128,6 +176,8 @@ def skill(organism, context):
             "suspicious": suspicious,
             "top_central": scores[:5],
             "mules": [s["account"] for s in scores if s["role"] == "mule"],
+            "laundering_chains": chains,
+            "longest_chain": longest_chain,
             "threshold": threshold,
         },
     }

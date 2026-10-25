@@ -159,6 +159,54 @@ def skill(organism, context):
             "reasons": reasons,
         })
 
+    # 5. Burst / velocity detector.
+    #
+    # A fraud ring is a group of comparable transfers fired in quick
+    # succession. This is the case the amount statistics cannot see: the
+    # ring is a large share of the population, so it inflates the very
+    # median and MAD it would be measured against, and each transfer
+    # looks unremarkable in isolation. The group only stands out when
+    # considered together.
+    bursts = []
+    by_hour = {}
+    for i, t in enumerate(txs):
+        h = _hour(t)
+        if h is not None:
+            by_hour.setdefault(h, []).append(i)
+    for h, idxs in by_hour.items():
+        if len(idxs) < 2:
+            continue
+        big = [i for i in idxs if amounts[i] > 0]
+        if len(big) < 2:
+            continue
+        burst_total = sum(amounts[i] for i in big)
+        burst_mean = burst_total / len(big)
+        # Compare the burst against the transactions outside it.
+        outside = [amounts[i] for i in range(len(txs)) if i not in set(idxs)]
+        outside_mean = statistics.fmean(outside) if outside else 0.0
+        ratio = (burst_mean / outside_mean) if outside_mean > 0 else 0.0
+        if ratio >= 2.0 and len(big) >= 2:
+            bursts.append({
+                "hour": h,
+                "count": len(big),
+                "mean_amount": round(burst_mean, 2),
+                "total": round(burst_total, 2),
+                "ratio_to_rest": round(ratio, 2),
+            })
+
+    if bursts:
+        worst = max(bursts, key=lambda b: b["ratio_to_rest"])
+        bump = min(0.45, 0.15 * worst["count"] + 0.05 * min(4.0, worst["ratio_to_rest"]))
+        # Apply the bump to every transaction in the burst window.
+        burst_hours = {b["hour"] for b in bursts}
+        for idx, s_ in enumerate(scored):
+            h = _hour(txs[idx])
+            if h in burst_hours:
+                s_["risk"] = round(min(1.0, s_["risk"] + bump), 4)
+                s_["reasons"] = s_["reasons"] + [
+                    f"burst of {len(bursts)} large transfers in hour {h}"
+                ]
+
     threshold = float(context.get("threshold", 0.5) or 0.5)
     flagged = [s for s in scored if s["risk"] >= threshold]
     scored.sort(key=lambda s: s["risk"], reverse=True)
@@ -182,6 +230,7 @@ def skill(organism, context):
             "stdev": round(stdev, 2),
             "median": round(statistics.median(amounts), 2) if amounts else 0.0,
             "top_risks": scored[:5],
-            "detectors": ["amount_outlier", "merchant_rarity", "unusual_hour", "balance_drain"],
+            "detectors": ["amount_outlier", "merchant_rarity", "unusual_hour", "balance_drain", "burst_velocity"],
+            "bursts": bursts,
         },
     }

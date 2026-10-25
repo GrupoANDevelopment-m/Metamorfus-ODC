@@ -8,7 +8,6 @@ def skill(organism, context):
                 "version": 1,
                 "result": {"gradients": [], "computed": 0, "error": "stations must be a list"}
             }
-        # stations is a list, compute pairwise differences (placeholder)
         return {
             "action": "PRESSURE_GRADIENT",
             "intensity": 0.5,

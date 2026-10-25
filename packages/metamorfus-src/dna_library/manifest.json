@@ -851,8 +851,8 @@
       },
       "foraged_by": "doctor.adopt",
       "morph_focus": "THINK",
-      "mastery": 0.6499999839682976,
-      "last_used_at": "2026-10-25T21:19:17.115Z",
+      "mastery": 0.7499999839682977,
+      "last_used_at": "2026-10-25T21:21:14.781Z",
       "usage_history": [
         {
           "at": "2026-10-25T21:16:11.871Z",
@@ -934,6 +934,76 @@
           },
           "outcome": 1,
           "duration_ms": 50
+        },
+        {
+          "at": "2026-10-25T21:20:50.047Z",
+          "by_profession": "doctor",
+          "context": [
+            "vitals"
+          ],
+          "result": {
+            "action": "TRIAGE",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "acuity": "critical",
+              "score": 13,
+              "max_wait_minutes": 0,
+              "contributions": {
+                "respiratory_rate": 3,
+                "spo2": 3,
+                "systolic_bp": 3,
+                "pulse": 2,
+                "temperature": 2
+              },
+              "escalate": true,
+              "vitals_seen": {
+                "respiratory_rate": 26,
+                "spo2": 89,
+                "systolic_bp": 82,
+                "pulse": 128,
+                "consciousness": null,
+                "temperature": 39.4
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 38
+        },
+        {
+          "at": "2026-10-25T21:21:14.781Z",
+          "by_profession": "doctor",
+          "context": [
+            "vitals"
+          ],
+          "result": {
+            "action": "TRIAGE",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "acuity": "critical",
+              "score": 13,
+              "max_wait_minutes": 0,
+              "contributions": {
+                "respiratory_rate": 3,
+                "spo2": 3,
+                "systolic_bp": 3,
+                "pulse": 2,
+                "temperature": 2
+              },
+              "escalate": true,
+              "vitals_seen": {
+                "respiratory_rate": 26,
+                "spo2": 89,
+                "systolic_bp": 82,
+                "pulse": 128,
+                "consciousness": null,
+                "temperature": 39.4
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
         }
       ],
       "transferable": false,
@@ -956,8 +1026,8 @@
       },
       "foraged_by": "doctor.adopt",
       "morph_focus": "THINK",
-      "mastery": 0.5999999503939832,
-      "last_used_at": "2026-10-25T21:19:17.167Z",
+      "mastery": 0.6999999503939833,
+      "last_used_at": "2026-10-25T21:21:14.833Z",
       "usage_history": [
         {
           "at": "2026-10-25T21:19:00.686Z",
@@ -1116,6 +1186,164 @@
           },
           "outcome": 1,
           "duration_ms": 41
+        },
+        {
+          "at": "2026-10-25T21:20:50.098Z",
+          "by_profession": "doctor",
+          "context": [
+            "findings"
+          ],
+          "result": {
+            "action": "DIFFERENTIAL",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "candidates": [
+                {
+                  "condition": "pneumonia",
+                  "score": 13,
+                  "normalised": 1,
+                  "supporting_findings": [
+                    "fever",
+                    "cough",
+                    "hypoxia",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "unsupported_by": [],
+                  "probability": 0.619
+                },
+                {
+                  "condition": "sepsis",
+                  "score": 5,
+                  "normalised": 0.2778,
+                  "supporting_findings": [
+                    "fever",
+                    "tachypnea"
+                  ],
+                  "unsupported_by": [
+                    "cough",
+                    "hypoxia",
+                    "crackles"
+                  ],
+                  "probability": 0.2381
+                },
+                {
+                  "condition": "pulmonary_embolism",
+                  "score": 3,
+                  "normalised": 0.25,
+                  "supporting_findings": [
+                    "hypoxia"
+                  ],
+                  "unsupported_by": [
+                    "fever",
+                    "cough",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "probability": 0.1429
+                }
+              ],
+              "top": "pneumonia",
+              "top_probability": 0.619,
+              "margin_over_second": 8,
+              "decisive": true,
+              "findings_used": [
+                "fever",
+                "cough",
+                "hypoxia",
+                "tachypnea",
+                "crackles"
+              ],
+              "next_best_test": {
+                "finding": "rash",
+                "would_support_against": "sepsis",
+                "weight": 1
+              },
+              "unexplained_findings": []
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 39
+        },
+        {
+          "at": "2026-10-25T21:21:14.833Z",
+          "by_profession": "doctor",
+          "context": [
+            "findings"
+          ],
+          "result": {
+            "action": "DIFFERENTIAL",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "candidates": [
+                {
+                  "condition": "pneumonia",
+                  "score": 13,
+                  "normalised": 1,
+                  "supporting_findings": [
+                    "fever",
+                    "cough",
+                    "hypoxia",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "unsupported_by": [],
+                  "probability": 0.619
+                },
+                {
+                  "condition": "sepsis",
+                  "score": 5,
+                  "normalised": 0.2778,
+                  "supporting_findings": [
+                    "fever",
+                    "tachypnea"
+                  ],
+                  "unsupported_by": [
+                    "cough",
+                    "hypoxia",
+                    "crackles"
+                  ],
+                  "probability": 0.2381
+                },
+                {
+                  "condition": "pulmonary_embolism",
+                  "score": 3,
+                  "normalised": 0.25,
+                  "supporting_findings": [
+                    "hypoxia"
+                  ],
+                  "unsupported_by": [
+                    "fever",
+                    "cough",
+                    "tachypnea",
+                    "crackles"
+                  ],
+                  "probability": 0.1429
+                }
+              ],
+              "top": "pneumonia",
+              "top_probability": 0.619,
+              "margin_over_second": 8,
+              "decisive": true,
+              "findings_used": [
+                "fever",
+                "cough",
+                "hypoxia",
+                "tachypnea",
+                "crackles"
+              ],
+              "next_best_test": {
+                "finding": "rash",
+                "would_support_against": "sepsis",
+                "weight": 1
+              },
+              "unexplained_findings": []
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 41
         }
       ],
       "transferable": false,
@@ -1138,8 +1366,8 @@
       },
       "foraged_by": "doctor.adopt",
       "morph_focus": "THINK",
-      "mastery": 0.5999999503939832,
-      "last_used_at": "2026-10-25T21:19:17.249Z",
+      "mastery": 0.6999999503939833,
+      "last_used_at": "2026-10-25T21:21:14.885Z",
       "usage_history": [
         {
           "at": "2026-10-25T21:19:00.764Z",
@@ -1195,6 +1423,80 @@
           },
           "outcome": 1,
           "duration_ms": 71
+        },
+        {
+          "at": "2026-10-25T21:20:50.148Z",
+          "by_profession": "doctor",
+          "context": [
+            "treatment",
+            "allergies",
+            "conditions",
+            "age",
+            "weight_kg",
+            "creatinine_mgdl"
+          ],
+          "result": {
+            "action": "TREATMENT",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "ok": false,
+              "drug": "metformin",
+              "original_dose": 1000,
+              "recommended_dose": 0,
+              "dose_adjustment_factor": 0,
+              "crcl_ml_min": 28.4,
+              "blocks": [
+                "contraindicated with renal_failure"
+              ],
+              "cautions": [
+                "renal impairment: reduce or withhold dose"
+              ],
+              "notes": [
+                "Contraindicated below eGFR 30; hold around contrast imaging."
+              ],
+              "requires_review": true
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 39
+        },
+        {
+          "at": "2026-10-25T21:21:14.885Z",
+          "by_profession": "doctor",
+          "context": [
+            "treatment",
+            "allergies",
+            "conditions",
+            "age",
+            "weight_kg",
+            "creatinine_mgdl"
+          ],
+          "result": {
+            "action": "TREATMENT",
+            "intensity": 1,
+            "version": 1,
+            "result": {
+              "ok": false,
+              "drug": "metformin",
+              "original_dose": 1000,
+              "recommended_dose": 0,
+              "dose_adjustment_factor": 0,
+              "crcl_ml_min": 28.4,
+              "blocks": [
+                "contraindicated with renal_failure"
+              ],
+              "cautions": [
+                "renal impairment: reduce or withhold dose"
+              ],
+              "notes": [
+                "Contraindicated below eGFR 30; hold around contrast imaging."
+              ],
+              "requires_review": true
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 40
         }
       ],
       "transferable": false,
@@ -1217,8 +1519,8 @@
       },
       "foraged_by": "fraud_analyst.adopt",
       "morph_focus": "HUNT",
-      "mastery": 0.6499999988233613,
-      "last_used_at": "2026-10-25T21:19:17.343Z",
+      "mastery": 0.7499999988233614,
+      "last_used_at": "2026-10-25T21:21:14.661Z",
       "usage_history": [
         {
           "at": "2026-10-25T21:16:11.951Z",
@@ -1340,6 +1642,171 @@
           },
           "outcome": 1,
           "duration_ms": 49
+        },
+        {
+          "at": "2026-10-25T21:20:49.946Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_ANOMALY_SCAN",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "flagged": [],
+              "flagged_count": 0,
+              "scored": 6,
+              "threshold": 0.5,
+              "mean": 31027.5,
+              "stdev": 21900.46,
+              "median": 45500,
+              "top_risks": [
+                {
+                  "id": "e1",
+                  "amount": 48000,
+                  "risk": 0.45,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 96% of balance"
+                  ]
+                },
+                {
+                  "id": "e2",
+                  "amount": 47000,
+                  "risk": 0.45,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 98% of balance"
+                  ]
+                },
+                {
+                  "id": "e3",
+                  "amount": 46000,
+                  "risk": 0.45,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 98% of balance"
+                  ]
+                },
+                {
+                  "id": "e4",
+                  "amount": 45000,
+                  "risk": 0.45,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 98% of balance"
+                  ]
+                },
+                {
+                  "id": "n1",
+                  "amount": 45,
+                  "risk": 0,
+                  "reasons": []
+                }
+              ],
+              "detectors": [
+                "amount_outlier",
+                "merchant_rarity",
+                "unusual_hour",
+                "balance_drain"
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 47
+        },
+        {
+          "at": "2026-10-25T21:21:14.661Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_ANOMALY_SCAN",
+            "intensity": 0.667,
+            "version": 1,
+            "result": {
+              "flagged": [
+                "e1",
+                "e2",
+                "e3",
+                "e4"
+              ],
+              "flagged_count": 4,
+              "scored": 6,
+              "threshold": 0.5,
+              "mean": 31027.5,
+              "stdev": 21900.46,
+              "median": 45500,
+              "top_risks": [
+                {
+                  "id": "e1",
+                  "amount": 48000,
+                  "risk": 0.9,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 96% of balance",
+                    "burst of 1 large transfers in hour 23"
+                  ]
+                },
+                {
+                  "id": "e2",
+                  "amount": 47000,
+                  "risk": 0.9,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 98% of balance",
+                    "burst of 1 large transfers in hour 23"
+                  ]
+                },
+                {
+                  "id": "e3",
+                  "amount": 46000,
+                  "risk": 0.9,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 98% of balance",
+                    "burst of 1 large transfers in hour 23"
+                  ]
+                },
+                {
+                  "id": "e4",
+                  "amount": 45000,
+                  "risk": 0.9,
+                  "reasons": [
+                    "off-hours 23",
+                    "drains 98% of balance",
+                    "burst of 1 large transfers in hour 23"
+                  ]
+                },
+                {
+                  "id": "n1",
+                  "amount": 45,
+                  "risk": 0,
+                  "reasons": []
+                }
+              ],
+              "detectors": [
+                "amount_outlier",
+                "merchant_rarity",
+                "unusual_hour",
+                "balance_drain",
+                "burst_velocity"
+              ],
+              "bursts": [
+                {
+                  "hour": 23,
+                  "count": 4,
+                  "mean_amount": 46500,
+                  "total": 186000,
+                  "ratio_to_rest": 563.64
+                }
+              ]
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 63
         }
       ],
       "transferable": false,
@@ -1362,8 +1829,8 @@
       },
       "foraged_by": "fraud_analyst.adopt",
       "morph_focus": "HUNT",
-      "mastery": 0.5999999910415007,
-      "last_used_at": "2026-10-25T21:19:17.397Z",
+      "mastery": 0.6999999910415008,
+      "last_used_at": "2026-10-25T21:21:14.727Z",
       "usage_history": [
         {
           "at": "2026-10-25T21:19:00.900Z",
@@ -1494,6 +1961,227 @@
           },
           "outcome": 1,
           "duration_ms": 41
+        },
+        {
+          "at": "2026-10-25T21:20:49.996Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_NETWORK",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "accounts": 8,
+              "edges": 6,
+              "total_flow": 186165,
+              "suspicious": [],
+              "top_central": [
+                {
+                  "account": "mule1",
+                  "centrality": 0.2021,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 95000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "mule2",
+                  "centrality": 0.1999,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 93000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "mule3",
+                  "centrality": 0.1978,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 91000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "c2",
+                  "centrality": 0.1002,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 165,
+                  "role": "leaf"
+                },
+                {
+                  "account": "victim",
+                  "centrality": 0.0766,
+                  "degree": 1,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 0,
+                  "flow": 48000,
+                  "role": "leaf"
+                }
+              ],
+              "mules": [],
+              "threshold": 0.4
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 38
+        },
+        {
+          "at": "2026-10-25T21:21:14.727Z",
+          "by_profession": "fraud_analyst",
+          "context": [
+            "transactions"
+          ],
+          "result": {
+            "action": "FRAUD_NETWORK",
+            "intensity": 0.375,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "accounts": 8,
+              "edges": 6,
+              "total_flow": 186165,
+              "suspicious": [
+                {
+                  "account": "mule1",
+                  "centrality": 0.4521,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 95000,
+                  "role": "mule"
+                },
+                {
+                  "account": "mule2",
+                  "centrality": 0.4499,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 93000,
+                  "role": "mule"
+                },
+                {
+                  "account": "mule3",
+                  "centrality": 0.4478,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 91000,
+                  "role": "mule"
+                }
+              ],
+              "top_central": [
+                {
+                  "account": "mule1",
+                  "centrality": 0.4521,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 95000,
+                  "role": "mule"
+                },
+                {
+                  "account": "mule2",
+                  "centrality": 0.4499,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 93000,
+                  "role": "mule"
+                },
+                {
+                  "account": "mule3",
+                  "centrality": 0.4478,
+                  "degree": 2,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 1,
+                  "flow": 91000,
+                  "role": "mule"
+                },
+                {
+                  "account": "victim",
+                  "centrality": 0.3266,
+                  "degree": 1,
+                  "triangles": 0,
+                  "sends": 1,
+                  "receives": 0,
+                  "flow": 48000,
+                  "role": "leaf"
+                },
+                {
+                  "account": "mule4",
+                  "centrality": 0.3233,
+                  "degree": 1,
+                  "triangles": 0,
+                  "sends": 0,
+                  "receives": 1,
+                  "flow": 45000,
+                  "role": "leaf"
+                }
+              ],
+              "mules": [
+                "mule1",
+                "mule2",
+                "mule3"
+              ],
+              "laundering_chains": [
+                {
+                  "path": [
+                    "victim",
+                    "mule1",
+                    "mule2"
+                  ],
+                  "retention": 0.9792,
+                  "flow": 95000
+                },
+                {
+                  "path": [
+                    "mule1",
+                    "mule2",
+                    "mule3"
+                  ],
+                  "retention": 0.9787,
+                  "flow": 93000
+                },
+                {
+                  "path": [
+                    "mule2",
+                    "mule3",
+                    "mule4"
+                  ],
+                  "retention": 0.9783,
+                  "flow": 91000
+                }
+              ],
+              "longest_chain": [
+                "victim",
+                "mule1",
+                "mule2",
+                "mule3",
+                "mule4"
+              ],
+              "threshold": 0.4
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 53
         }
       ],
       "transferable": false,
@@ -2306,7 +2994,7 @@
       "runtime": "python",
       "morph_focus": "ACT",
       "status": "active",
-      "mastery": 0.39999999999999997,
+      "mastery": 0.44999999999999996,
       "transferable": true,
       "usage_history": [
         {
@@ -2398,6 +3086,51 @@
           },
           "outcome": 1,
           "duration_ms": 42
+        },
+        {
+          "at": "2026-10-25T21:20:50.199Z",
+          "by_profession": "engineer",
+          "context": [
+            "loads",
+            "section",
+            "material"
+          ],
+          "result": {
+            "action": "LOAD_CALC",
+            "intensity": 0.134,
+            "version": 1,
+            "result": {
+              "ok": true,
+              "utilisation": 0.134,
+              "von_mises_pa": 22252202,
+              "allowable_pa": 166666666.66666666,
+              "section_properties": {
+                "I_m4": 0.0003375,
+                "Z_m3": 0.00225,
+                "area_m2": 0.045,
+                "type": "rectangle"
+              },
+              "checks": {
+                "bending": {
+                  "value": 22222222.22,
+                  "utilisation": 0.133
+                },
+                "shear": {
+                  "value": 666666.67,
+                  "utilisation": 0.004
+                },
+                "axial": {
+                  "value": 0,
+                  "utilisation": 0
+                }
+              },
+              "deflection_m": 0.00039506,
+              "max_deflection_m": 0.011111111111111112,
+              "governing": "bending"
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 40
         }
       ],
       "reactivation_triggers": [
@@ -2405,7 +3138,7 @@
       ],
       "created_by": "seed-backfill",
       "created_at": "2026-10-25T21:18:50.513Z",
-      "last_used_at": "2026-10-25T21:19:17.875Z"
+      "last_used_at": "2026-10-25T21:20:50.199Z"
     },
     {
       "key": "engineer_stress_analysis_protocol",
@@ -2748,7 +3481,7 @@
       "runtime": "python",
       "morph_focus": "ACT",
       "status": "active",
-      "mastery": 0.39999999999999997,
+      "mastery": 0.44999999999999996,
       "transferable": true,
       "usage_history": [
         {
@@ -2828,6 +3561,45 @@
           },
           "outcome": 1,
           "duration_ms": 42
+        },
+        {
+          "at": "2026-10-25T21:20:50.251Z",
+          "by_profession": "meteorologist",
+          "context": [
+            "stations"
+          ],
+          "result": {
+            "action": "FRONT_DETECTION",
+            "intensity": 0.167,
+            "version": 1,
+            "result": {
+              "fronts": [
+                {
+                  "a": "a",
+                  "b": "b",
+                  "distance_km": 47.2,
+                  "dT": 10,
+                  "grad_per_100km": 21.199,
+                  "dP": 0
+                }
+              ],
+              "computed": 6,
+              "front_count": 1,
+              "threshold": 8.57,
+              "median_gradient": 1.815,
+              "mean_gradient": 5.713,
+              "strongest": {
+                "a": "a",
+                "b": "b",
+                "distance_km": 47.2,
+                "dT": 10,
+                "grad_per_100km": 21.199,
+                "dP": 0
+              }
+            }
+          },
+          "outcome": 1,
+          "duration_ms": 40
         }
       ],
       "reactivation_triggers": [
@@ -2835,7 +3607,7 @@
       ],
       "created_by": "seed-backfill",
       "created_at": "2026-10-25T21:18:50.513Z",
-      "last_used_at": "2026-10-25T21:19:18.437Z"
+      "last_used_at": "2026-10-25T21:20:50.251Z"
     },
     {
       "key": "signal_synthesis_protocol",
