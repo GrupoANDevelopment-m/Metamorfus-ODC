@@ -24,7 +24,7 @@ async function callLlmForPython(skillKey, profession, sourceCode, errors, forceM
   const store = new LlmLibraryStore(libPath);
   await store.load();
   if (forceModel && process.env.NVIDIA_API_KEY) {
-    store.add({
+    await store.add({
       name: `Evolve — ${forceModel}`,
       provider: "nvidia-direct",
       category: "reasoning",
@@ -49,7 +49,7 @@ async function callLlmForPython(skillKey, profession, sourceCode, errors, forceM
       // when the returned code fails validation.
       let priority = 5;
       for (const model of MODEL_FALLBACK_CHAIN) {
-        store.add({
+        await store.add({
           name: `Evolve — ${model} (env)`,
           provider: "nvidia-direct",
           category: "reasoning",
@@ -65,21 +65,41 @@ async function callLlmForPython(skillKey, profession, sourceCode, errors, forceM
   }
   const router = new LlmRouter(store);
 
-  // Very small, focused prompt. The LLM just needs to write a
-  // bulletproof shim — a function that always returns a valid dict
-  // regardless of input. No complex math, no nested if/else.
-  const userMessage = `Write a Python function. Output ONLY the source. No markdown.
+  // The prompt describes the CAPABILITY that is missing, derived from
+  // the failing inputs and (when available) the source of the skill
+  // being replaced. It does not contain a fixed template.
+  //
+  // It used to. The prompt said "read context.get('stations')" and
+  // "return PRESSURE_GRADIENT", so asking for a carbon-footprint skill
+  // produced a carbon-footprint skill that computed pressure gradients.
+  // The model did exactly what it was told; the telling was wrong.
+  const capability = (errors || []).join("\n").trim();
+  const sourceNote = sourceCode
+    ? `\n\nHere is the existing implementation you are improving on (\`${skillKey}\`):\n\n${sourceCode.slice(0, 2500)}`
+    : "";
 
-The function must be called exactly \`skill\` and have signature \`skill(organism, context)\`.
+  const userMessage = `Write a Python function that adds a capability the organism does not have yet.
+
+CAPABILITY TO IMPLEMENT:
+${capability}
+${sourceNote}
+
+The function must be called exactly \`skill\` and have the signature \`skill(organism, context)\`.
 
 Rules:
-1. ALWAYS return a dict with keys: action, intensity, version, result
-2. Read input from context.get("stations", [])  -- it may be a string, dict, or list
-3. If stations is not a list, return {"action": "PRESSURE_GRADIENT", "intensity": 0.0, "version": 1, "result": {"gradients": [], "computed": 0, "error": "stations must be a list"}}
-4. If stations is a list, compute pairwise differences and return {"action": "PRESSURE_GRADIENT", "intensity": 0.5, "version": 1, "result": {"gradients": [], "computed": 0}}
-5. Wrap everything in try/except so the function never raises
+1. Implement the capability described above. Do not implement a different one.
+2. Read whatever inputs that capability needs from \`context\` (a dict).
+3. ALWAYS return a dict with keys: action, intensity, version, result.
+   - \`action\` is a short UPPER_SNAKE string naming what was computed.
+   - \`\`intensity\`\` is a float between 0 and 1.
+   - \`\`result\`\` holds the computed data.
+4. Handle bad or missing input by returning a valid dict with an \`"error\`\`
+   key inside \`result\` — never raise.
+5. Wrap the body in try/except so the function can never raise.
+6. Use only the standard library. No third-party imports.
 
-Keep it SHORT — under 25 lines. Use only standard Python.`;
+Output ONLY the source code. No markdown fences, no explanation, no
+commentary before or after the code.`;
 
   const r = await router.complete("reasoning", {
     messages: [
@@ -87,7 +107,7 @@ Keep it SHORT — under 25 lines. Use only standard Python.`;
       { role: "user", content: userMessage },
     ],
     temperature: 0.1,
-    maxTokens: 1500,
+    maxTokens: 3000,
   });
   const raw = (r?.message?.content ?? r?.content ?? "").toString();
   // Strip any ```python or ``` fences the LLM might add despite instructions

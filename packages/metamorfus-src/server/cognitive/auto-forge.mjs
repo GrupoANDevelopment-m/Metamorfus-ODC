@@ -38,7 +38,7 @@ async function callLlmForTaskSkill(taskDescription, trainingDataSample, errorAna
   if (process.env.NVIDIA_API_KEY) {
     const hasR = store.list({ category: "reasoning" }).length > 0;
     if (!hasR) {
-      store.add({
+      await store.add({
         name: "AutoForge (env)",
         provider: "nvidia-direct",
         category: "reasoning",

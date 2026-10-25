@@ -52,7 +52,7 @@ export async function classifyIntent(req) {
   if (process.env.NVIDIA_API_KEY) {
     const hasR = store.list({ category: "reasoning" }).length > 0;
     if (!hasR) {
-      store.add({
+      await store.add({
         name: "Classify (env)",
         provider: "nvidia-direct",
         category: "reasoning",
@@ -166,7 +166,7 @@ async function localCortex(req) {
   if (process.env.NVIDIA_API_KEY) {
     const hasText = store.list({ category: "text" }).length > 0;
     if (!hasText) {
-      store.add({
+      await store.add({
         name: "Cortex (env)",
         provider: "nvidia-direct",
         category: "text",
@@ -242,7 +242,7 @@ async function localForge(req) {
   if (process.env.NVIDIA_API_KEY) {
     const hasR = store.list({ category: "reasoning" }).length > 0;
     if (!hasR) {
-      store.add({
+      await store.add({
         name: "Forge (env)",
         provider: "nvidia-direct",
         category: "reasoning",

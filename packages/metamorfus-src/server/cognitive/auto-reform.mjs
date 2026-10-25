@@ -56,7 +56,7 @@ async function forgeViaPlanner(workspaceRoot, skillKey, profession, sourceCode, 
   if (process.env.NVIDIA_API_KEY) {
     const hasR = store.list({ category: "reasoning" }).length > 0;
     if (!hasR) {
-      store.add({
+      await store.add({
         name: "Auto-Reform (env)",
         provider: "nvidia-direct",
         category: "reasoning",

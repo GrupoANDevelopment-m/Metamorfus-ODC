@@ -76,7 +76,7 @@ async function getJudge() {
   if (process.env.NVIDIA_API_KEY) {
     const hasReasoning = store.list({ category: "reasoning" }).length > 0;
     if (!hasReasoning) {
-      store.add({
+      await store.add({
         name: "Constitution judge (env)",
         provider: "nvidia-direct",
         category: "reasoning",
