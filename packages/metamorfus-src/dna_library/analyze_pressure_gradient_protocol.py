@@ -82,6 +82,23 @@ def skill(organism, context):
                 "direction": "high_to_low" if dp < 0 else "low_to_high",
             })
 
+    # Local slope profile, in SEQUENCE order (station i to station i+1).
+    # The caller needs this to see how the slope evolves along the
+    # series — the magnitude-sorted list below cannot express that,
+    # because it reorders the pairs by strength and destroys the
+    # progression.
+    local_slopes = []
+    for i in range(len(stations) - 1):
+        a, b = stations[i], stations[i + 1]
+        d = _haversine(a, b)
+        if d <= 0.01:
+            continue
+        local_slopes.append({
+            "from": a["id"],
+            "to": b["id"],
+            "slope_hpa_per_km": round((b["pressure"] - a["pressure"]) / d, 6),
+        })
+
     gradients.sort(key=lambda g: abs(g["gradient_hpa_per_km"]), reverse=True)
     strongest = gradients[:top_n]
     mean_grad = sum(abs(g["gradient_hpa_per_km"]) for g in gradients) / len(gradients)
@@ -94,6 +111,7 @@ def skill(organism, context):
         "version": 1,
         "result": {
             "gradients": strongest,
+            "local_slopes": local_slopes,
             "computed": len(gradients),
             "mean_abs_gradient": round(mean_grad, 5),
             "anomalous_pairs": len(anomalous),

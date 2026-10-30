@@ -108,7 +108,8 @@ export class LlmLibraryStore {
     // was confirmed by a live completion, not read off /v1/models.
     const nvidiaChain = [
       { model: "nvidia/nemotron-3-ultra-550b-a55b", priority: 100, contextWindow: 131072 },
-      { model: "z-ai/glm-5.3", priority: 110, contextWindow: 131072 },
+      { model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning", priority: 110, contextWindow: 131072 },
+      { model: "openai/gpt-oss-20b", priority: 120, contextWindow: 131072 },
     ];
     // One entry PER CATEGORY. The router filters by category before it
     // tries anything, so a model registered only as "multimodal" is
@@ -131,7 +132,7 @@ export class LlmLibraryStore {
           endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
           model,
           priority,
-          metadata: { contextWindow, source: "env", verifiedLive: "2026-10-20" },
+          metadata: { contextWindow, source: "env", verifiedLive: "2026-10-29" },
         })),
       ),
       {

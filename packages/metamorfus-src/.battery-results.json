@@ -125,7 +125,7 @@
     "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
     "newSkillOk": true,
     "validInputOk": true,
-    "pythonBytes": 2348,
+    "pythonBytes": 2817,
     "llmAttempts": 3
   },
   "T7": {
@@ -377,56 +377,133 @@
     }
   },
   "T12": {
-    "fraudTask": {
-      "single": {
-        "precision": 1,
-        "recall": 0.4,
-        "f1": 0.5714285714285715,
-        "flagged": 4,
-        "truePositives": 4,
-        "falsePositives": 0,
-        "falseNegatives": 6,
-        "confidence": 0.5,
-        "distinctProfessionsUsed": 1
-      },
-      "note": "Fraud detection — cross-domain doesn't help because fraud_anomaly only catches spikes via stdev. Drip/weird profiles need graph/temporal skills that don't exist yet."
+    "label": "agreement: a rise that saturates and turns",
+    "baselineMAE": 4.364919552736632,
+    "traderOnlyMAE": 3.5699461902324874,
+    "twoDomainMAE": 1.18502610272005,
+    "threeDomainMAE": 0.8797870345261565,
+    "singleDomainMAE": {
+      "trader": 3.5699461902324874,
+      "meteorology": 3.5699461902324874,
+      "engineering": 4.364919552736632
     },
-    "timeSeriesTask": {
-      "baseline": {
-        "mae": 1.6379999999999995,
-        "name": "linear extrapolation only"
+    "bestSingleMAE": 3.5699461902324874,
+    "bestSingleName": "trader",
+    "improvementPct": 79.84414090805947,
+    "beatsBestSingle": true,
+    "everyDomainContributed": true,
+    "domains": [
+      {
+        "domain": "trader",
+        "available": true,
+        "contributes": "direction",
+        "signal": -1,
+        "abstained": false,
+        "evidence": "rsi=100 (overbought)"
       },
-      "traderOnly": {
-        "mae": 0.5779999999999973,
-        "name": "trader RSI direction"
+      {
+        "domain": "meteorology",
+        "available": true,
+        "contributes": "direction",
+        "signal": -1,
+        "abstained": false,
+        "evidence": "rates [0.459, 0.958, 0.799, 0.169], recent -78.8% (decaying)"
       },
-      "twoDomain": {
-        "mae": 0.6301019999999937,
-        "name": "trader + meteorology"
+      {
+        "domain": "engineering",
+        "available": true,
+        "contributes": "magnitude",
+        "signal": 0,
+        "abstained": false,
+        "evidence": "load [63.3, 76.6, 93.2, 102.2], growth 9.6%, headroom 0.13 -> x1.10"
+      }
+    ],
+    "raw": {
+      "trader": {
+        "domain": "trader",
+        "signal": -1,
+        "available": true,
+        "contributes": "direction",
+        "rsi": 100,
+        "evidence": "rsi=100 (overbought)"
       },
-      "threeDomain": {
-        "mae": 0.6301019999999937,
-        "name": "trader + meteorology + engineer"
+      "meteor": {
+        "domain": "meteorology",
+        "signal": -1,
+        "available": true,
+        "contributes": "direction",
+        "rateProfile": [
+          0.4585372,
+          0.9580300399999999,
+          0.79859956,
+          0.1691293323076923
+        ],
+        "rateChange": -0.7882175989331971,
+        "push": 1,
+        "reading": "decaying",
+        "evidence": "rates [0.459, 0.958, 0.799, 0.169], recent -78.8% (decaying)"
       },
-      "synthesis": {
-        "confidence": 1,
-        "distinctProfessionsUsed": 3,
-        "crossPatterns": [
-          "multi-action: RSI,PRESSURE_GRADIENT,LOAD_CALC",
-          "mean-intensity=0.633",
-          "cross-domain: 3 professions"
-        ]
-      },
-      "passed": true,
-      "hypothesis": "Cross-domain ensemble should beat linear baseline"
+      "eng": {
+        "domain": "engineering",
+        "signal": 0,
+        "available": true,
+        "contributes": "magnitude",
+        "loadProfile": [
+          63.3425,
+          76.6475,
+          93.2125,
+          102.16
+        ],
+        "growth": 0.09599034464261758,
+        "headroom": 0.13043478260869557,
+        "magnitude": 1.0959903446426176,
+        "evidence": "load [63.3, 76.6, 93.2, 102.2], growth 9.6%, headroom 0.13 -> x1.10"
+      }
     },
-    "passed": true,
-    "overall": {
-      "synthesisConfidenceGrows": true,
-      "taskPerformanceImproves": true,
-      "improvement_pct": 61.5322344322348,
-      "verdict": "Cross-domain synthesis IMPROVES time-series prediction"
-    }
+    "disagreement": {
+      "label": "disagreement: a rise that accelerates",
+      "baselineMAE": 1.778128325001008,
+      "traderOnlyMAE": 2.6695819247354304,
+      "twoDomainMAE": 0.3251742596207734,
+      "threeDomainMAE": 0.763565583951813,
+      "singleDomainMAE": {
+        "trader": 2.6695819247354304,
+        "meteorology": 1.2523026788455613,
+        "engineering": 1.778128325001008
+      },
+      "bestSingleMAE": 1.2523026788455613,
+      "bestSingleName": "meteorology",
+      "improvementPct": 57.05790334612772,
+      "beatsBestSingle": true,
+      "everyDomainContributed": true,
+      "domains": [
+        {
+          "domain": "trader",
+          "available": true,
+          "contributes": "none",
+          "signal": 0,
+          "abstained": true,
+          "evidence": "rsi=100 (overbought); abstained — RSI pinned but the field is building energy, so the range it assumes is not there"
+        },
+        {
+          "domain": "meteorology",
+          "available": true,
+          "contributes": "direction",
+          "signal": 0.5899,
+          "abstained": false,
+          "evidence": "rates [0.317, 0.525, 0.761, 0.986], recent 29.5% (building)"
+        },
+        {
+          "domain": "engineering",
+          "available": true,
+          "contributes": "magnitude",
+          "signal": 0,
+          "abstained": false,
+          "evidence": "load [62.8, 70.4, 81.9, 99.0], growth 20.8%, headroom 0.13 -> x1.21"
+        }
+      ]
+    },
+    "verdict": "Cross-domain fusion beats every single domain and the baseline, on both cases"
   },
   "T13": {
     "baseline": {
@@ -717,15 +794,15 @@
     },
     "forgeReport": {
       "neededForge": true,
-      "initialScore": 0.18181818181818182,
+      "initialScore": 0,
       "finalScore": 1,
       "improved": true,
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mvodr7j2",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mvtefzzr",
       "trainTestSplit": {
         "trainSize": 100,
         "testSize": 30
       },
-      "reason": "LLM-forged skill improved test score from 0.182 to 1.000 (honest held-out evaluation)"
+      "reason": "LLM-forged skill improved test score from 0.000 to 1.000 (honest held-out evaluation)"
     },
     "final": {
       "precision": 1,
@@ -735,7 +812,7 @@
       "truePositives": 10,
       "falsePositives": 0,
       "falseNegatives": 0,
-      "name": "forged forged_fraud_anomaly_protocol_mvodr7j2"
+      "name": "forged forged_fraud_anomaly_protocol_mvtefzzr"
     },
     "cacheReport": {
       "totalEntries": 4,
@@ -776,11 +853,11 @@
       "kfold": {
         "k": 5,
         "perFoldScores": [
-          0,
-          0.4,
-          0.4,
           0.333,
-          0.333
+          0.333,
+          0.4,
+          0.4,
+          0
         ],
         "meanF1": 0.29333333333333333,
         "stdF1": 0.16733200530681513,
@@ -793,9 +870,9 @@
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
           "tp": 4,
-          "fp": 3,
+          "fp": 4,
           "fn": 16,
-          "tn": 177
+          "tn": 176
         },
         "fullDatasetConfusionMatrix": {
           "tp": 4,
@@ -832,72 +909,72 @@
         "k": 5,
         "perFoldScores": [
           0.5,
+          0.533,
           0.5,
-          0.5,
-          0.375,
-          0.462
+          0.353,
+          0.429
         ],
-        "meanF1": 0.4673076923076923,
-        "stdF1": 0.054222585307198784,
-        "sem": 0.02424907733253556,
+        "meanF1": 0.46296918767507,
+        "stdF1": 0.07242762628664459,
+        "sem": 0.032390619165177596,
         "tCritical": 2.776,
         "ci95": {
-          "lower": 0.3999922536325736,
-          "upper": 0.534623130982811
+          "lower": 0.373052828872537,
+          "upper": 0.552885546477603
         },
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
-          "tp": 17,
-          "fp": 36,
-          "fn": 3,
-          "tn": 144
+          "tp": 18,
+          "fp": 40,
+          "fn": 2,
+          "tn": 140
         },
         "fullDatasetConfusionMatrix": {
-          "tp": 20,
-          "fp": 65,
-          "fn": 0,
-          "tn": 115
+          "tp": 19,
+          "fp": 68,
+          "fn": 1,
+          "tn": 112
         },
-        "fullDatasetF1": 0.38095238095238093,
+        "fullDatasetF1": 0.35514018691588783,
         "roc": {
           "degenerate": true,
           "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
-          "tpr": 1,
-          "fpr": 0.3611111111111111,
-          "precision": 0.23529411764705882,
-          "recall": 1,
+          "tpr": 0.95,
+          "fpr": 0.37777777777777777,
+          "precision": 0.21839080459770116,
+          "recall": 0.95,
           "operatingPoint": {
-            "tpr": 1,
-            "fpr": 0.3611111111111111,
+            "tpr": 0.95,
+            "fpr": 0.37777777777777777,
             "threshold": "binary"
           },
           "confusionMatrix": {
-            "tp": 20,
-            "fp": 65,
-            "fn": 0,
-            "tn": 115
+            "tp": 19,
+            "fp": 68,
+            "fn": 1,
+            "tn": 112
           }
         },
         "robustness": "robust"
       },
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mvodrdws",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mvtegg92",
       "description": "LLM-forged skill with multi-strategy detection"
     },
     "forgeReport": {
       "improved": true,
-      "initialScore": 0.2608695652173913,
-      "finalScore": 0.7450980392156863,
-      "reason": "LLM-forged skill improved test score from 0.261 to 0.745 (honest held-out evaluation)"
+      "initialScore": 0.18181818181818182,
+      "finalScore": 0.7755102040816326,
+      "reason": "LLM-forged skill improved test score from 0.182 to 0.776 (honest held-out evaluation)"
     },
     "verdict": {
       "baselineMeanF1": 0.29333333333333333,
       "baselineRobustness": "moderate",
-      "forgedMeanF1": 0.4673076923076923,
+      "forgedMeanF1": 0.46296918767507,
       "forgedRobustness": "robust",
-      "improvement": 0.17397435897435898,
+      "improvement": 0.16963585434173667,
       "ci95": {
-        "lower": 0.3999922536325736,
-        "upper": 0.534623130982811
+        "lower": 0.373052828872537,
+        "upper": 0.552885546477603
       },
       "significant": false,
       "conclusion": "forged skill is better but CI overlap — not statistically significant at 95%"
@@ -933,9 +1010,9 @@
       "kfold": {
         "k": 10,
         "perFoldScores": [
+          1,
+          1,
           0.667,
-          1,
-          1,
           1,
           1,
           1,
@@ -1220,16 +1297,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999685396309,
-          "score": 7.599999370792618
+          "mastery": 0.5499997349621895,
+          "score": 7.599999469924379
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.6354999326717995,
-          "score": 4.770999865343599
+          "mastery": 0.6354999273500503,
+          "score": 4.770999854700101
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -1276,24 +1353,24 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999882336128,
-          "score": 1.5999999764672257
+          "mastery": 0.5499999838212177,
+          "score": 1.5999999676424355
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999704369527,
-          "score": 1.5999999408739054
+          "mastery": 0.5499999652891585,
+          "score": 1.599999930578317
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999524932133,
-          "score": 1.5999999049864266
+          "mastery": 0.5499999526402931,
+          "score": 1.5999999052805862
         }
       ],
       "synthResults": [
@@ -1345,5 +1422,13 @@
         }
       ]
     }
+  },
+  "T17": {
+    "total": 54,
+    "executed": 44,
+    "needsInput": 1,
+    "needsTool": 9,
+    "broken": 0,
+    "reachable": 54
   }
 }

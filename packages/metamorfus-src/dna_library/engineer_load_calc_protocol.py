@@ -11,6 +11,18 @@ Originally forged by: engineer.adopt
 """
 import math
 
+# Typical engineering properties. E in Pa, yield in Pa.
+MATERIALS = {
+    "steel": {"E": 200e9, "yield": 250e6},
+    "stainless": {"E": 193e9, "yield": 215e6},
+    "aluminium": {"E": 70e9, "yield": 95e6},
+    "aluminum": {"E": 70e9, "yield": 95e6},
+    "concrete": {"E": 30e9, "yield": 30e6},
+    "timber": {"E": 11e9, "yield": 24e6},
+    "wood": {"E": 11e9, "yield": 24e6},
+    "glass": {"E": 70e9, "yield": 50e6},
+}
+
 
 def _section(context):
     s = context.get("section", {}) or {}
@@ -46,6 +58,25 @@ def _properties(sec):
     return I, Z, A
 
 
+def _material(raw):
+    """Resolve the material into properties.
+
+    `material` may be a dict of properties, or the NAME of a material —
+    "steel" is the obvious thing to pass, and a skill that crashes on
+    it is not a skill, it is a trap. Unknown names fall back to the
+    steel defaults rather than raising.
+    """
+    if isinstance(raw, dict):
+        return raw
+    if isinstance(raw, str) and raw.strip():
+        key = raw.strip().lower()
+        for name, props in MATERIALS.items():
+            if key == name or key in name:
+                return dict(props)
+        return {}
+    return {}
+
+
 def skill(organism, context):
     """Check a member against bending, shear and combined stress."""
     loads = context.get("loads", {}) or {}
@@ -59,7 +90,7 @@ def skill(organism, context):
             "result": {"ok": False, "error": "loads must be numeric"},
         }
 
-    mat = context.get("material", {}) or {}
+    mat = _material(context.get("material", {}))
     E = float(mat.get("E", 200e9))            # Pa
     yield_strength = float(mat.get("yield", mat.get("yield_strength", 250e6)))  # Pa
     G = float(mat.get("G", E / (2 * 1.3)))    # Pa

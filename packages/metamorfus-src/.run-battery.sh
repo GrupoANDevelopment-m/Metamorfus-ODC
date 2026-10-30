@@ -229,13 +229,50 @@ test("T12 — Performance Gain with Cross-Domain Knowledge", async () => {
   const { measurePerformanceGain } = await import(path.join(ROOT, "server/cognitive/performance.mjs"));
   const r = await measurePerformanceGain(ws);
   results.T12 = r;
-  console.log("[T12] fraud f1=" + r.fraudTask.single.f1.toFixed(3));
-  console.log("[T12] ts baseline MAE=" + r.timeSeriesTask.baseline.mae.toFixed(3));
-  console.log("[T12] ts trader MAE=" + r.timeSeriesTask.traderOnly.mae.toFixed(3));
-  console.log("[T12] ts 2-domain MAE=" + r.timeSeriesTask.twoDomain.mae.toFixed(3));
-  console.log("[T12] ts 3-domain MAE=" + r.timeSeriesTask.threeDomain.mae.toFixed(3) + " conf=" + r.timeSeriesTask.synthesis.confidence.toFixed(3));
-  console.log("[T12] improvement:", r.overall.improvement_pct.toFixed(1) + "%");
-  console.log("[T12] verdict:", r.overall.verdict);
+  console.log("[T12] ts baseline MAE=" + r.baselineMAE.toFixed(3));
+  console.log("[T12] ts trader MAE=" + r.traderOnlyMAE.toFixed(3));
+  console.log("[T12] ts 2-domain MAE=" + r.twoDomainMAE.toFixed(3));
+  console.log("[T12] ts 3-domain MAE=" + r.threeDomainMAE.toFixed(3));
+  for (const d of r.domains) {
+    console.log("[T12]   dominio " + d.domain.padEnd(14) + " disponivel=" + d.available +
+      " contribui=" + d.contributes + " sinal=" + d.signal + "  (" + d.evidence + ")");
+  }
+  for (const [k, v] of Object.entries(r.singleDomainMAE)) {
+    console.log("[T12]   so " + k.padEnd(14) + " MAE=" + (v === null ? "n/a" : v.toFixed(3)));
+  }
+  console.log("[T12] improvement:", r.improvementPct.toFixed(1) + "%");
+  console.log("[T12] todos os dominios contribuíram:", r.everyDomainContributed);
+  console.log("[T12] fusao bate o melhor dominio isolado:", r.beatsBestSingle);
+  console.log("[T12] verdict:", r.verdict);
+
+  // A cross-domain claim is only valid if every domain actually
+  // produced a signal. The old version of this test reported a 64.7%
+  // "cross-domain" gain while two of the three domains were inert.
+  assert.ok(r.everyDomainContributed,
+    "T12: cross-domain result is invalid — at least one domain produced no signal");
+  assert.ok(r.improvementPct > 0,
+    `T12: cross-domain fusion did not improve on the baseline (${r.improvementPct.toFixed(1)}%)`);
+  // The whole point of measuring cross-domain: the fused result must
+  // beat every domain on its own, not just the do-nothing baseline.
+  assert.ok(r.beatsBestSingle,
+    `T12: fusion (${r.threeDomainMAE.toFixed(3)}) did not beat the best single domain`);
+  // And on the disagreement case it must beat the domain that is
+  // confidently wrong, which is what a single domain cannot do.
+  const dg = r.disagreement;
+  console.log("[T12] cenario desacordo (" + dg.label + "): baseline=" + dg.baselineMAE.toFixed(3) +
+    " fusao=" + dg.threeDomainMAE.toFixed(3) +
+    " melhor isolado=" + dg.bestSingleMAE.toFixed(3) + " (" + dg.bestSingleName + ")" +
+    " trader-so=" + dg.singleDomainMAE.trader.toFixed(3));
+  for (const d of dg.domains) {
+    console.log("[T12]   " + d.domain.padEnd(14) + " contribui=" + d.contributes +
+      " sinal=" + d.signal + (d.abstained ? " ABSTENÇÃO" : "") + "  (" + d.evidence + ")");
+  }
+  assert.ok(dg.everyDomainContributed,
+    "T12: on the disagreement case a domain produced no usable signal");
+  assert.ok(dg.beatsBestSingle,
+    `T12: fusion on the disagreement case (${dg.threeDomainMAE.toFixed(3)}) did not beat the best single domain (${dg.bestSingleMAE.toFixed(3)})`);
+  assert.ok(dg.threeDomainMAE < dg.singleDomainMAE.trader,
+    "T12: fusion did not rescue the task from the confidently-wrong domain");
   await fs.rm(ws, { recursive: true, force: true });
 });
 
@@ -340,6 +377,44 @@ test("T11 — Supreme Test", async () => {
   });
   results.T11 = r;
   console.log("[T11] distinctProfUsed:", r.distinctProfessionsUsed, "passed:", r.passed);
+  await fs.rm(ws, { recursive: true, force: true });
+});
+
+test("T17 — Skill Reachability Audit (every shipped skill must run)", async () => {
+  const ws = await bootWorkspace();
+  // The audit must cover the LIBRARY THAT SHIPS, so the shipped
+  // manifest goes in alongside the shipped .py files. bootWorkspace()
+  // deliberately skips the manifest so that each test starts from a
+  // clean adopt(); this one is auditing the shipped state instead.
+  await fs.copyFile(
+    path.join(ROOT, "dna_library", "manifest.json"),
+    path.join(ws, "packages", "metamorfus-src", "dna_library", "manifest.json"),
+  );
+  const { auditReachableSkills } = await import(path.join(ROOT, "server/cognitive/reachability.mjs"));
+  const r = await auditReachableSkills(ws);
+  results.T17 = {
+    total: r.total, executed: r.executedCount, needsInput: r.needsInputCount,
+    needsTool: r.needsToolCount, broken: r.brokenCount, reachable: r.reachableCount,
+  };
+  console.log("[T17] skills no manifesto: " + r.total);
+  console.log("[T17] EXECUTARAM com valor real: " + r.executedCount);
+  console.log("[T17] alcancaveis, faltou contexto: " + r.needsInputCount);
+  console.log("[T17] alcancaveis, falta ferramenta externa: " + r.needsToolCount);
+  console.log("[T17] QUEBRADOS (bug real): " + r.brokenCount);
+  for (const b of r.broken) console.log("[T17]   QUEBRADO " + b.key + " — " + b.reason);
+
+  // A skill that cannot run is not a capability. Zero broken is the
+  // bar; a broken skill means the organism advertises something it
+  // cannot do.
+  assert.strictEqual(r.brokenCount, 0,
+    "T17: " + r.brokenCount + " skill(s) raised instead of returning a value: " +
+    r.broken.map((b) => b.key).join(", "));
+  // The organism must actually possess capabilities, not just files.
+  assert.ok(r.executedCount >= 40,
+    `T17: only ${r.executedCount} skills executed; the organism claims 40+ reachable skills`);
+  // Every skill in the manifest must correspond to a real file.
+  assert.strictEqual(r.reachableCount, r.total,
+    `T17: ${r.total - r.reachableCount} manifest skills are not reachable at all`);
   await fs.rm(ws, { recursive: true, force: true });
 });
 
