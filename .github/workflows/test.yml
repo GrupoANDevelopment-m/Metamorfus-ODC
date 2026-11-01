@@ -84,7 +84,7 @@ jobs:
           retention-days: 7
 
   # ────────────────────────────────────────────────────────────────
-  # Live LLM battery (T1–T16). Needs a real NVIDIA key.
+  # Live LLM battery (T1–T18). Needs a real NVIDIA key.
   #
   # This is the suite that actually proves the organism works: real
   # Python execution, real LLM forging, real k-fold CV with t-distribution
@@ -92,7 +92,7 @@ jobs:
   # minutes) and billable, so it runs only on main pushes and on demand.
   # ────────────────────────────────────────────────────────────────
   battery:
-    name: LLM battery T1–T16
+    name: LLM battery T1–T18
     runs-on: ubuntu-latest
     needs: offline
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
