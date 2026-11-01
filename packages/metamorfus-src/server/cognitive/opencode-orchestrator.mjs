@@ -264,7 +264,11 @@ async function localForge(req) {
   }
   const orch = new MetamorphoseOrchestrator({
     forgeSkill: async ({ skillKey, pythonSource }) => {
-      const r = await executeBridgeTool("forge_skill", { skillKey, pythonSource });
+      const r = await executeBridgeTool(
+        "forge_skill",
+        { skillKey, pythonSource },
+        { workspaceRoot: ws },
+      );
       return { output: r.output, data: r.data };
     },
     dnaDir: "packages/metamorfus-src/dna_library",

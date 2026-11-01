@@ -75,6 +75,17 @@ export async function executeBridgeTool(
   args: Record<string, unknown>,
   ctx?: { workspaceRoot?: string; dnaDir?: string },
 ) {
+  // A malformed context used to fail SILENTLY: passing a bare string
+  // instead of `{ workspaceRoot }` left `ctx.workspaceRoot` undefined,
+  // and the tool then wrote into `cwd/../..` — the installed package
+  // — instead of the caller's workspace. Every forged skill landed in
+  // the wrong place and nobody was told. Now it is an error.
+  if (ctx !== undefined && (typeof ctx !== "object" || ctx === null || Array.isArray(ctx))) {
+    throw new Error(
+      `executeBridgeTool("${name}"): ctx must be { workspaceRoot?, dnaDir? }, got ${typeof ctx}. ` +
+      `Passing a bare string silently wrote into the installed package instead of the workspace.`,
+    );
+  }
   const workspaceRoot = ctx?.workspaceRoot ?? path.resolve(process.cwd(), "../..");
   const dnaDir = ctx?.dnaDir;
   return executeTool(name, args, {

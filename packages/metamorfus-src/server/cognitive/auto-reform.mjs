@@ -99,7 +99,11 @@ async function runOrchestrator(workspaceRoot, plan) {
   const { executeBridgeTool } = await import(path.join(ROOT, "server/odc-opencode-bridge.js"));
   const orch = new MetamorphoseOrchestrator({
     forgeSkill: async ({ skillKey, pythonSource }) => {
-      const r = await executeBridgeTool("forge_skill", { skillKey, pythonSource });
+      const r = await executeBridgeTool(
+        "forge_skill",
+        { skillKey, pythonSource },
+        { workspaceRoot },
+      );
       return { output: r.output, data: r.data };
     },
     dnaDir: "packages/metamorfus-src/dna_library",

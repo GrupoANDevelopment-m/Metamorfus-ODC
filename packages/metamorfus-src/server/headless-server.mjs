@@ -91,7 +91,11 @@ export async function startHeadlessServer(opts = {}) {
   const { PromptPlanner } = await import("./metamorfose/prompt-planner.mjs");
   const orchestrator = new MetamorphoseOrchestrator({
     forgeSkill: async ({ skillKey, pythonSource }) =>
-      executeBridgeTool("forge_skill", { skillKey, pythonSource }),
+      executeBridgeTool(
+        "forge_skill",
+        { skillKey, pythonSource },
+        { workspaceRoot: opts.workspaceRoot ?? process.cwd() },
+      ),
     // Resolved through packageRoot() rather than a literal
     // "packages/metamorfus-src/dna_library" relative to CWD. That literal
     // only holds for a monorepo checkout; in the container the package is
@@ -121,7 +125,11 @@ export async function startHeadlessServer(opts = {}) {
     orchestrator,
     planner,
     forgeSkill: async ({ skillKey, pythonSource }) =>
-      executeBridgeTool("forge_skill", { skillKey, pythonSource }),
+      executeBridgeTool(
+        "forge_skill",
+        { skillKey, pythonSource },
+        { workspaceRoot: opts.workspaceRoot ?? process.cwd() },
+      ),
     dnaDir: DNA_DIR,
   });
 
@@ -132,7 +140,11 @@ export async function startHeadlessServer(opts = {}) {
     workspaceRoot,
     dnaDir: "packages/metamorfus-src/dna_library",
     forgeSkill: async ({ skillKey, pythonSource }) => {
-      const r = await executeBridgeTool("forge_skill", { skillKey, pythonSource });
+      const r = await executeBridgeTool(
+        "forge_skill",
+        { skillKey, pythonSource },
+        { workspaceRoot },
+      );
       return { output: r.output, data: r.data };
     },
     scanCodebase: async (args = {}) =>
@@ -265,7 +277,13 @@ export async function startHeadlessServer(opts = {}) {
   app.post("/api/tools/:name", async (req, res) => {
     const { name } = req.params;
     try {
-      const r = await executeBridgeTool(name, req.body ?? {});
+      // The workspace matters: a tool that writes (forge_skill) must
+      // write into THIS tenant's library, not into the installed
+      // package. Without it the bridge falls back to its own
+      // directory and every forged skill lands in the wrong place.
+      const r = await executeBridgeTool(name, req.body ?? {}, {
+        workspaceRoot: req.tenant?.workspaceRoot ?? opts.workspaceRoot ?? process.cwd(),
+      });
       return res.json({ name, ...r });
     } catch (e) {
       return res.status(400).json({ name, error: e?.message ?? "tool error" });
@@ -536,6 +554,51 @@ export async function startHeadlessServer(opts = {}) {
       });
     } catch (e) {
       res.status(503).json({ ok: false, error: e.message, attempts: e.attempts });
+    }
+  });
+
+  // ─── /api/capabilities — what the organism can do ────────────────
+  // The library, with the provenance of every skill: which ones were
+  // seeds, which ones the organism forged itself.
+  app.get("/api/capabilities", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    try {
+      const { listCapabilities } = await import("./cognitive/capability-forge.mjs");
+      const workspaceRoot = req.tenant?.workspaceRoot ?? opts.workspaceRoot ?? process.cwd();
+      const report = await listCapabilities(workspaceRoot);
+      res.json(report);
+    } catch (e) {
+      res.status(500).json({ error: e?.message ?? "capability listing failed" });
+    }
+  });
+
+  // ─── /api/capabilities/forge — grow a capability ─────────────────
+  // Describe what the organism cannot do yet; it writes the skill,
+  // validates it by running it, registers it in the tenant's library,
+  // and returns the actual output of the new skill. If the forge
+  // fails, the failure comes back — it never reports success it did
+  // not achieve.
+  app.post("/api/capabilities/forge", async (req, res) => {
+    if (!req.tenant) return res.status(401).json({ error: "auth required" });
+    const { skillKey, capability, profession, context, maxAttempts } = req.body ?? {};
+    if (!skillKey) return res.status(400).json({ error: "skillKey is required" });
+    if (!capability) return res.status(400).json({ error: "capability is required" });
+    try {
+      const { forgeCapability } = await import("./cognitive/capability-forge.mjs");
+      const workspaceRoot = req.tenant?.workspaceRoot ?? opts.workspaceRoot ?? process.cwd();
+      const report = await forgeCapability(workspaceRoot, {
+        skillKey,
+        capability,
+        profession,
+        context,
+        maxAttempts,
+      });
+      // 200 when the capability was created AND runs; 422 when the
+      // model could not produce a working skill — that is a real
+      // failure, not a transport error.
+      res.status(report.created && report.usable ? 200 : 422).json(report);
+    } catch (e) {
+      res.status(500).json({ error: e?.message ?? "forge failed" });
     }
   });
 

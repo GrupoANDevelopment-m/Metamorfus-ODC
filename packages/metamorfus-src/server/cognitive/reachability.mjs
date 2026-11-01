@@ -133,9 +133,17 @@ export async function auditReachableSkills(workspaceRoot) {
     needsInput: [],
     needsTool: [],
     broken: [],
+    retired: [],
   };
 
   for (const s of skills) {
+    // A retired skill stays in the library forever (the no-delete
+    // rule), but it is not a capability the organism can use, so it
+    // is counted apart from the live ones.
+    if (s.status === "archaeology") {
+      report.retired.push(s.key);
+      continue;
+    }
     const pyPath = path.join(dnaDir, `${s.key}.py`);
     if (!(await fs.stat(pyPath).catch(() => null))) {
       report.broken.push({ key: s.key, profession: s.profession, reason: "no .py file" });
@@ -180,7 +188,10 @@ export async function auditReachableSkills(workspaceRoot) {
   report.needsInputCount = report.needsInput.length;
   report.needsToolCount = report.needsTool.length;
   report.brokenCount = report.broken.length;
+  report.retiredCount = report.retired.length;
   report.allReachable = report.brokenCount === 0;
+  // The live population is everything that is not retired.
+  report.liveCount = skills.length - report.retiredCount;
   report.reachableCount = report.executedCount + report.needsInputCount + report.needsToolCount;
   return report;
 }

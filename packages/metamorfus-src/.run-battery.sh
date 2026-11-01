@@ -393,10 +393,11 @@ test("T17 — Skill Reachability Audit (every shipped skill must run)", async ()
   const { auditReachableSkills } = await import(path.join(ROOT, "server/cognitive/reachability.mjs"));
   const r = await auditReachableSkills(ws);
   results.T17 = {
-    total: r.total, executed: r.executedCount, needsInput: r.needsInputCount,
-    needsTool: r.needsToolCount, broken: r.brokenCount, reachable: r.reachableCount,
+    total: r.total, live: r.liveCount, executed: r.executedCount, needsInput: r.needsInputCount,
+    needsTool: r.needsToolCount, broken: r.brokenCount, retired: r.retiredCount,
+    reachable: r.reachableCount,
   };
-  console.log("[T17] skills no manifesto: " + r.total);
+  console.log("[T17] skills no manifesto: " + r.total + " (vivas: " + r.liveCount + ", aposentadas: " + r.retiredCount + ")");
   console.log("[T17] EXECUTARAM com valor real: " + r.executedCount);
   console.log("[T17] alcancaveis, faltou contexto: " + r.needsInputCount);
   console.log("[T17] alcancaveis, falta ferramenta externa: " + r.needsToolCount);
@@ -412,9 +413,58 @@ test("T17 — Skill Reachability Audit (every shipped skill must run)", async ()
   // The organism must actually possess capabilities, not just files.
   assert.ok(r.executedCount >= 40,
     `T17: only ${r.executedCount} skills executed; the organism claims 40+ reachable skills`);
-  // Every skill in the manifest must correspond to a real file.
-  assert.strictEqual(r.reachableCount, r.total,
-    `T17: ${r.total - r.reachableCount} manifest skills are not reachable at all`);
+  // Every LIVE skill in the manifest must correspond to a real file.
+  // Retired ones stay in the library forever (the no-delete rule) and
+  // are counted apart.
+  assert.strictEqual(r.reachableCount, r.liveCount,
+    `T17: ${r.liveCount - r.reachableCount} live manifest skills are not reachable at all`);
+  await fs.rm(ws, { recursive: true, force: true });
+});
+
+test("T18 — Capability Forge (the organism grows a capability it lacks)", async () => {
+  const ws = await bootWorkspace();
+  const { forgeCapability } = await import(path.join(ROOT, "server/cognitive/capability-forge.mjs"));
+  const r = await forgeCapability(ws, {
+    skillKey: "freight_carbon_footprint_protocol",
+    capability: [
+      "the organism has no way to estimate the carbon footprint of a freight movement",
+      "it must accept distance_km (float), weight_tonnes (float) and transport_mode (one of: road, rail, air, ship)",
+      "and return the kilograms of CO2 emitted, the per-mode breakdown when several modes are given, and which mode dominates",
+    ],
+    context: { distance_km: 1000, weight_tonnes: 10, transport_mode: "road" },
+  });
+  results.T18 = {
+    created: r.created, usable: r.usable, model: r.model ?? null,
+    bytes: r.bytes ?? null, reason: r.reason ?? null,
+  };
+  console.log("[T18] created:", r.created, "| usable:", r.usable, "| model:", r.model, "| bytes:", r.bytes);
+  console.log("[T18] smoke:", JSON.stringify(r.smokeTest?.result ?? r.smokeTest?.error));
+
+  assert.ok(r.created, `T18: the organism did not forge the capability: ${r.reason ?? r.error}`);
+  // A skill that was written but never executed is a claim, not a
+  // capability. The forge runs it before calling it usable.
+  assert.ok(r.usable, `T18: the forged skill did not execute: ${r.smokeTest?.error}`);
+  assert.ok(r.bytes > 100, `T18: the forged skill is suspiciously small (${r.bytes} bytes)`);
+
+  // The skill must live in THIS workspace...
+  const wsPy = path.join(ws, "packages", "metamorfus-src", "dna_library", "freight_carbon_footprint_protocol.py");
+  assert.ok(await fs.stat(wsPy).then(() => true).catch(() => false),
+    "T18: the forged skill was not written into the workspace");
+  // ...and NOT in the installed package. That was a real bug: the
+  // bridge was called with the workspace root in the wrong shape and
+  // silently fell back to its own directory, so every forged skill
+  // landed in the package instead of the tenant's library.
+  const installedPy = path.join(ROOT, "dna_library", "freight_carbon_footprint_protocol.py");
+  assert.equal(await fs.stat(installedPy).then(() => true).catch(() => false), false,
+    "T18: the forged skill leaked into the installed package instead of the workspace");
+
+  // The manifest must record where it came from.
+  const manifest = JSON.parse(await fs.readFile(path.join(ws, "packages", "metamorfus-src", "dna_library", "manifest.json"), "utf-8"));
+  const entry = (manifest.skills ?? []).find((s) => s.key === "freight_carbon_footprint_protocol");
+  assert.ok(entry, "T18: the forged skill was not registered in the manifest");
+  assert.equal(entry.created_by, "capability-forge");
+  assert.ok(entry.forged_by_model, "T18: the manifest does not record which model wrote the skill");
+
   await fs.rm(ws, { recursive: true, force: true });
 });
 

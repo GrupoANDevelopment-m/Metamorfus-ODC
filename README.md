@@ -102,6 +102,14 @@ imports the module, calls `skill(organism, context)`, and prints the
 result as JSON. A skill that raises returns `ok: false` with the
 traceback rather than exiting quietly.
 
+A second bug lived in the same family: `executeBridgeTool` was called
+with the workspace root in the wrong shape in six places, so
+`ctx.workspaceRoot` was `undefined` and the bridge silently fell back to
+its own directory. Every forged skill — including the ones written
+through the HTTP API — landed in the installed package instead of the
+tenant's library, and nothing said so. The call sites are fixed, and the
+bridge now rejects a malformed context instead of guessing.
+
 Contexts over 64 KB go through a temp file instead of an env var. Passing
 1000 transactions as `METAMORFUS_CONTEXT` hit the kernel's `ARG_MAX` and
 the spawn died with `E2BIG` — which is why diagnosis once reported
@@ -124,7 +132,8 @@ so.
 | T14 | Significance | baseline 0.147 [0.000, 0.398] vs forged 0.434 [0.248, 0.620] — **not significant** |
 | T15 | PaySim-like data, k=10 | F1 0.933 [0.833, 1.000] |
 | T16 | Directional forge | baseline 0.967 [0.891, 1.000], forge had nothing to add |
-| T17 | Are the skills real? | 44 of 54 execute and return values, **0 broken** |
+| T17 | Are the skills real? | 43 of 53 live skills execute and return values, **0 broken** |
+| T18 | Can the organism grow a capability? | forged, registered, executed — and it landed in the workspace, not the package |
 
 T14 is the honest one. The forged skill scored higher, but the confidence
 intervals overlap, so it is reported as not significant rather than as a
@@ -146,6 +155,30 @@ needs-tool / broken. The 10 that do not execute need an external program
 (`nginx`, `archify`, `bsk`, `browser_use`, `requests`, a live HTTP server,
 an unbuilt binary) or a field the audit did not supply. None of them is
 broken.
+
+One skill is **retired** rather than deleted: `test_realskill_protocol`
+was a stub that returned a constant dict and computed nothing. The
+constitution is explicit — *"No skill may be deleted, only retired (marked
+archaeology) and superseded by a new version"* — so it stays in the
+manifest and on disk with its history, marked `archaeology`.
+
+### Growing a capability
+
+`POST /api/capabilities/forge` asks the organism to implement a
+capability it does not have. It takes a description of what is missing,
+nothing else — no template, no source, no domain hint — and then:
+
+1. the model writes the skill (walking the verified chain until the code
+   validates, because the router's failover only sees transport errors)
+2. the skill is written into **the caller's workspace**
+3. it is registered in that workspace's manifest with its provenance
+   (`created_by`, `forged_by_model`)
+4. it is **executed** with a smoke-test context, and the real output is
+   returned
+
+`GET /api/capabilities` lists what the organism holds and where each
+skill came from. T18 asserts all four steps, including that the forged
+skill does **not** appear in the installed package.
 
 ---
 
@@ -186,7 +219,7 @@ category before trying anything, so a key registered only as
 packages/metamorfus-src/
   server/
     skills/         invoker.py, runner.mjs — real Python execution
-    cognitive/      23 modules: forge, complementarity, statistics, ...
+    cognitive/      25 modules: forge, capability-forge, complementarity, statistics, ...
     llm-library/    router, providers, store, model-registry
     identity/       constitution, archaeology, persistence
     __tests__/
