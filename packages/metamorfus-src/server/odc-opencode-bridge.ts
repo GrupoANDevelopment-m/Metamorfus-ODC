@@ -96,18 +96,31 @@ export async function executeBridgeTool(
 }
 
 /**
+ * OpenCode's health endpoint. It used to be `/health`; the current
+ * server exposes it at `/global/health`
+ * (packages/opencode/src/server/routes/instance/httpapi/groups/global.ts).
+ * The bridge asked for `/health`, got a 404, and reported the sidecar
+ * as unreachable — so the OpenCode path never engaged and every chat
+ * silently fell back to the local LLM library. Both paths are tried.
+ */
+const HEALTH_PATHS = ["/global/health", "/health"];
+
+/**
  * Quick reachability check used by /api/chat to fail fast with a 503 when
  * the OpenCode sidecar is down. Cheap — short timeout, single GET.
  */
 export async function ping(): Promise<boolean> {
-  try {
-    const res = await fetch(`${OPENCODE_URL}/health`, {
-      signal: AbortSignal.timeout(2000),
-    });
-    return res.ok;
-  } catch {
-    return false;
+  for (const p of HEALTH_PATHS) {
+    try {
+      const res = await fetch(`${OPENCODE_URL}${p}`, {
+        signal: AbortSignal.timeout(2000),
+      });
+      if (res.ok) return true;
+    } catch {
+      // try the next path
+    }
   }
+  return false;
 }
 
 /**
@@ -132,9 +145,9 @@ export async function complete(req: BridgeRequest): Promise<BridgeResponse> {
       const err = await safeText(sessionRes);
       throw new Error(`OpenCode session.create failed (${sessionRes.status}): ${err}`);
     }
-    const session = (await sessionRes.json()) as { id?: string };
-    if (!session.id) throw new Error("OpenCode session.create returned no id");
-    const sessionId: string = session.id;
+    const session = (await sessionRes.json()) as { id?: string; info?: { id?: string } };
+    const sessionId: string = session.id ?? session.info?.id ?? "";
+    if (!sessionId) throw new Error("OpenCode session.create returned no id");
 
     // 2) Build the parts payload. OpenCode accepts a `parts` array of typed
     //    segments; text-only is enough for the Metamorfus use case.
@@ -146,11 +159,15 @@ export async function complete(req: BridgeRequest): Promise<BridgeResponse> {
     const body: Record<string, unknown> = {
       agent: METAMORFUS_AGENT,
       parts,
-      temperature: req.temperature ?? 0.7,
-      maxTokens: req.maxTokens ?? 4096,
+      // PromptInput has no temperature/maxTokens — OpenCode's schema
+      // ignores excess properties, and the model config carries the
+      // sampling settings. They are kept out of the request so the
+      // payload matches the server's schema exactly.
     };
-    if (req.provider) body.provider = req.provider;
-    if (req.model) body.model = req.model;
+    // `model` must be a ModelRef ({ id, providerID }), not a string:
+    // SessionPrompt.PromptInput validates its type, so a bare string
+    // is rejected with a 400 and the whole OpenCode path fails.
+    if (req.model) body.model = toModelRef(req.model);
 
     const promptRes = await fetch(
       `${OPENCODE_URL}/session/${encodeURIComponent(sessionId)}/message`,
@@ -165,29 +182,64 @@ export async function complete(req: BridgeRequest): Promise<BridgeResponse> {
       const err = await safeText(promptRes);
       throw new Error(`OpenCode prompt failed (${promptRes.status}): ${err}`);
     }
+    // OpenCode returns SessionV1.WithParts: { info, parts }. The
+    // assistant's text lives in parts[] (each { type, text }); the
+    // legacy shape { content } is still accepted.
     const result = (await promptRes.json()) as {
       content?: string;
+      parts?: Array<{ type?: string; text?: string }>;
+      info?: {
+        modelID?: string;
+        providerID?: string;
+        tokens?: {
+          total?: number;
+          input?: number;
+          output?: number;
+          reasoning?: number;
+          cache?: { read?: number; write?: number };
+        };
+      };
       model?: string;
       provider?: string;
       usage?: Partial<BridgeUsage>;
     };
 
+    const text =
+      typeof result.content === "string"
+        ? result.content
+        : (result.parts ?? [])
+            .filter((p) => p?.type === "text" && typeof p.text === "string")
+            .map((p) => p.text as string)
+            .join("");
+
+    const tokens = result.info?.tokens;
     const usage: BridgeUsage = {
-      promptTokens: result.usage?.promptTokens ?? 0,
-      completionTokens: result.usage?.completionTokens ?? 0,
-      totalTokens: result.usage?.totalTokens ?? 0,
+      promptTokens: tokens?.input ?? result.usage?.promptTokens ?? 0,
+      completionTokens: tokens?.output ?? result.usage?.completionTokens ?? 0,
+      totalTokens: tokens?.total ?? result.usage?.totalTokens ?? 0,
     };
 
     return {
-      content: result.content ?? "",
-      model: result.model ?? req.model ?? "opencode-default",
-      provider: result.provider ?? req.provider ?? "opencode-default",
+      content: text,
+      model: result.info?.modelID ?? result.model ?? req.model ?? "opencode-default",
+      provider: result.info?.providerID ?? result.provider ?? req.provider ?? "opencode-default",
       sessionId,
       usage,
     };
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Converts a model id into OpenCode's ModelRef.
+ * OpenCode splits ids as `provider/model`
+ * (packages/opencode/src/provider/provider.ts:2029).
+ */
+export function toModelRef(model: string): { id: string; providerID: string } {
+  const separator = model.indexOf("/");
+  if (separator <= 0) return { id: model, providerID: model };
+  return { id: model, providerID: model.slice(0, separator) };
 }
 
 async function safeText(res: Response): Promise<string> {

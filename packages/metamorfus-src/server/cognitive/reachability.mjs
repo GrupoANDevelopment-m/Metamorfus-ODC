@@ -28,7 +28,11 @@ const ROOT = packageRoot();
  */
 const CONTEXT_BY_HINT = [
   [/arxiv/i, { query: "transformer architecture", max_results: 3 }],
-  [/browser_use|browser-harness|bsk/i, { task: "read the title of a page", url: "http://127.0.0.1:8080/" }],
+  [/browser_use|browser-harness|bsk|playwright/i, {
+    task: "read the title of a page",
+    url: "http://127.0.0.1:8080/",
+    pages: ["http://127.0.0.1:8080/"],
+  }],
   [/crypto_price/i, { symbol: "BTC", ids: ["bitcoin"] }],
   [/cve/i, { keyword: "log4j" }],
   [/summar/i, { text: "The quick brown fox jumps over the lazy dog. It was a bright cold day in April." }],
@@ -109,8 +113,17 @@ function contextFor(key) {
   return {};
 }
 
-/** Classifies a failure that is not a real defect. */
-function classifyFailure(reason) {
+/**
+ * Classifies a failure.
+ *
+ * The runner tells us whether the skill RAISED or merely reported a
+ * condition (failureKind). A skill that raised is a defect. A skill
+ * that ran and said "nginx not installed" is working correctly — it
+ * told the truth about its environment. Calling that "broken" made
+ * the audit lie about the organism.
+ */
+function classifyFailure(reason, failureKind) {
+  if (failureKind === "raised") return "broken";
   const r = String(reason ?? "");
   // "the skill needs a field this audit did not supply"
   if (/\b(required|is required|missing)\b/i.test(r)) return "needsInput";
@@ -118,7 +131,9 @@ function classifyFailure(reason) {
   if (/(not installed|not found|not built|No such file|Connection refused|nxdomain|ENOENT|command not found)/i.test(r)) {
     return "needsTool";
   }
-  return "broken";
+  // Ran, reported something, but nothing we recognise: still a
+  // condition, not a crash.
+  return "degraded";
 }
 
 export async function auditReachableSkills(workspaceRoot) {
@@ -132,6 +147,7 @@ export async function auditReachableSkills(workspaceRoot) {
     executed: [],
     needsInput: [],
     needsTool: [],
+    degraded: [],
     broken: [],
     retired: [],
   };
@@ -163,7 +179,7 @@ export async function auditReachableSkills(workspaceRoot) {
     }
     if (!r.ok) {
       const reason = String(r.error ?? "unknown");
-      const bucket = classifyFailure(reason);
+      const bucket = classifyFailure(reason, r.failureKind);
       report[bucket].push({ key: s.key, profession: s.profession, reason: reason.slice(0, 150) });
       continue;
     }
@@ -187,11 +203,13 @@ export async function auditReachableSkills(workspaceRoot) {
   report.executedCount = report.executed.length;
   report.needsInputCount = report.needsInput.length;
   report.needsToolCount = report.needsTool.length;
+  report.degradedCount = report.degraded.length;
   report.brokenCount = report.broken.length;
   report.retiredCount = report.retired.length;
   report.allReachable = report.brokenCount === 0;
   // The live population is everything that is not retired.
   report.liveCount = skills.length - report.retiredCount;
-  report.reachableCount = report.executedCount + report.needsInputCount + report.needsToolCount;
+  report.reachableCount =
+    report.executedCount + report.needsInputCount + report.needsToolCount + report.degradedCount;
   return report;
 }
