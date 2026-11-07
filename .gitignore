@@ -20,3 +20,8 @@ packages/opencode-src/artifacts/
 packages/opencode-src/packages/opencode/test/image/fixtures/picture-5mb-base64.png
 packages/opencode-src/packages/opencode/test/tool/fixtures/models-api.json
 packages/opencode-src/packages/opencode/test/tool/fixtures/large-image.png
+
+# Python bytecode. Compiled .pyc files in a repository are noise: they
+# change on every run, differ per platform, and are rebuilt on demand.
+__pycache__/
+*.py[cod]
