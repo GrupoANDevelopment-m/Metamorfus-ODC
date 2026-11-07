@@ -32,13 +32,16 @@ async function bootIsolatedServer() {
     if (f.endsWith(".pyc") || f === "__pycache__" || f === "manifest.json" || f === "baselines") continue;
     try { await fs.copyFile(path.join(srcDna, f), path.join(dstDna, f)); } catch {}
   }
-  // Use a high port to avoid clashes
-  const port = 3700 + Math.floor(Math.random() * 200);
+  // Port 0 = the OS picks a free ephemeral port. See the note in
+  // constitution-memory.test.mjs: a reused port leaves undici holding a
+  // dead keep-alive socket.
+  const port = 0;
   const handle = await startHeadlessServer({
     workspaceRoot: ws,
     port,
   });
-  return { ws, port, handle };
+  // handle.port is the port the OS actually gave us.
+  return { ws, port: handle.port, handle };
 }
 
 async function authed(port, p, opts = {}) {

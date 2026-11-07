@@ -31,9 +31,14 @@ async function bootIsolatedServer() {
     if (f.endsWith(".pyc") || f === "__pycache__" || f === "manifest.json" || f === "baselines") continue;
     try { await fs.copyFile(path.join(srcDna, f), path.join(dstDna, f)); } catch {}
   }
-  const port = 3900 + Math.floor(Math.random() * 200);
-  const handle = await startHeadlessServer({ workspaceRoot: ws, port });
-  return { ws, port, handle };
+  // Port 0 lets the OS pick a free ephemeral port. A fixed or random
+  // port can be reused by a later test in the same file, and undici
+  // keeps a keep-alive socket per host:port — so the next test would
+  // fetch through a socket the closed server had already killed. That
+  // surfaced as "fetch failed" on Node 22 and not on Node 20: a race
+  // that looked like a logic failure.
+  const handle = await startHeadlessServer({ workspaceRoot: ws, port: 0 });
+  return { ws, port: handle.port, handle };
 }
 
 async function authed(port, p, opts = {}) {

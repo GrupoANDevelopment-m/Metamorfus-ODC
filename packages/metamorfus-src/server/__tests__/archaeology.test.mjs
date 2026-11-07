@@ -232,16 +232,18 @@ test("A8: HTTP routes expose archaeology REST API", async () => {
   await decommissionFlow(ws, f1.id, "test");
   await decommissionFlow(ws, f2.id, "test");
   // Use the same workspace for the HTTP server
-  const handle = await startHeadlessServer({ workspaceRoot: ws, port: 4002 });
+  // Port 0 = free ephemeral port chosen by the OS.
+  const handle = await startHeadlessServer({ workspaceRoot: ws, port: 0 });
+  const base = `http://127.0.0.1:${handle.port}`;
   try {
     const auth = { Authorization: "Bearer dev-secret-local" };
-    const r1 = await fetch("http://127.0.0.1:4002/api/archaeology/flows", { headers: auth });
-    const r2 = await fetch("http://127.0.0.1:4002/api/archaeology/skills", { headers: auth });
-    const r3 = await fetch("http://127.0.0.1:4002/api/archaeology/flows/synthesize", {
+    const r1 = await fetch(base + "/api/archaeology/flows", { headers: auth });
+    const r2 = await fetch(base + "/api/archaeology/skills", { headers: auth });
+    const r3 = await fetch(base + "/api/archaeology/flows/synthesize", {
       method: "POST", headers: { ...auth, "Content-Type": "application/json" },
       body: JSON.stringify({ baseFlowIds: [f1.id, f2.id] }),
     });
-    const r4 = await fetch("http://127.0.0.1:4002/api/archaeology/flows/" + f1.id + "/restore", {
+    const r4 = await fetch(base + "/api/archaeology/flows/" + f1.id + "/restore", {
       method: "POST", headers: { ...auth, "Content-Type": "application/json" },
       body: JSON.stringify({}),
     });
@@ -251,7 +253,7 @@ test("A8: HTTP routes expose archaeology REST API", async () => {
     assert.equal(r3.status, 200, `synthesize flow: ${r3.status}`);
     assert.equal(r4.status, 200, `restore flow: ${r4.status}`);
     // 401 without auth
-    const r5 = await fetch("http://127.0.0.1:4002/api/archaeology/flows");
+    const r5 = await fetch(base + "/api/archaeology/flows");
     assert.equal(r5.status, 401);
   } finally {
     await handle.close();

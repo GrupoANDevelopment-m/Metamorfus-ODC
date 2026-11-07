@@ -9,6 +9,16 @@ and reachable over HTTP. Metamorfus talks to it through
 `server/odc-opencode-bridge.ts` and degrades to NVIDIA direct when it is
 not running.
 
+The bridge used to speak a protocol OpenCode does not serve — wrong health
+path, wrong response shape, a `model` sent as a string where a `ModelRef`
+is required. Every mismatch was silent, so the sidecar was reported
+unreachable, `/api/chat` always fell back to the local LLM library, and
+the OpenCode path never engaged at all. It now speaks the server's actual
+schema, verified against the vendored source, and
+`server/__tests__/opencode-bridge.test.mjs` serves those exact shapes from
+a fake server — the test fails on the old bridge and passes on the new
+one.
+
 ---
 
 ## What this actually does
@@ -69,16 +79,21 @@ cd ../opencode-src/packages/opencode && bun install && bun run dev serve
 ### Tests
 
 ```bash
-# offline — no key needed
+# offline — no key needed (92 tests)
 npx tsx --test \
   server/__tests__/cognitive.test.mjs \
   server/__tests__/archaeology.test.mjs \
   server/__tests__/identity.test.mjs \
   server/__tests__/constitution-memory.test.mjs \
   server/__tests__/llm-library.test.mjs \
+  server/__tests__/model-liveness.test.mjs \
+  server/__tests__/capability-forge.test.mjs \
+  server/__tests__/opencode-bridge.test.mjs \
+  server/__tests__/skill-runtimes.test.mjs \
+  server/__tests__/skill-contracts.test.mjs \
   server/__tests__/tool-registry.test.ts
 
-# live battery — needs a key, ~10-20 min
+# live battery — needs a key, ~5 min
 bash .run-battery.sh
 ```
 
@@ -117,6 +132,37 @@ the spawn died with `E2BIG` — which is why diagnosis once reported
 
 ---
 
+## The bug that was hiding in plain sight
+
+`analyze_pressure_gradient_protocol` reads
+`stations[{ id, pressure, lat, lon }]`. Every caller in the repository sent
+`{ station_id, pressure_hpa }`.
+
+So the pressure arrived as `0`. Every gradient came out as `0`. The field
+looked perfectly flat. And the call returned `ok: true`, because nothing had
+crashed — the skill was answering a question nobody had asked it.
+
+`engineer_load_calc_protocol` had the same shape: it reads
+`loads{ moment, shear, axial, length }` and
+`section{ type, depth, width }`, and its callers sent
+`distributed_kg_m2`, `span_m`, `depth_m`, `width_m`. It fell back to its
+defaults every time and reported a utilisation of `0`.
+
+This was the machinery behind the old fake "64.7% cross-domain gain": two of
+the three domains were contributing nothing while reporting success. A test
+that asserts "the fusion beats the baseline" cannot see that two of its three
+inputs are zero — the fusion still beats the baseline, just for the wrong
+reason.
+
+The adapters now speak the contracts the skills actually implement, and
+`server/__tests__/skill-contracts.test.mjs` closes the class of bug: it sends
+each documented context and asserts the output is **not degenerate** —
+gradients computed, utilisation above zero, RSI in range, temperatures
+actually read. Rewrite a skill, rename a field, or let an adapter drift, and
+the test fails instead of quietly returning zeros.
+
+---
+
 ## Battery results
 
 Real numbers from real runs. Where a result was not significant, it says
@@ -127,12 +173,12 @@ so.
 | T1 | Identity preservation | IPS 93.33, transferability 33.33 |
 | T4 | Precision under load | 0.9999, RSI matches Wilder's reference |
 | T6 | Self-modification | LLM wrote 2922 bytes of Python, compiles and runs |
-| T12 | Does cross-domain help? | MAE 4.365 → 0.880 (79.8%) — beats every single domain |
+| T12 | Does cross-domain help? | MAE 4.365 → 0.878 (79.9%) — beats every single domain |
 | T13 | Auto-forged skill on held-out data | F1 0.571 → 1.000 |
 | T14 | Significance | baseline 0.147 [0.000, 0.398] vs forged 0.434 [0.248, 0.620] — **not significant** |
 | T15 | PaySim-like data, k=10 | F1 0.933 [0.833, 1.000] |
 | T16 | Directional forge | baseline 0.967 [0.891, 1.000], forge had nothing to add |
-| T17 | Are the skills real? | 43 of 53 live skills execute and return values, **0 broken** |
+| T17 | Are the skills real? | 44 of 53 live skills execute and return values, **0 broken** |
 | T18 | Can the organism grow a capability? | forged, registered, executed — and it landed in the workspace, not the package |
 
 T14 is the honest one. The forged skill scored higher, but the confidence
@@ -142,19 +188,37 @@ win.
 T12 used to claim 64.7%. It was false: the "gain" was the trader RSI skill
 alone, while the meteorology and engineering skills were being fed inputs
 they do not read and their outputs were read through keys that do not
-exist. Both failed silently and contributed nothing. The adapters now speak
-the contracts in `server/metamorfus-core/seed-sources.ts` — which is the
-source of truth, because `dna_library/*.py` are *outputs* of `adopt()`, not
-hand-written sources — and the test asserts that the fusion beats every
-single domain on both the agreement case and the disagreement case, where
-the trader is confidently wrong and the meteorology profile discredits it.
+exist. Both failed silently and contributed nothing.
+
+It now measures against skills that really answer:
+
+| | baseline | trader only | best single | 2-domain | 3-domain |
+|---|---|---|---|---|---|
+| domains agree | 4.365 | 3.570 | 3.570 | 1.185 | **0.878 (−79.9%)** |
+| trader confidently wrong | 1.778 | 2.670 | 1.252 | 0.325 | **0.764 (−57.1%)** |
+
+On the disagreement case the trader **abstains** on purpose: its RSI is
+pinned at 100, but the meteorology profile shows the field is building
+energy, and the range that RSI assumes is not there. The meteorology domain
+then votes the direction, engineering modulates the magnitude (headroom
+0.41, ×1.21), and the fusion lands closer to the truth than any single
+domain does. The test asserts that the fusion beats every single domain on
+both cases — a weaker assertion would let two inert domains hide behind
+one good one again.
 
 T17 counts no files. It invokes every skill in the manifest through the
 real invoker and sorts the outcomes into executed / needs-input /
-needs-tool / broken. The 10 that do not execute need an external program
-(`nginx`, `archify`, `bsk`, `browser_use`, `requests`, a live HTTP server,
-an unbuilt binary) or a field the audit did not supply. None of them is
-broken.
+needs-tool / degraded / broken. The distinction that matters:
+
+- **broken** — the skill raised. That is a bug.
+- **degraded** — the skill ran and reported a condition honestly, like
+  `{"error": "playwright failed: Executable doesn't exist"}`. That is the
+  skill *working*, telling the truth about its environment.
+
+The invoker prefixes its own faults with `invoker:`, which is how the two
+are told apart. Today: **44 executed, 1 degraded, 8 need an external
+program** (`nginx`, `archify`, `bsk`, `browser_use`, `browser-harness`,
+`agent_reach`, `github-mcp-server`, a live HTTP server), **0 broken**.
 
 One skill is **retired** rather than deleted: `test_realskill_protocol`
 was a stub that returned a constant dict and computed nothing. The
@@ -211,6 +275,33 @@ NVIDIA is registered under all three categories. The router filters by
 category before trying anything, so a key registered only as
 `multimodal` leaves the forge with nothing to call.
 
+**The registry heals itself now.** The chain is probed before it is used,
+and a model is retired **only** on an explicit `404` or `410`. A timeout,
+a `429` or a `5xx` proves nothing — retiring a working model because the
+network hiccuped would be worse than the original bug — so those models
+stay in the chain. Results are cached for 30 minutes. Verified against the
+live API: `glm-5.3` and `nemotron-3-super` are retired, the ultra and
+`gpt-oss-20b` answer.
+
+### The runner honours the declared runtime
+
+`sharpen_axe` is a shell skill, `navigate_forest` is JavaScript,
+`weather_read` and `material_selection` are specification documents. The
+runner used to look for `<key>.py` regardless, so in a fresh workspace —
+where `adopt()` writes the seed in its own runtime — those four skills were
+written as `.sh` / `.js` / `.spec.json` and then invoked as `.py`.
+Unreachable. The runner now dispatches per runtime, and falls back to the
+Python implementation only when the runtime-specific file is absent,
+switching the executor along with it.
+
+`dna_library/*.py` are *outputs* of `adopt()`; the source of truth is
+`server/metamorfus-core/seed-sources.ts`. Thirty of the seeds had drifted
+away from the files that actually ship, so a fresh workspace started the
+organism with weaker skills than the repository ships — and neither file
+showed it. The Python seed payloads are now regenerated from the `.py`
+files on disk, and a fresh workspace materialises all 30 byte-identical to
+what the repo ships.
+
 ---
 
 ## Layout
@@ -234,6 +325,27 @@ packages/opencode-src/   vendored OpenCode
 `directional-forge.mjs` (feed real baseline failures back into the prompt).
 
 ---
+
+## Repository size, honestly
+
+| | |
+|---|---|
+| versioned content | 108.7 MB |
+| `.git` history | 88 MB |
+| working tree with `node_modules` | 276 MB |
+
+The vendored OpenCode is 125 MB, and 74.6 MB of that is binary assets —
+landing-page videos, desktop icons, fonts, screenshots. Removing them
+would break the console build (it imports the videos) and the desktop
+build (it references the icons), so they stay; they are excluded from the
+container image, which is where the weight actually mattered. What could
+go did go: upstream's experiment output directory (7.9 MB, referenced by
+nothing) and three oversized upstream test fixtures (11.6 MB).
+
+The clone is still larger than the source needs, because the Git history
+holds blobs the working tree no longer has. Shrinking it further means
+rewriting history, which changes every commit SHA — that is a decision,
+not a cleanup, and it was not made silently.
 
 ## License
 

@@ -212,16 +212,18 @@ test("C8: orchestrate() runs the local fallback when OpenCode is unreachable", a
 });
 
 test("C9: HTTP server exposes the 7 new cognitive routes", async () => {
-  const handle = await startHeadlessServer({ workspaceRoot: "/tmp/metamorfus-cog-http", port: 4001 });
+  // Port 0 = free ephemeral port chosen by the OS.
+  const handle = await startHeadlessServer({ workspaceRoot: "/tmp/metamorfus-cog-http", port: 0 });
+  const base = `http://127.0.0.1:${handle.port}`;
   try {
-    const r1 = await fetch("http://127.0.0.1:4001/api/flows", { headers: { Authorization: "Bearer dev-secret-local" } });
-    const r2 = await fetch("http://127.0.0.1:4001/api/reflect", { headers: { Authorization: "Bearer dev-secret-local" } });
-    const r3 = await fetch("http://127.0.0.1:4001/api/health");
+    const r1 = await fetch(base + "/api/flows", { headers: { Authorization: "Bearer dev-secret-local" } });
+    const r2 = await fetch(base + "/api/reflect", { headers: { Authorization: "Bearer dev-secret-local" } });
+    const r3 = await fetch(base + "/api/health");
     assert.equal(r1.status, 200, "GET /api/flows must return 200");
     assert.equal(r2.status, 200, "GET /api/reflect must return 200");
     assert.equal(r3.status, 200, "GET /api/health must return 200");
     // Verify 401 without auth
-    const r4 = await fetch("http://127.0.0.1:4001/api/flows");
+    const r4 = await fetch(base + "/api/flows");
     assert.equal(r4.status, 401);
   } finally {
     await handle.close();
