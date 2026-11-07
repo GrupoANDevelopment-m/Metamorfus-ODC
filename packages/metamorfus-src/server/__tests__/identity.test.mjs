@@ -67,7 +67,7 @@ test("T1: real Identity Preservation Score over a 3-domain journey", async () =>
     await new Promise((resolve) => {
       const p = spawn("python3", [pyPath], {
         cwd: ws,
-        env: { ...process.env, METAMORFUS_CONTEXT: JSON.stringify({ stations: [{ station_id: "A", lat: 0, lon: 0, pressure_hpa: 1010 }, { station_id: "B", lat: 0, lon: 1, pressure_hpa: 1005 }] }) },
+        env: { ...process.env, METAMORFUS_CONTEXT: JSON.stringify({ stations: [{ id: "A", lat: 0, lon: 0, pressure: 1010 }, { id: "B", lat: 0, lon: 1, pressure: 1005 }] }) },
         stdio: ["ignore", "pipe", "pipe"],
       });
       p.stdout.on("data", () => {});

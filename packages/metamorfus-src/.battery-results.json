@@ -16,14 +16,47 @@
     "portPattern": "statistical",
     "polymorphic": true,
     "fraudResult": {
-      "action": "ANOMALY_SCAN",
-      "intensity": 0.7,
+      "action": "FRAUD_ANOMALY_SCAN",
+      "intensity": 0,
       "version": 1,
       "result": {
+        "flagged": [],
+        "flagged_count": 0,
+        "scored": 3,
+        "threshold": 0.5,
         "mean": 3401.67,
         "stdev": 4665.73,
-        "flagged": [],
-        "flagged_count": 0
+        "median": 105,
+        "top_risks": [
+          {
+            "id": 3,
+            "amount": 10000,
+            "risk": 0.4,
+            "reasons": [
+              "amount outlier (z=1334.82)"
+            ]
+          },
+          {
+            "id": 1,
+            "amount": 100,
+            "risk": 0,
+            "reasons": []
+          },
+          {
+            "id": 2,
+            "amount": 105,
+            "risk": 0,
+            "reasons": []
+          }
+        ],
+        "detectors": [
+          "amount_outlier",
+          "merchant_rarity",
+          "unusual_hour",
+          "balance_drain",
+          "burst_velocity"
+        ],
+        "bursts": []
       }
     },
     "flagged": 0
@@ -121,11 +154,11 @@
     "ok": true,
     "evolved": true,
     "attempts": 3,
-    "lastError": "invoker: skill raised: string indices must be integers, not 'str'",
+    "lastError": "invoker: skill raised: invalid literal for int() with base 10: 'not-a-number'",
     "newSkillKey": "evolved_analyze_pressure_gradient_protocol",
     "newSkillOk": true,
     "validInputOk": true,
-    "pythonBytes": 2276,
+    "pythonBytes": 3735,
     "llmAttempts": 3
   },
   "T7": {
@@ -237,12 +270,12 @@
           "profession": "lumberjack",
           "ok": false,
           "result": {
-            "action": "SHARPEN_AXE",
-            "intensity": 0.4,
-            "required_attributes": {
-              "strength": 10
-            },
-            "version": 1
+            "action": "SHELL_RESULT",
+            "intensity": 0.3,
+            "version": 1,
+            "result": {
+              "stdout": "sharpen_axe: edge restored"
+            }
           }
         },
         {
@@ -257,7 +290,8 @@
             },
             "version": 1,
             "params": {
-              "destination": ""
+              "destination": "",
+              "bearing_deg": 0
             }
           }
         },
@@ -266,12 +300,18 @@
           "profession": "lumberjack",
           "ok": false,
           "result": {
-            "action": "READ_WEATHER",
-            "intensity": 0.3,
-            "required_attributes": {
-              "cpu": 10
-            },
-            "version": 1
+            "action": "SPEC_REFERENCE",
+            "intensity": 0.2,
+            "version": 1,
+            "result": {
+              "title": "weather_read_protocol",
+              "type": "reference",
+              "rules": [
+                "If cumulus build vertically fast → convective risk",
+                "If wind shifts counter-clockwise → incoming front",
+                "If pressure drops > 3 hPa/hour → storm within 6 hours"
+              ]
+            }
           }
         },
         {
@@ -311,14 +351,24 @@
           "profession": "architect",
           "ok": false,
           "result": {
-            "action": "SELECT_MATERIALS",
-            "intensity": 0.6,
-            "required_attributes": {
-              "cpu": 40
-            },
+            "action": "SPEC_REFERENCE",
+            "intensity": 0.2,
             "version": 1,
-            "params": {
-              "constraints": {}
+            "result": {
+              "title": "material_selection_protocol",
+              "type": "rubric",
+              "axes": [
+                "load_kg_m2",
+                "exposure",
+                "cost_per_m2",
+                "lifecycle_years"
+              ],
+              "defaults": {
+                "load_kg_m2": 200,
+                "exposure": "interior",
+                "cost_per_m2": 50,
+                "lifecycle_years": 30
+              }
             }
           }
         },
@@ -340,13 +390,13 @@
         }
       ],
       "crossPatterns": [
-        "multi-action: FORM_HYPOTHESIS,DESIGN_EXPERIMENT,PEER_REVIEW,FELL_TREE,SHARPEN_AXE,NAVIGATE_FOREST,READ_WEATHER,DRAFT_BLUEPRINT,STRUCTURAL_ANALYSIS,SELECT_MATERIALS",
-        "mean-intensity=0.609",
+        "multi-action: FORM_HYPOTHESIS,DESIGN_EXPERIMENT,PEER_REVIEW,FELL_TREE,SHELL_RESULT,NAVIGATE_FOREST,SPEC_REFERENCE,DRAFT_BLUEPRINT,STRUCTURAL_ANALYSIS",
+        "mean-intensity=0.555",
         "cross-domain: 3 professions"
       ],
       "confidence": 0.65,
       "distinctProfessionsUsed": 3,
-      "answer": "synthesis(scientist/hypothesis_protocol=fail; scientist/experimental_design_protocol=fail; scientist/peer_review_protocol=fail; lumberjack/fell_tree_protocol=fail; lumberjack/sharpen_axe_protocol=fail; lumberjack/navigate_forest_protocol=fail; lumberjack/weather_read_protocol=fail; architect/blueprint_protocol=fail; architect/structural_analysis_protocol=fail; architect/material_selection_protocol=fail; architect/blueprint_protocol=ok); patterns=[multi-action: FORM_HYPOTHESIS,DESIGN_EXPERIMENT,PEER_REVIEW,FELL_TREE,SHARPEN_AXE,NAVIGATE_FOREST,READ_WEATHER,DRAFT_BLUEPRINT,STRUCTURAL_ANALYSIS,SELECT_MATERIALS; mean-intensity=0.609; cross-domain: 3 professions]; confidence=0.65"
+      "answer": "synthesis(scientist/hypothesis_protocol=fail; scientist/experimental_design_protocol=fail; scientist/peer_review_protocol=fail; lumberjack/fell_tree_protocol=fail; lumberjack/sharpen_axe_protocol=fail; lumberjack/navigate_forest_protocol=fail; lumberjack/weather_read_protocol=fail; architect/blueprint_protocol=fail; architect/structural_analysis_protocol=fail; architect/material_selection_protocol=fail; architect/blueprint_protocol=ok); patterns=[multi-action: FORM_HYPOTHESIS,DESIGN_EXPERIMENT,PEER_REVIEW,FELL_TREE,SHELL_RESULT,NAVIGATE_FOREST,SPEC_REFERENCE,DRAFT_BLUEPRINT,STRUCTURAL_ANALYSIS; mean-intensity=0.555; cross-domain: 3 professions]; confidence=0.65"
     },
     "finalSkillKey": "blueprint_protocol",
     "transferableSkills": 0,
@@ -381,7 +431,7 @@
     "baselineMAE": 4.364919552736632,
     "traderOnlyMAE": 3.5699461902324874,
     "twoDomainMAE": 1.18502610272005,
-    "threeDomainMAE": 0.8797870345261565,
+    "threeDomainMAE": 0.8783935200398805,
     "singleDomainMAE": {
       "trader": 3.5699461902324874,
       "meteorology": 3.5699461902324874,
@@ -389,7 +439,7 @@
     },
     "bestSingleMAE": 3.5699461902324874,
     "bestSingleName": "trader",
-    "improvementPct": 79.84414090805947,
+    "improvementPct": 79.87606622694426,
     "beatsBestSingle": true,
     "everyDomainContributed": true,
     "domains": [
@@ -407,7 +457,7 @@
         "contributes": "direction",
         "signal": -1,
         "abstained": false,
-        "evidence": "rates [0.459, 0.958, 0.799, 0.169], recent -78.8% (decaying)"
+        "evidence": "rates [0.004, 0.009, 0.007, 0.002], recent -78.8% (decaying)"
       },
       {
         "domain": "engineering",
@@ -415,7 +465,7 @@
         "contributes": "magnitude",
         "signal": 0,
         "abstained": false,
-        "evidence": "load [63.3, 76.6, 93.2, 102.2], growth 9.6%, headroom 0.13 -> x1.10"
+        "evidence": "utilisation [0.378, 0.459, 0.560, 0.614], growth 9.6%, headroom 0.39 -> x1.10"
       }
     ],
     "raw": {
@@ -433,15 +483,15 @@
         "available": true,
         "contributes": "direction",
         "rateProfile": [
-          0.4585372,
-          0.9580300399999999,
-          0.79859956,
-          0.1691293323076923
+          0.004123818181818182,
+          0.008615727272727273,
+          0.007182000000000002,
+          0.0015210769230769232
         ],
-        "rateChange": -0.7882175989331971,
+        "rateChange": -0.7882098408414199,
         "push": 1,
         "reading": "decaying",
-        "evidence": "rates [0.459, 0.958, 0.799, 0.169], recent -78.8% (decaying)"
+        "evidence": "rates [0.004, 0.009, 0.007, 0.002], recent -78.8% (decaying)"
       },
       "eng": {
         "domain": "engineering",
@@ -449,31 +499,37 @@
         "available": true,
         "contributes": "magnitude",
         "loadProfile": [
-          63.3425,
-          76.6475,
-          93.2125,
-          102.16
+          0.378,
+          0.459,
+          0.56,
+          0.614
         ],
-        "growth": 0.09599034464261758,
-        "headroom": 0.13043478260869557,
-        "magnitude": 1.0959903446426176,
-        "evidence": "load [63.3, 76.6, 93.2, 102.2], growth 9.6%, headroom 0.13 -> x1.10"
+        "loadPath": [
+          42.048267519596585,
+          51.04911934419988,
+          62.274946423014256,
+          68.24733037534224
+        ],
+        "growth": 0.09642857142857131,
+        "headroom": 0.386,
+        "magnitude": 1.0964285714285713,
+        "evidence": "utilisation [0.378, 0.459, 0.560, 0.614], growth 9.6%, headroom 0.39 -> x1.10"
       }
     },
     "disagreement": {
       "label": "disagreement: a rise that accelerates",
       "baselineMAE": 1.778128325001008,
       "traderOnlyMAE": 2.6695819247354304,
-      "twoDomainMAE": 0.3251742596207734,
-      "threeDomainMAE": 0.763565583951813,
+      "twoDomainMAE": 0.32520537493889456,
+      "threeDomainMAE": 0.7621504612807879,
       "singleDomainMAE": {
         "trader": 2.6695819247354304,
-        "meteorology": 1.2523026788455613,
+        "meteorology": 1.2522949000160324,
         "engineering": 1.778128325001008
       },
-      "bestSingleMAE": 1.2523026788455613,
+      "bestSingleMAE": 1.2522949000160324,
       "bestSingleName": "meteorology",
-      "improvementPct": 57.05790334612772,
+      "improvementPct": 57.13748830358709,
       "beatsBestSingle": true,
       "everyDomainContributed": true,
       "domains": [
@@ -491,7 +547,7 @@
           "contributes": "direction",
           "signal": 0.5899,
           "abstained": false,
-          "evidence": "rates [0.317, 0.525, 0.761, 0.986], recent 29.5% (building)"
+          "evidence": "rates [0.003, 0.005, 0.007, 0.009], recent 29.5% (building)"
         },
         {
           "domain": "engineering",
@@ -499,7 +555,7 @@
           "contributes": "magnitude",
           "signal": 0,
           "abstained": false,
-          "evidence": "load [62.8, 70.4, 81.9, 99.0], growth 20.8%, headroom 0.13 -> x1.21"
+          "evidence": "utilisation [0.376, 0.422, 0.491, 0.593], growth 20.8%, headroom 0.41 -> x1.21"
         }
       ]
     },
@@ -595,43 +651,124 @@
         "real_port_scanner_protocol"
       ],
       "coveredSignals": [
+        "pattern",
         "statistical",
-        "magnitude",
         "graph",
         "temporal"
       ],
       "missingSignals": [
         "anomaly",
+        "magnitude",
         "categorical"
       ],
-      "recommendation": "missing 2 signal types (anomaly, categorical) — consider forging a new skill",
+      "recommendation": "missing 3 signal types (anomaly, magnitude, categorical) — consider forging a new skill",
       "astMap": {
         "fraud_anomaly_protocol": {
-          "signalTypes": [],
-          "signalCounts": {},
+          "signalTypes": [
+            "pattern",
+            "statistical"
+          ],
+          "signalCounts": {
+            "statistical": 5,
+            "pattern": 1
+          },
           "details": {
-            "imports": [],
+            "imports": [
+              "math",
+              "statistics"
+            ],
             "function_calls": [
               "context.get",
+              "statistics.median",
+              "statistics.median",
+              "statistics.fmean",
+              "_txs",
+              "_robust_z",
               "len",
+              "enumerate",
+              "enumerate",
+              "by_hour.items",
               "float",
-              "sum",
-              "len",
-              "sum",
-              "len",
+              "scored.sort",
+              "context.get",
+              "isinstance",
+              "isinstance",
               "t.get",
-              "round",
-              "round",
               "len",
               "abs",
+              "statistics.pstdev",
+              "_amount",
+              "_merchant",
+              "_hour",
+              "_merchant",
+              "_hour",
+              "t.get",
+              "scored.append",
+              "_hour",
+              "sum",
+              "max",
+              "min",
+              "enumerate",
+              "statistics.fmean",
+              "out.append",
+              "str",
+              "t.get",
+              "len",
+              "len",
+              "reasons.append",
+              "t.get",
+              "len",
+              "len",
+              "len",
+              "statistics.fmean",
+              "bursts.append",
+              "_hour",
+              "context.get",
+              "statistics.pstdev",
+              "round",
+              "len",
+              "len",
+              "round",
+              "round",
               "float",
-              "t.get"
+              "int",
+              "len",
+              "merchant_counts.get",
+              "hour_counts.get",
+              "reasons.append",
+              "reasons.append",
+              "reasons.append",
+              "reasons.append",
+              "float",
+              "t.get",
+              "round",
+              "range",
+              "len",
+              "round",
+              "len",
+              "round",
+              "reasons.append",
+              "hour_counts.get",
+              "reasons.append",
+              "min",
+              "by_hour.setdefault",
+              "len",
+              "set",
+              "len",
+              "round",
+              "round",
+              "round",
+              "min",
+              "min",
+              "len",
+              "statistics.median",
+              "len"
             ],
             "control_flow": {
-              "for": 0,
+              "for": 10,
               "while": 0,
-              "if": 1,
-              "try": 0
+              "if": 26,
+              "try": 5
             },
             "return_keys": [
               "action",
@@ -647,8 +784,12 @@
           "error": null
         },
         "rsi_calculator_v2_protocol": {
-          "signalTypes": [],
-          "signalCounts": {},
+          "signalTypes": [
+            "statistical"
+          ],
+          "signalCounts": {
+            "statistical": 3
+          },
           "details": {
             "imports": [],
             "function_calls": [
@@ -664,10 +805,10 @@
               "sum",
               "sum",
               "len",
-              "max",
-              "max",
               "round",
               "len",
+              "max",
+              "max",
               "len"
             ],
             "control_flow": {
@@ -677,24 +818,23 @@
               "try": 0
             },
             "return_keys": [
-              "action",
-              "intensity",
-              "version",
-              "result",
-              "action",
-              "intensity",
-              "version",
-              "result"
+              "rsi",
+              "period",
+              "signal",
+              "samples",
+              "error"
             ]
           },
           "error": null
         },
         "analyze_pressure_gradient_protocol": {
           "signalTypes": [
+            "pattern",
             "statistical"
           ],
           "signalCounts": {
-            "statistical": 1
+            "statistical": 1,
+            "pattern": 1
           },
           "details": {
             "imports": [
@@ -702,28 +842,77 @@
             ],
             "function_calls": [
               "context.get",
+              "isinstance",
+              "math.radians",
+              "math.radians",
+              "_stations",
               "int",
-              "out.sort",
-              "context.get",
-              "grid.get",
-              "out.append",
-              "round",
-              "round",
-              "round",
-              "round",
-              "max",
-              "abs",
+              "range",
+              "range",
+              "gradients.sort",
+              "isinstance",
+              "math.radians",
+              "math.radians",
+              "math.asin",
+              "len",
+              "len",
+              "range",
+              "_haversine",
+              "local_slopes.append",
+              "sum",
               "len",
               "round",
-              "math.cos",
+              "isinstance",
+              "out.append",
+              "math.sin",
+              "math.sqrt",
+              "context.get",
+              "len",
+              "_haversine",
+              "gradients.append",
+              "len",
+              "min",
+              "len",
               "round",
-              "math.radians"
+              "len",
+              "math.cos",
+              "math.cos",
+              "math.sin",
+              "min",
+              "math.sin",
+              "round",
+              "abs",
+              "abs",
+              "abs",
+              "s.get",
+              "float",
+              "float",
+              "float",
+              "float",
+              "math.radians",
+              "abs",
+              "round",
+              "round",
+              "round",
+              "s.get",
+              "s.get",
+              "s.get",
+              "s.get",
+              "s.get",
+              "abs",
+              "abs",
+              "round",
+              "s.get",
+              "s.get",
+              "s.get",
+              "s.get",
+              "len"
             ],
             "control_flow": {
-              "for": 1,
+              "for": 4,
               "while": 0,
-              "if": 2,
-              "try": 0
+              "if": 6,
+              "try": 1
             },
             "return_keys": [
               "action",
@@ -762,18 +951,18 @@
               "asyncio.run",
               "context.get",
               "run_all",
-              "w.close",
-              "asyncio.gather",
               "len",
               "len",
               "int",
+              "w.close",
+              "asyncio.gather",
               "asyncio.wait_for",
+              "len",
+              "len",
               "asyncio.open_connection",
               "w.wait_closed",
-              "len",
-              "len",
-              "check",
-              "time.time"
+              "time.time",
+              "check"
             ],
             "control_flow": {
               "for": 0,
@@ -782,10 +971,12 @@
               "try": 2
             },
             "return_keys": [
-              "action",
-              "intensity",
-              "version",
-              "result"
+              "host",
+              "scanned_ports",
+              "open_ports",
+              "open_count",
+              "duration_ms",
+              "summary"
             ]
           },
           "error": null
@@ -794,15 +985,15 @@
     },
     "forgeReport": {
       "neededForge": true,
-      "initialScore": 0.18181818181818182,
+      "initialScore": 0.5714285714285715,
       "finalScore": 1,
       "improved": true,
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mvw2slpl",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mw672v63",
       "trainTestSplit": {
         "trainSize": 100,
         "testSize": 30
       },
-      "reason": "LLM-forged skill improved test score from 0.182 to 1.000 (honest held-out evaluation)"
+      "reason": "LLM-forged skill improved test score from 0.571 to 1.000 (honest held-out evaluation)"
     },
     "final": {
       "precision": 1,
@@ -812,7 +1003,7 @@
       "truePositives": 10,
       "falsePositives": 0,
       "falseNegatives": 0,
-      "name": "forged forged_fraud_anomaly_protocol_mvw2slpl"
+      "name": "forged forged_fraud_anomaly_protocol_mw672v63"
     },
     "cacheReport": {
       "totalEntries": 4,
@@ -839,7 +1030,7 @@
       }
     },
     "passed": true,
-    "passedReason": "gap correctly identified (missing: anomaly, categorical) + auto-forge attempted",
+    "passedReason": "gap correctly identified (missing: anomaly, magnitude, categorical) + auto-forge attempted",
     "verdict": "Auto-forge IMPROVED F1 from 0.571 to 1.000 (75.0%)"
   },
   "T14": {
@@ -853,51 +1044,51 @@
       "kfold": {
         "k": 5,
         "perFoldScores": [
-          0.667,
           0,
-          0,
-          0.667,
-          0.333
+          0.25,
+          0.286,
+          0.5,
+          0.889
         ],
-        "meanF1": 0.3333333333333333,
-        "stdF1": 0.3333333333333333,
-        "sem": 0.14907119849998596,
+        "meanF1": 0.384920634920635,
+        "stdF1": 0.3329551898952862,
+        "sem": 0.1489020876134422,
         "tCritical": 2.776,
         "ci95": {
           "lower": 0,
-          "upper": 0.7471549803692943
+          "upper": 0.7982728301355505
         },
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
-          "tp": 5,
-          "fp": 3,
-          "fn": 15,
-          "tn": 177
+          "tp": 8,
+          "fp": 9,
+          "fn": 12,
+          "tn": 171
         },
         "fullDatasetConfusionMatrix": {
-          "tp": 5,
-          "fp": 2,
-          "fn": 15,
-          "tn": 178
+          "tp": 6,
+          "fp": 9,
+          "fn": 14,
+          "tn": 171
         },
-        "fullDatasetF1": 0.37037037037037035,
+        "fullDatasetF1": 0.34285714285714286,
         "roc": {
           "degenerate": true,
           "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
-          "tpr": 0.25,
-          "fpr": 0.011111111111111112,
-          "precision": 0.7142857142857143,
-          "recall": 0.25,
+          "tpr": 0.3,
+          "fpr": 0.05,
+          "precision": 0.4,
+          "recall": 0.3,
           "operatingPoint": {
-            "tpr": 0.25,
-            "fpr": 0.011111111111111112,
+            "tpr": 0.3,
+            "fpr": 0.05,
             "threshold": "binary"
           },
           "confusionMatrix": {
-            "tp": 5,
-            "fp": 2,
-            "fn": 15,
-            "tn": 178
+            "tp": 6,
+            "fp": 9,
+            "fn": 14,
+            "tn": 171
           }
         },
         "robustness": "brittle"
@@ -908,73 +1099,73 @@
       "kfold": {
         "k": 5,
         "perFoldScores": [
-          0.5,
-          0.533,
-          0.444,
-          0.364,
+          0.545,
+          0.615,
+          0.333,
+          0.333,
           0.5
         ],
-        "meanF1": 0.46828282828282825,
-        "stdF1": 0.06663834721432696,
-        "sem": 0.029801574855893763,
+        "meanF1": 0.4655011655011655,
+        "stdF1": 0.12746022204652774,
+        "sem": 0.057001944184650676,
         "tCritical": 2.776,
         "ci95": {
-          "lower": 0.38555365648286716,
-          "upper": 0.5510120000827893
+          "lower": 0.30726376844457526,
+          "upper": 0.6237385625577557
         },
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
-          "tp": 17,
-          "fp": 35,
-          "fn": 3,
-          "tn": 145
+          "tp": 14,
+          "fp": 26,
+          "fn": 6,
+          "tn": 154
         },
         "fullDatasetConfusionMatrix": {
           "tp": 19,
-          "fp": 75,
+          "fp": 61,
           "fn": 1,
-          "tn": 105
+          "tn": 119
         },
-        "fullDatasetF1": 0.3333333333333333,
+        "fullDatasetF1": 0.38,
         "roc": {
           "degenerate": true,
           "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
           "tpr": 0.95,
-          "fpr": 0.4166666666666667,
-          "precision": 0.20212765957446807,
+          "fpr": 0.3388888888888889,
+          "precision": 0.2375,
           "recall": 0.95,
           "operatingPoint": {
             "tpr": 0.95,
-            "fpr": 0.4166666666666667,
+            "fpr": 0.3388888888888889,
             "threshold": "binary"
           },
           "confusionMatrix": {
             "tp": 19,
-            "fp": 75,
+            "fp": 61,
             "fn": 1,
-            "tn": 105
+            "tn": 119
           }
         },
-        "robustness": "robust"
+        "robustness": "moderate"
       },
-      "forgedSkillKey": "forged_fraud_anomaly_protocol_mvw2su51",
+      "forgedSkillKey": "forged_fraud_anomaly_protocol_mw6732oc",
       "description": "LLM-forged skill with multi-strategy detection"
     },
     "forgeReport": {
       "improved": true,
-      "initialScore": 0.18181818181818182,
-      "finalScore": 0.8260869565217392,
-      "reason": "LLM-forged skill improved test score from 0.182 to 0.826 (honest held-out evaluation)"
+      "initialScore": 0.4285714285714285,
+      "finalScore": 0.7142857142857143,
+      "reason": "LLM-forged skill improved test score from 0.429 to 0.714 (honest held-out evaluation)"
     },
     "verdict": {
-      "baselineMeanF1": 0.3333333333333333,
+      "baselineMeanF1": 0.384920634920635,
       "baselineRobustness": "brittle",
-      "forgedMeanF1": 0.46828282828282825,
-      "forgedRobustness": "robust",
-      "improvement": 0.13494949494949493,
+      "forgedMeanF1": 0.4655011655011655,
+      "forgedRobustness": "moderate",
+      "improvement": 0.0805805305805305,
       "ci95": {
-        "lower": 0.38555365648286716,
-        "upper": 0.5510120000827893
+        "lower": 0.30726376844457526,
+        "upper": 0.6237385625577557
       },
       "significant": false,
       "conclusion": "forged skill is better but CI overlap — not statistically significant at 95%"
@@ -1010,76 +1201,76 @@
       "kfold": {
         "k": 10,
         "perFoldScores": [
+          0.286,
+          0.571,
+          0.364,
+          0.25,
           1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
+          0.25,
+          0.333,
+          0.286,
+          0.25,
+          0.5
         ],
-        "meanF1": 1,
-        "stdF1": 0,
-        "sem": 0,
+        "meanF1": 0.40898268398268395,
+        "stdF1": 0.23522331622437626,
+        "sem": 0.07438414380470673,
         "tCritical": 2.262,
         "ci95": {
-          "lower": 1,
-          "upper": 1
+          "lower": 0.2407257506964373,
+          "upper": 0.5772396172689306
         },
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
           "tp": 13,
-          "fp": 0,
+          "fp": 49,
           "fn": 0,
-          "tn": 987
+          "tn": 938
         },
         "fullDatasetConfusionMatrix": {
-          "tp": 11,
-          "fp": 0,
-          "fn": 2,
-          "tn": 987
+          "tp": 13,
+          "fp": 79,
+          "fn": 0,
+          "tn": 908
         },
-        "fullDatasetF1": 0.9166666666666666,
+        "fullDatasetF1": 0.2476190476190476,
         "roc": {
           "degenerate": true,
           "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
-          "tpr": 0.8461538461538461,
-          "fpr": 0,
-          "precision": 1,
-          "recall": 0.8461538461538461,
+          "tpr": 1,
+          "fpr": 0.0800405268490375,
+          "precision": 0.14130434782608695,
+          "recall": 1,
           "operatingPoint": {
-            "tpr": 0.8461538461538461,
-            "fpr": 0,
+            "tpr": 1,
+            "fpr": 0.0800405268490375,
             "threshold": "binary"
           },
           "confusionMatrix": {
-            "tp": 11,
-            "fp": 0,
-            "fn": 2,
-            "tn": 987
+            "tp": 13,
+            "fp": 79,
+            "fn": 0,
+            "tn": 908
           }
         },
-        "robustness": "robust"
+        "robustness": "brittle"
       },
       "description": "fraud_anomaly_protocol (stdev-based, not informed by PaySim)"
     },
     "forged": null,
     "forgeReport": {
       "improved": false,
-      "initialScore": 0.8750000000000001,
-      "finalScore": 0.8750000000000001,
-      "reason": "baseline score 0.875 already >= threshold 0.3"
+      "initialScore": 0.2465753424657534,
+      "finalScore": 0.05980066445182724,
+      "reason": "LLM-forged skill did not improve on HELD-OUT test (0.247 → 0.060), discarded"
     },
     "statistics": {
       "kFolds": 10,
       "tCritical": 2.262,
-      "baselineMean": 1,
+      "baselineMean": 0.40898268398268395,
       "baselineCI": [
-        1,
-        1
+        0.2407257506964373,
+        0.5772396172689306
       ],
       "forgedMean": null,
       "forgedCI": null,
@@ -1112,108 +1303,91 @@
     },
     "diagnosis": {
       "totalFraud": 13,
-      "caught": 11,
-      "missed": 2,
-      "missedByType": {
-        "TRANSFER": 2
-      },
-      "missedSamples": [
-        {
-          "type": "TRANSFER",
-          "amount": 36810.7,
-          "merchant": "customer",
-          "isMerchant": false,
-          "errorBalanceOrig": 42.91000000000349
-        },
-        {
-          "type": "TRANSFER",
-          "amount": 15432.1,
-          "merchant": "customer",
-          "isMerchant": false,
-          "errorBalanceOrig": 831.0699999999997
-        }
-      ]
+      "caught": 13,
+      "missed": 0,
+      "missedByType": {},
+      "missedSamples": []
     },
     "situationalData": {
       "originalSize": 1000,
-      "situationalSize": 1030,
-      "oversampleRate": 1.03,
-      "situationalFraud": 43
+      "situationalSize": 1000,
+      "oversampleRate": 1,
+      "situationalFraud": 13
     },
     "baseline": {
       "kfold": {
         "k": 10,
         "perFoldScores": [
+          0.4,
+          0.286,
+          0.8,
+          0.286,
+          0.667,
           1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1,
-          1
+          0.333,
+          0.286,
+          0.286,
+          0.4
         ],
-        "meanF1": 1,
-        "stdF1": 0,
-        "sem": 0,
+        "meanF1": 0.4742857142857143,
+        "stdF1": 0.2566053563235342,
+        "sem": 0.08114573857814589,
         "tCritical": 2.262,
         "ci95": {
-          "lower": 1,
-          "upper": 1
+          "lower": 0.2907340536219483,
+          "upper": 0.6578373749494804
         },
         "ciMethod": "t-distribution",
         "totalConfusionMatrix": {
           "tp": 13,
-          "fp": 0,
+          "fp": 40,
           "fn": 0,
-          "tn": 987
+          "tn": 947
         },
         "fullDatasetConfusionMatrix": {
-          "tp": 11,
-          "fp": 0,
-          "fn": 2,
-          "tn": 987
+          "tp": 13,
+          "fp": 79,
+          "fn": 0,
+          "tn": 908
         },
-        "fullDatasetF1": 0.9166666666666666,
+        "fullDatasetF1": 0.2476190476190476,
         "roc": {
           "degenerate": true,
           "reason": "binary classifier — ROC AUC not defined (needs score-based ranking)",
-          "tpr": 0.8461538461538461,
-          "fpr": 0,
-          "precision": 1,
-          "recall": 0.8461538461538461,
+          "tpr": 1,
+          "fpr": 0.0800405268490375,
+          "precision": 0.14130434782608695,
+          "recall": 1,
           "operatingPoint": {
-            "tpr": 0.8461538461538461,
-            "fpr": 0,
+            "tpr": 1,
+            "fpr": 0.0800405268490375,
             "threshold": "binary"
           },
           "confusionMatrix": {
-            "tp": 11,
-            "fp": 0,
-            "fn": 2,
-            "tn": 987
+            "tp": 13,
+            "fp": 79,
+            "fn": 0,
+            "tn": 908
           }
         },
-        "robustness": "robust"
+        "robustness": "brittle"
       },
       "description": "fraud_anomaly_protocol on ORIGINAL data"
     },
     "forged": null,
     "forgeReport": {
       "improved": false,
-      "initialScore": 0.8750000000000001,
-      "finalScore": 0.8750000000000001,
-      "reason": "baseline score 0.875 already >= threshold 0.5"
+      "initialScore": 0.2465753424657534,
+      "finalScore": 0.05980066445182724,
+      "reason": "LLM-forged skill did not improve on HELD-OUT test (0.247 → 0.060), discarded"
     },
     "statistics": {
       "kFolds": 10,
       "tCritical": 2.262,
-      "baselineMean": 1,
+      "baselineMean": 0.4742857142857143,
       "baselineCI": [
-        1,
-        1
+        0.2907340536219483,
+        0.6578373749494804
       ],
       "forgedMean": null,
       "forgedCI": null,
@@ -1240,7 +1414,8 @@
             "version": 1,
             "result": {
               "gradients": [],
-              "computed": 0
+              "computed": 0,
+              "error": "need at least 2 stations with pressure"
             }
           }
         },
@@ -1250,12 +1425,36 @@
           "ok": true,
           "result": {
             "action": "LOAD_CALC",
-            "intensity": 0.7,
+            "intensity": 0,
             "version": 1,
             "result": {
-              "total_kg": 0,
-              "area_m2": 1,
-              "point_total_kg": 0
+              "ok": true,
+              "utilisation": 0,
+              "von_mises_pa": 0,
+              "allowable_pa": 166666666.66666666,
+              "section_properties": {
+                "I_m4": 0.0000666667,
+                "Z_m3": 0.00066667,
+                "area_m2": 0.02,
+                "type": "rectangle"
+              },
+              "checks": {
+                "bending": {
+                  "value": 0,
+                  "utilisation": 0
+                },
+                "shear": {
+                  "value": 0,
+                  "utilisation": 0
+                },
+                "axial": {
+                  "value": 0,
+                  "utilisation": 0
+                }
+              },
+              "deflection_m": 0,
+              "max_deflection_m": 0,
+              "governing": "bending"
             }
           }
         },
@@ -1264,27 +1463,24 @@
           "profession": "doctor",
           "ok": true,
           "result": {
-            "action": "TREATMENT_PLAN",
-            "intensity": 0.7,
+            "action": "TREATMENT",
+            "intensity": 0,
             "version": 1,
             "result": {
-              "diagnosis": "",
-              "plan": [
-                "consult specialist",
-                "supportive care"
-              ]
+              "ok": false,
+              "error": "treatment.drug is required"
             }
           }
         }
       ],
       "crossPatterns": [
-        "multi-action: PRESSURE_GRADIENT,LOAD_CALC,TREATMENT_PLAN",
-        "mean-intensity=0.467",
+        "multi-action: PRESSURE_GRADIENT,LOAD_CALC,TREATMENT",
+        "mean-intensity=0.000",
         "cross-domain: 3 professions"
       ],
       "confidence": 1,
       "distinctProfessionsUsed": 3,
-      "answer": "synthesis(meteorologist/analyze_pressure_gradient_protocol=ok; engineer/engineer_load_calc_protocol=ok; doctor/doctor_treatment_protocol=ok); patterns=[multi-action: PRESSURE_GRADIENT,LOAD_CALC,TREATMENT_PLAN; mean-intensity=0.467; cross-domain: 3 professions]; confidence=1.00"
+      "answer": "synthesis(meteorologist/analyze_pressure_gradient_protocol=ok; engineer/engineer_load_calc_protocol=ok; doctor/doctor_treatment_protocol=ok); patterns=[multi-action: PRESSURE_GRADIENT,LOAD_CALC,TREATMENT; mean-intensity=0.000; cross-domain: 3 professions]; confidence=1.00"
     },
     "passed": true,
     "details": {
@@ -1297,16 +1493,16 @@
           "profession": "meteorologist",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499997202542125,
-          "score": 7.599999440508425
+          "mastery": 0.5499997249607651,
+          "score": 7.59999944992153
         },
         {
           "key": "forecast_synthesis_protocol",
           "profession": "meteorologist",
           "transferable": true,
           "usageCount": 3,
-          "mastery": 0.6354999301916326,
-          "score": 4.770999860383265
+          "mastery": 0.6354999297629615,
+          "score": 4.770999859525923
         },
         {
           "key": "engineer_load_calc_protocol",
@@ -1337,40 +1533,40 @@
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999998529203,
-          "score": 1.5999999997058405
+          "mastery": 0.5499999997058403,
+          "score": 1.5999999994116807
         },
         {
           "key": "doctor_differential_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.549999993675567,
-          "score": 1.599999987351134
+          "mastery": 0.5499999882336128,
+          "score": 1.5999999764672257
         },
         {
           "key": "doctor_triage_protocol",
           "profession": "doctor",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999876452935,
-          "score": 1.599999975290587
+          "mastery": 0.5499999733785493,
+          "score": 1.5999999467570987
         },
         {
           "key": "real_incident_logger_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999717606712,
-          "score": 1.5999999435213423
+          "mastery": 0.5499999583764065,
+          "score": 1.599999916752813
         },
         {
           "key": "real_http_header_audit_protocol",
           "profession": "cybersecurity",
           "transferable": false,
           "usageCount": 1,
-          "mastery": 0.5499999576410073,
-          "score": 1.5999999152820146
+          "mastery": 0.5499999342553149,
+          "score": 1.5999998685106298
         }
       ],
       "synthResults": [
@@ -1384,7 +1580,8 @@
             "version": 1,
             "result": {
               "gradients": [],
-              "computed": 0
+              "computed": 0,
+              "error": "need at least 2 stations with pressure"
             }
           }
         },
@@ -1394,12 +1591,36 @@
           "ok": true,
           "result": {
             "action": "LOAD_CALC",
-            "intensity": 0.7,
+            "intensity": 0,
             "version": 1,
             "result": {
-              "total_kg": 0,
-              "area_m2": 1,
-              "point_total_kg": 0
+              "ok": true,
+              "utilisation": 0,
+              "von_mises_pa": 0,
+              "allowable_pa": 166666666.66666666,
+              "section_properties": {
+                "I_m4": 0.0000666667,
+                "Z_m3": 0.00066667,
+                "area_m2": 0.02,
+                "type": "rectangle"
+              },
+              "checks": {
+                "bending": {
+                  "value": 0,
+                  "utilisation": 0
+                },
+                "shear": {
+                  "value": 0,
+                  "utilisation": 0
+                },
+                "axial": {
+                  "value": 0,
+                  "utilisation": 0
+                }
+              },
+              "deflection_m": 0,
+              "max_deflection_m": 0,
+              "governing": "bending"
             }
           }
         },
@@ -1408,15 +1629,12 @@
           "profession": "doctor",
           "ok": true,
           "result": {
-            "action": "TREATMENT_PLAN",
-            "intensity": 0.7,
+            "action": "TREATMENT",
+            "intensity": 0,
             "version": 1,
             "result": {
-              "diagnosis": "",
-              "plan": [
-                "consult specialist",
-                "supportive care"
-              ]
+              "ok": false,
+              "error": "treatment.drug is required"
             }
           }
         }
@@ -1426,9 +1644,10 @@
   "T17": {
     "total": 54,
     "live": 53,
-    "executed": 43,
-    "needsInput": 1,
-    "needsTool": 9,
+    "executed": 44,
+    "needsInput": 0,
+    "degraded": 1,
+    "needsTool": 8,
     "broken": 0,
     "retired": 1,
     "reachable": 53
@@ -1436,8 +1655,8 @@
   "T18": {
     "created": true,
     "usable": true,
-    "model": "nvidia/nemotron-3-ultra-550b-a55b",
-    "bytes": 3415,
-    "reason": "forged with nvidia/nemotron-3-ultra-550b-a55b (3415 bytes), registered and executed"
+    "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+    "bytes": 2750,
+    "reason": "forged with nvidia/nemotron-3-nano-omni-30b-a3b-reasoning (2750 bytes), registered and executed"
   }
 }

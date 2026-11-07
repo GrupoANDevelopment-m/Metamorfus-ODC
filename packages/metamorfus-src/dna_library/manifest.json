@@ -2598,7 +2598,7 @@
       "runtime": "python",
       "morph_focus": "ACT",
       "status": "active",
-      "mastery": 0.39999999999999997,
+      "mastery": 0.5499999999999999,
       "transferable": true,
       "usage_history": [
         {
@@ -2714,6 +2714,66 @@
           },
           "outcome": 1,
           "duration_ms": 42
+        },
+        {
+          "at": "2026-11-07T09:19:19.068Z",
+          "by_profession": "meteorologist",
+          "runtime": "python",
+          "context": [
+            "stations",
+            "top_n"
+          ],
+          "result": {
+            "action": "PRESSURE_GRADIENT",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "gradients": [],
+              "computed": 0,
+              "error": "need at least 2 stations with pressure"
+            }
+          },
+          "outcome": 1,
+          "failure_kind": null,
+          "duration_ms": 37
+        },
+        {
+          "at": "2026-11-07T09:19:19.111Z",
+          "by_profession": "meteorologist",
+          "runtime": "python",
+          "context": [
+            "stations",
+            "top_n"
+          ],
+          "result": {
+            "error": "invoker: skill raised: invalid literal for int() with base 10: 'not-a-number'",
+            "traceback": "Traceback (most recent call last):\n  File \"/run/csi/mount-root/nas/eab0d61a99b6696edb3d2aff87b585e8/metamorfus-opencode/packages/metamorfus-src/server/skills/invoker.py\", line 74, in main\n    result = module.skill({}, context)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/workspace/metamorfus-opencode/packages/metamorfus-src/dna_library/analyze_pressure_gradient_protocol.py\", line 61, in skill\n    top_n = int(context.get(\"top_n\", 5) or 5)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: invalid literal for int() with base 10: 'not-a-number'\n"
+          },
+          "outcome": -1,
+          "failure_kind": "raised",
+          "duration_ms": 32
+        },
+        {
+          "at": "2026-11-07T09:19:19.150Z",
+          "by_profession": "meteorologist",
+          "runtime": "python",
+          "context": [
+            "stations",
+            "top_n"
+          ],
+          "result": {
+            "action": "PRESSURE_GRADIENT",
+            "intensity": 0,
+            "version": 1,
+            "result": {
+              "gradients": [],
+              "computed": 0,
+              "error": "need at least 2 stations with pressure"
+            }
+          },
+          "outcome": 1,
+          "failure_kind": null,
+          "duration_ms": 26
         }
       ],
       "reactivation_triggers": [
@@ -2721,7 +2781,7 @@
       ],
       "created_by": "seed-backfill",
       "created_at": "2026-10-25T21:18:50.513Z",
-      "last_used_at": "2026-10-25T21:19:17.663Z"
+      "last_used_at": "2026-11-07T09:19:19.150Z"
     },
     {
       "key": "archaeo_artifact_inference_protocol",

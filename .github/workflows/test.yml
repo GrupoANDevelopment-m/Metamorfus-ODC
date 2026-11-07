@@ -70,7 +70,11 @@ jobs:
             server/__tests__/identity.test.mjs \
             server/__tests__/constitution-memory.test.mjs \
             server/__tests__/llm-library.test.mjs \
+            server/__tests__/model-liveness.test.mjs \
             server/__tests__/capability-forge.test.mjs \
+            server/__tests__/opencode-bridge.test.mjs \
+            server/__tests__/skill-runtimes.test.mjs \
+            server/__tests__/skill-contracts.test.mjs \
             server/__tests__/tool-registry.test.ts
 
       - name: Upload results on failure

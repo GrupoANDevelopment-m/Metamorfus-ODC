@@ -15,25 +15,29 @@
  * exist. Both failed silently: the skills returned ok:true and
  * contributed nothing.
  *
- * THE SEED SOURCES ARE THE TRUTH
- * ------------------------------
- * dna_library/*.py are OUTPUTS of adopt(), not the source of truth.
- * The source is server/metamorfus-core/seed-sources.ts, and adopt()
- * writes that payload into the .py file. So the contracts that matter
- * are the ones in seed-sources.ts:
+ * THE SKILLS ON DISK ARE THE TRUTH
+ * --------------------------------
+ * dna_library/*.py are OUTPUTS of adopt(); the source is
+ * server/metamorfus-core/seed-sources.ts, which is kept byte-identical
+ * to the files on disk. Whichever way you look at it, the contract
+ * that matters is the one the skill actually implements:
  *
- *   analyze_pressure_gradient  reads stations[{station_id, lat, lon,
- *                              pressure_hpa}], pairs each station with
- *                              its EAST neighbour (lon+1), returns
- *                              gradients[] with magnitude_hpa_per_100km
- *                              SORTED BY MAGNITUDE
- *   engineer_load_calc         reads distributed_kg_m2, span_m,
- *                              point_loads_kg, tributary_width_m;
- *                              returns total_kg, area_m2, point_total_kg
+ *   analyze_pressure_gradient  reads stations[{id, pressure, lat, lon}]
+ *                              (also "name", "p", "latitude", "longitude"),
+ *                              returns gradients[] with
+ *                              gradient_hpa_per_km SORTED BY MAGNITUDE,
+ *                              and local_slopes[] with
+ *                              slope_hpa_per_km IN SEQUENCE ORDER
+ *   engineer_load_calc         reads loads{moment, shear, axial,
+ *                              length, distributed}, section{type, depth,
+ *                              width}, material; returns utilisation,
+ *                              von_mises_pa, section_properties, checks
  *   rsi_calculator_v2          reads prices[], returns rsi and signal
  *
- * The adapters below speak exactly those contracts, and each one
- * reports whether it actually produced a usable reading.
+ * The adapters below speak exactly those contracts. When the skills
+ * were rewritten, the adapters went with them — an adapter reading
+ * keys the skill never had is a domain that fails silently, and that
+ * is precisely the bug this test exists to catch.
  */
 import path from "node:path";
 import { packageRoot } from "../package-root.mjs";
@@ -150,6 +154,9 @@ async function adaptTrader(workspaceRoot, series) {
  */
 const SEGMENTS = 4;
 
+/** The span of the member the engineering domain reads the load on. */
+const SPAN_M = 4;
+
 async function adaptMeteorology(workspaceRoot, series) {
   const runSkill = await loadRunner();
   const n = series.length;
@@ -165,17 +172,23 @@ async function adaptMeteorology(workspaceRoot, series) {
     const to = j === SEGMENTS - 1 ? n : from + segSize;
     const chunk = series.slice(from, to);
     if (chunk.length < 3) continue;
+    // The skill reads stations[{id, pressure, lat, lon}]. The old
+    // adapter passed {station_id, pressure_hpa}, which the skill never
+    // looked for: every pressure came out as 0 and every pair had a
+    // zero gradient. The domain was not failing loudly — it was
+    // reporting a flat field.
     const stations = chunk.map((v, i) => ({
-      station_id: `s${j}_${i}`,
+      id: `s${j}_${i}`,
       lat: 0,
       lon: i,
-      pressure_hpa: v,
+      pressure: v,
     }));
     const r = await runSkill(workspaceRoot, {
       skillKey: "analyze_pressure_gradient_protocol",
       byProfession: "meteorologist",
       context: { stations, top_n: stations.length },
     });
+    const data = inner(r);
     if (!r.ok) {
       return {
         domain: "meteorology",
@@ -185,17 +198,19 @@ async function adaptMeteorology(workspaceRoot, series) {
         evidence: r.error ?? "gradient failed",
       };
     }
-    const grads = inner(r).gradients ?? [];
-    const mags = grads.map((g) => Number(g.magnitude_hpa_per_100km ?? 0));
+    // local_slopes[] keeps the SEQUENCE order (the skill sorts only
+    // gradients[], which is why reading gradients alone would destroy
+    // the progression). slope_hpa_per_km is already hPa per km — the
+    // skill divides by the great-circle distance, so no unit
+    // conversion is needed here.
+    const slopes = data.local_slopes ?? [];
+    const mags = slopes.map((g) => Math.abs(Number(g.slope_hpa_per_km ?? 0)));
     if (!mags.length) {
-      return { domain: "meteorology", signal: 0, available: false, contributes: "none", evidence: "no gradients" };
+      return { domain: "meteorology", signal: 0, available: false, contributes: "none", evidence: "no local slopes" };
     }
-    // magnitude_hpa_per_100km = |dp| * 100 / (111.32 * cos(lat)); with
-    // lat = 0 that is |dp| * 0.898, so |dp| = magnitude * 1.1132.
     const meanMag = mags.reduce((a, b) => a + b, 0) / mags.length;
-    const meanAbsStep = meanMag * 1.1132;
-    rates.push(meanAbsStep);
-    perSegment.push({ segment: j, from, to, meanMag, meanAbsStep, pairs: mags.length });
+    rates.push(meanMag);
+    perSegment.push({ segment: j, from, to, meanMag, meanAbsStep: meanMag, pairs: mags.length });
   }
 
   if (rates.length < 3) {
@@ -245,9 +260,16 @@ async function adaptMeteorology(workspaceRoot, series) {
 /**
  * ENGINEERING — headroom, and how fast the margin is being consumed.
  *
- * The load-calc seed reads `distributed_kg_m2`, `span_m`,
- * `point_loads_kg` and `tributary_width_m`, and returns total_kg,
- * area_m2 and point_total_kg.
+ * The load-calc skill reads `loads{moment, shear, axial, length,
+ * distributed}`, `section{type, depth, width}` and `material`, and
+ * returns `utilisation` (the fraction of the allowable stress the
+ * member is using), `von_mises_pa`, `section_properties` and the
+ * individual `checks`.
+ *
+ * The series is read as a LOAD PATH in kN: a simply supported 4 m
+ * steel beam (100 x 200 mm section) carrying that load at midspan,
+ * so the bending moment is P * L / 4. The utilisation is then the
+ * honest question: how much of the member's capacity is being used?
  *
  * The engineering domain does NOT vote on direction. Load alone
  * cannot tell a series that peaked from one that is still climbing:
@@ -270,48 +292,52 @@ async function adaptEngineering(workspaceRoot, series) {
     return { domain: "engineering", signal: 0, available: false, contributes: "none", evidence: "window too short" };
   }
 
-  const intensities = [];
+  const utilisations = [];
+  const loadPath = [];
   for (let j = 0; j < SEGMENTS; j++) {
     const from = j * segSize;
     const to = j === SEGMENTS - 1 ? n : from + segSize;
     const chunk = series.slice(from, to);
     if (chunk.length < 3) continue;
+    // Mean load of the segment, in kN.
+    const loadKn = Math.abs(chunk.reduce((a, b) => a + b, 0) / chunk.length);
+    loadPath.push(loadKn);
     const r = await runSkill(workspaceRoot, {
       skillKey: "engineer_load_calc_protocol",
       byProfession: "engineer",
       context: {
-        distributed_kg_m2: Math.abs(chunk.reduce((a, b) => a + b, 0) / chunk.length),
-        span_m: 4,
-        point_loads_kg: [Math.abs(chunk[0]), Math.abs(chunk[chunk.length - 1])],
-        tributary_width_m: 1,
+        loads: { moment: (loadKn * 1000 * SPAN_M) / 4, length: SPAN_M },
+        section: { type: "rectangle", depth: 0.2, width: 0.1 },
+        material: "steel",
       },
     });
     const data = inner(r);
-    if (!r.ok || data.total_kg === undefined) {
+    if (!r.ok || data.utilisation === undefined) {
       return {
         domain: "engineering",
         signal: 0,
         available: false,
         contributes: "none",
-        evidence: r.error ?? `no total_kg (keys: ${Object.keys(data).join(",") || "none"})`,
+        evidence: r.error ?? `no utilisation (keys: ${Object.keys(data).join(",") || "none"})`,
       };
     }
-    const area = Number(data.area_m2) || 1;
-    intensities.push(Number(data.total_kg) / area);
+    utilisations.push(Number(data.utilisation));
   }
 
-  if (intensities.length < 3) {
+  if (utilisations.length < 3) {
     return { domain: "engineering", signal: 0, available: false, contributes: "none", evidence: "not enough segments" };
   }
 
-  // How fast the load is being consumed, recently.
-  const growth =
-    (intensities[intensities.length - 1] - intensities[intensities.length - 2]) /
-    Math.max(intensities[intensities.length - 2], 1e-9);
+  // How fast the capacity is being consumed, recently.
+  const last = utilisations[utilisations.length - 1];
+  const prev = utilisations[utilisations.length - 2];
+  const peak = Math.max(...utilisations);
+  // The denominator is floored against the peak so a tiny utilisation
+  // cannot turn a small absolute change into an absurd ratio.
+  const growth = (last - prev) / Math.max(prev, peak * 0.02, 1e-9);
 
-  // Margin left, against the heaviest load the structure has carried.
-  const peak = Math.max(...intensities);
-  const headroom = Math.max(0, Math.min(1, 1 - intensities[intensities.length - 1] / (peak * 1.15)));
+  // Margin left: the fraction of the allowable stress still unused.
+  const headroom = Math.max(0, Math.min(1, 1 - last));
 
   // A climbing load means less margin, so the same change lands
   // harder. A load that has stopped climbing means the structure has
@@ -323,12 +349,13 @@ async function adaptEngineering(workspaceRoot, series) {
     signal: 0,
     available: true,
     contributes: "magnitude",
-    loadProfile: intensities,
+    loadProfile: utilisations,
+    loadPath,
     growth,
     headroom,
     magnitude,
     evidence:
-      `load [${intensities.map((v) => v.toFixed(1)).join(", ")}], growth ${(growth * 100).toFixed(1)}%, headroom ${headroom.toFixed(2)} -> x${magnitude.toFixed(2)}`,
+      `utilisation [${utilisations.map((v) => v.toFixed(3)).join(", ")}], growth ${(growth * 100).toFixed(1)}%, headroom ${headroom.toFixed(2)} -> x${magnitude.toFixed(2)}`,
   };
 }
 

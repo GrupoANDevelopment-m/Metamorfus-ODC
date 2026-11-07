@@ -91,8 +91,8 @@ test("C2: invokeFlow runs all skills in chain via real runner", async () => {
   const result = await invokeFlow(ws, flow, {
     profession: "meteorologist",
     stations: [
-      { station_id: "A", lat: 0, lon: 0, pressure_hpa: 1010, temp_c: 20 },
-      { station_id: "B", lat: 0, lon: 1, pressure_hpa: 1005, temp_c: 20 },
+      { id: "A", lat: 0, lon: 0, pressure: 1010, temperature: 20 },
+      { id: "B", lat: 0, lon: 1, pressure: 1005, temperature: 20 },
     ],
   });
   assert.equal(result.ok, true);
@@ -245,7 +245,7 @@ test("C10: end-to-end — flow invocation updates fitness and chain", async () =
   for (let i = 0; i < 3; i++) {
     await invokeFlow(ws, flow, {
       profession: "meteorologist",
-      stations: [{ station_id: "A", lat: 0, lon: 0, pressure_hpa: 1010, temp_c: 20 }, { station_id: "B", lat: 0, lon: 1, pressure_hpa: 1005, temp_c: 22 }],
+      stations: [{ id: "A", lat: 0, lon: 0, pressure: 1010, temperature: 20 }, { id: "B", lat: 0, lon: 1, pressure: 1005, temperature: 22 }],
     });
   }
   // Re-read flow from disk

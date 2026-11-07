@@ -77,7 +77,7 @@ export async function measureGapFilling(workspaceRoot) {
   const candidateSkills = [
     { skillKey: "fraud_anomaly_protocol", byProfession: "fraud_analyst", context: { transactions: txs } },
     { skillKey: "rsi_calculator_v2_protocol", byProfession: "trader", context: { prices: txs.map((t) => t.amount) } },
-    { skillKey: "analyze_pressure_gradient_protocol", byProfession: "meteorologist", context: { stations: txs.slice(0, 10).map((t, i) => ({ station_id: t.id, lat: 0, lon: i, pressure_hpa: t.amount })) } },
+    { skillKey: "analyze_pressure_gradient_protocol", byProfession: "meteorologist", context: { stations: txs.slice(0, 10).map((t, i) => ({ id: t.id, lat: 0, lon: i, pressure: t.amount })) } },
     { skillKey: "real_port_scanner_protocol", byProfession: "cybersecurity", context: { host: "127.0.0.1", ports: [22, 80, 443, 3389, 5432] } },
   ];
   const skillOutputs = [];

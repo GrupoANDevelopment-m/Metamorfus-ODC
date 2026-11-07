@@ -48,17 +48,17 @@ test("T1 — Identity Continuity (3-domain journey)", async () => {
   const c = ctx(ws);
   await adopt("meteorologist", c);
   const stateA = await loadManifest(c);
-  await runSkill(ws, { skillKey: "analyze_pressure_gradient_protocol", byProfession: "meteorologist", context: { stations: [{ station_id: "A", lat: 0, lon: 0, pressure_hpa: 1010 }, { station_id: "B", lat: 0, lon: 1, pressure_hpa: 1005 }] } });
+  await runSkill(ws, { skillKey: "analyze_pressure_gradient_protocol", byProfession: "meteorologist", context: { stations: [{ id: "A", lat: 0, lon: 0, pressure: 1010 }, { id: "B", lat: 0, lon: 1, pressure: 1005 }] } });
   await adopt("cybersecurity", c);
   await runSkill(ws, { skillKey: "real_port_scanner_protocol", byProfession: "cybersecurity", context: { host: "127.0.0.1", ports: [22, 80] } });
   await adopt("engineer", c);
-  await runSkill(ws, { skillKey: "engineer_load_calc_protocol", byProfession: "engineer", context: { distributed_kg_m2: 200, span_m: 4, point_loads_kg: [100, 200] } });
+  await runSkill(ws, { skillKey: "engineer_load_calc_protocol", byProfession: "engineer", context: { loads: { moment: 4000, shear: 2000, axial: 1000, length: 4 }, section: { type: "rectangle", depth: 0.2, width: 0.1 }, material: "steel" } });
   // Cross-profession invocation: trader uses analyze_pressure_gradient_protocol.
   // Polymorphic skills (statistical) get marked transferable when 2+ professions use them.
   await adopt("trader", c);
-  await runSkill(ws, { skillKey: "analyze_pressure_gradient_protocol", byProfession: "trader", context: { stations: [{ station_id: "X", lat: 0, lon: 0, pressure_hpa: 1015 }, { station_id: "Y", lat: 0, lon: 1, pressure_hpa: 1008 }] } });
+  await runSkill(ws, { skillKey: "analyze_pressure_gradient_protocol", byProfession: "trader", context: { stations: [{ id: "X", lat: 0, lon: 0, pressure: 1015 }, { id: "Y", lat: 0, lon: 1, pressure: 1008 }] } });
   await adopt("meteorologist", c);
-  await runSkill(ws, { skillKey: "front_detection_protocol", byProfession: "meteorologist", context: { stations: [{ station_id: "X", temp_c: 10 }, { station_id: "Y", temp_c: 25 }] } });
+  await runSkill(ws, { skillKey: "front_detection_protocol", byProfession: "meteorologist", context: { stations: [{ id: "X", lat: 0, lon: 0, temperature: 10 }, { id: "Y", lat: 0, lon: 1, temperature: 25 }] } });
   const stateF = await loadManifest(c);
   const ips = computeIPS(stateA, stateF);
   // Mark transferred skills as transferable in the manifest for IPS
@@ -133,11 +133,39 @@ test("T6 — Self-Evolution (LLM-driven, not fallback)", async () => {
   // Adopt meteorologist first so the manifest + dna_library are populated
   await adopt("meteorologist", c);
   try {
+    // THE PREMISE IS ASSERTED, NOT ASSUMED.
+    //
+    // This test used to feed the skill `stations: "this is not a
+    // list"`. The skill has since been rewritten to handle that
+    // gracefully — it reports "need at least 2 stations with pressure"
+    // instead of raising — so the failing task stopped failing and
+    // the evolution path silently stopped being exercised. The test
+    // would have degraded into asserting nothing.
+    //
+    // A skill that REPORTS a condition is working. Only a skill that
+    // RAISES is broken. So the failing input is one the skill cannot
+    // survive: a non-numeric top_n, which raises inside the skill.
+    const failingContext = {
+      stations: [
+        { id: "A", pressure: 1010, lat: 0, lon: 0 },
+        { id: "B", pressure: 1005, lat: 0, lon: 1 },
+      ],
+      top_n: "not-a-number",
+    };
+    const before = await runSkill(ws, {
+      skillKey: "analyze_pressure_gradient_protocol",
+      byProfession: "meteorologist",
+      context: failingContext,
+    });
+    console.log("[T6] premissa: a skill original falhou de verdade? ok =", before.ok, "| kind =", before.failureKind ?? "-");
+    assert.equal(before.ok, false, "T6: the premise is broken — the original skill did not fail, so evolution is not being tested");
+    assert.equal(before.failureKind, "raised", "T6: the original skill reported a condition instead of failing — that is not a broken skill");
+
     const evo = await measureSelfEvolution(ws, {
       failingTask: {
         skillKey: "analyze_pressure_gradient_protocol",
         profession: "meteorologist",
-        context: { stations: "this is not a list", top_n: -1 },
+        context: failingContext,
       },
       maxAttempts: 3,
     });
@@ -149,6 +177,7 @@ test("T6 — Self-Evolution (LLM-driven, not fallback)", async () => {
     // skill — because nothing was ever asserted. A battery that cannot
     // fail is a battery that reports fiction.
     assert.ok(evo.evolved, `T6: no skill was evolved: ${evo.error ?? "no error reported"}`);
+    assert.notEqual(evo.reason, "succeeded before evolution needed", "T6: the skill never failed, so no evolution happened");
     assert.equal(evo.ok, true, "T6: evolved skill did not execute successfully");
     assert.ok(evo.pythonBytes > 100, `T6: forged skill is suspiciously small (${evo.pythonBytes} bytes)`);
     assert.ok(evo.newSkillKey, "T6: no new skill key was produced");
@@ -394,12 +423,13 @@ test("T17 — Skill Reachability Audit (every shipped skill must run)", async ()
   const r = await auditReachableSkills(ws);
   results.T17 = {
     total: r.total, live: r.liveCount, executed: r.executedCount, needsInput: r.needsInputCount,
-    needsTool: r.needsToolCount, broken: r.brokenCount, retired: r.retiredCount,
-    reachable: r.reachableCount,
+    degraded: r.degradedCount, needsTool: r.needsToolCount, broken: r.brokenCount,
+    retired: r.retiredCount, reachable: r.reachableCount,
   };
   console.log("[T17] skills no manifesto: " + r.total + " (vivas: " + r.liveCount + ", aposentadas: " + r.retiredCount + ")");
   console.log("[T17] EXECUTARAM com valor real: " + r.executedCount);
   console.log("[T17] alcancaveis, faltou contexto: " + r.needsInputCount);
+  console.log("[T17] degradaram (reportaram condicao com honestidade): " + r.degradedCount);
   console.log("[T17] alcancaveis, falta ferramenta externa: " + r.needsToolCount);
   console.log("[T17] QUEBRADOS (bug real): " + r.brokenCount);
   for (const b of r.broken) console.log("[T17]   QUEBRADO " + b.key + " — " + b.reason);

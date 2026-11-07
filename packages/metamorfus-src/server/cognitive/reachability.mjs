@@ -38,21 +38,20 @@ const CONTEXT_BY_HINT = [
   [/summar/i, { text: "The quick brown fox jumps over the lazy dog. It was a bright cold day in April." }],
   [/pressure|gradient|front|forecast|weather/i, {
     stations: [
-      { station_id: "A", lat: 0, lon: 0, pressure_hpa: 1013, temp_c: 15 },
-      { station_id: "B", lat: 0, lon: 1, pressure_hpa: 1008, temp_c: 12 },
-      { station_id: "C", lat: 0, lon: 2, pressure_hpa: 1010, temp_c: 18 },
-      { station_id: "D", lat: 0, lon: 3, pressure_hpa: 1002, temp_c: 21 },
+      { id: "A", lat: 0, lon: 0, pressure: 1013, temperature: 15, wind: 4 },
+      { id: "B", lat: 0, lon: 1, pressure: 1008, temperature: 12, wind: 6 },
+      { id: "C", lat: 0, lon: 2, pressure: 1010, temperature: 18, wind: 3 },
+      { id: "D", lat: 0, lon: 3, pressure: 1002, temperature: 21, wind: 8 },
     ],
   }],
   [/load|stress|toler|material|structur|beam|column/i, {
-    distributed_kg_m2: 120,
-    span_m: 4,
-    point_loads_kg: [800, 400],
-    tributary_width_m: 1.5,
-    material: { E: 200e9, yield: 250e6 },
+    // The skill reads loads{}, section{type, depth, width} and
+    // material. The old keys (distributed_kg_m2, span_m, depth_m,
+    // width_m) were read by nothing: the skill fell back to its
+    // defaults and the audit still counted the skill as executed.
     loads: { moment: 12000, shear: 3000, axial: 5000, length: 4, distributed: 800 },
-    section: { type: "rectangle", depth_m: 0.3, width_m: 0.15 },
-    allowable_stress_pa: 250e6,
+    section: { type: "rectangle", depth: 0.3, width: 0.15 },
+    material: "steel",
   }],
   [/rsi|signal|trend|trader|price/i, {
     prices: [100, 101, 103, 102, 104, 106, 105, 107, 109, 108, 110, 112, 111, 113, 115, 114, 116, 118],

@@ -10,3 +10,13 @@ dist/
 .run-battery-output.txt
 coverage/
 *.tsbuildinfo
+
+# Upstream OpenCode experiment outputs and oversized test fixtures.
+# They are not referenced by any build target Metamorfus uses, and they
+# are already excluded from the container image (see
+# packages/opencode-src/.dockerignore). The upstream test suite that
+# consumed the fixtures would need to fetch them separately.
+packages/opencode-src/artifacts/
+packages/opencode-src/packages/opencode/test/image/fixtures/picture-5mb-base64.png
+packages/opencode-src/packages/opencode/test/tool/fixtures/models-api.json
+packages/opencode-src/packages/opencode/test/tool/fixtures/large-image.png

@@ -308,7 +308,7 @@ export async function measureSelfEvolution(workspaceRoot, opts) {
   const validRetry = await run(workspaceRoot, {
     skillKey: newKey,
     byProfession: failingTask.profession,
-    context: { stations: [{ station_id: "A", pressure_hpa: 1010 }, { station_id: "B", pressure_hpa: 1005 }], top_n: 3 },
+    context: { stations: [{ id: "A", lat: 0, lon: 0, pressure: 1010 }, { id: "B", lat: 0, lon: 1, pressure: 1005 }], top_n: 3 },
   });
 
   return {

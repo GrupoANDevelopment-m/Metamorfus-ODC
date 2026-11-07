@@ -126,3 +126,89 @@ export function resolveModel(requested) {
 export function isDeprecated(model) {
   return Boolean(DEPRECATED_MODELS[model]);
 }
+
+/**
+ * LIVENESS PROBE
+ * --------------
+ * The catalog churns. `z-ai/glm-5.3` was alive on 2026-10-23 and
+ * retired on 2026-10-28, which is what broke T14 on 2026-10-29. A
+ * registry that is only correct on the day it was written is a
+ * registry that breaks again in a week.
+ *
+ * So the chain is checked before it is used. A model is declared dead
+ * ONLY on an explicit 404 or 410 from the endpoint — a network error
+ * or a timeout proves nothing and must never retire a working model.
+ *
+ * The result is cached, because a probe costs a round trip and the
+ * registry is consulted on every forge.
+ */
+const LIVENESS_TTL_MS = 30 * 60 * 1000;
+let livenessCache = { checkedAt: 0, live: null, dead: null };
+
+/** Forces the next chain lookup to re-probe. */
+export function clearLivenessCache() {
+  livenessCache = { checkedAt: 0, live: null, dead: null };
+}
+
+/**
+ * Probes each model with the smallest possible completion and reports
+ * which ones answer.
+ *
+ * @param {object} opts
+ * @param {string[]} [opts.models]  candidates (defaults to the chain)
+ * @param {boolean} [opts.force]    ignore the cache
+ * @param {number} [opts.timeoutMs]
+ */
+export async function probeModelLiveness({ models = MODEL_FALLBACK_CHAIN, force = false, timeoutMs = 8000 } = {}) {
+  const now = Date.now();
+  if (!force && livenessCache.live && now - livenessCache.checkedAt < LIVENESS_TTL_MS) {
+    return { live: livenessCache.live, dead: livenessCache.dead, checkedAt: livenessCache.checkedAt, cached: true };
+  }
+  const key = process.env.NVIDIA_API_KEY;
+  if (!key) {
+    // No key: nothing can be probed. Say so instead of pretending the
+    // chain is healthy.
+    return { live: models, dead: [], checkedAt: now, cached: false, skipped: "no NVIDIA_API_KEY" };
+  }
+
+  const live = [];
+  const dead = [];
+  for (const model of models) {
+    try {
+      const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: "ping" }],
+          max_tokens: 1,
+        }),
+        signal: AbortSignal.timeout(timeoutMs),
+      });
+      if (res.ok) {
+        live.push(model);
+      } else if (res.status === 404 || res.status === 410) {
+        // An explicit "gone" — this model is retired.
+        dead.push(model);
+      } else {
+        // 429, 5xx, network hiccup: not evidence of death.
+        live.push(model);
+      }
+    } catch {
+      // Timeout / DNS / offline: unknown, not dead.
+      live.push(model);
+    }
+  }
+  livenessCache = { checkedAt: now, live, dead };
+  return { live, dead, checkedAt: now, cached: false };
+}
+
+/**
+ * The chain, filtered to the models that actually answer right now.
+ * Falls back to the static chain when nothing could be determined.
+ */
+export async function liveModelChain() {
+  const r = await probeModelLiveness();
+  if (!r.live || !r.live.length) return [...MODEL_FALLBACK_CHAIN];
+  return r.live;
+}

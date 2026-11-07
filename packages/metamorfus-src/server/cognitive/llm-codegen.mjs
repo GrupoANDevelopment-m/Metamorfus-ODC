@@ -192,12 +192,16 @@ export async function generateValidPython({
   maxAttempts = 3,
   onAttempt = null,
 }) {
-  const { MODEL_FALLBACK_CHAIN } = await import(path.join(ROOT, "server/llm-library/model-registry.mjs"));
+  const { liveModelChain } = await import(path.join(ROOT, "server/llm-library/model-registry.mjs"));
   const prompt = buildCapabilityPrompt({ capability, existingSource, skillKey, profession });
 
   const triedModels = [];
   let lastError = null;
-  const chain = MODEL_FALLBACK_CHAIN.slice(0, Math.max(1, maxAttempts));
+  // The chain is filtered to the models that answer RIGHT NOW. The
+  // catalog churns — z-ai/glm-5.3 was alive on 2026-10-23 and retired
+  // on 2026-10-28 — and a static chain is a chain that breaks again
+  // in a week.
+  const chain = (await liveModelChain()).slice(0, Math.max(1, maxAttempts));
 
   for (const model of chain) {
     try {
